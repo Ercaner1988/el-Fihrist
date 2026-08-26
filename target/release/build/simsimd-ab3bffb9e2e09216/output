@@ -1,0 +1,507 @@
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+cargo:warning=cl: Komut satırı warning D9002: Bilinmeyen '-std:c99' seçeneği yoksayılıyor
+lib.c
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1304): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1305): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1302): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1308): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1309): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1306): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\elementwise.h(1482): error C2440: 'tür dönüştürme': '__m512i' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(522): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(523): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(524): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(525): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(526): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(516): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(521): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(534): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(578): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(563): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2440: 'tür dönüştürme': '__m256i' - '__m256bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2440: 'tür dönüştürme': '__m256i' - '__m256bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2168: '_mm256_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+cargo:warning=Failed to compile SimSIMD with all SIMD backends...
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:warning=cl: Komut satırı warning D9002: Bilinmeyen '-std:c99' seçeneği yoksayılıyor
+lib.c
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1304): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1305): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1302): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1308): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1309): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1306): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\elementwise.h(1482): error C2440: 'tür dönüştürme': '__m512i' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(522): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(523): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(524): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(525): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(526): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(516): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(521): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(534): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(578): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(563): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2440: 'tür dönüştürme': '__m256i' - '__m256bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2440: 'tür dönüştürme': '__m256i' - '__m256bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\sparse.h(695): error C2168: '_mm256_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+cargo:warning=Failed to compile after disabling SIMSIMD_TARGET_SIERRA, trying next configuration...
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:warning=cl: Komut satırı warning D9002: Bilinmeyen '-std:c99' seçeneği yoksayılıyor
+lib.c
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1304): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1305): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1302): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1308): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1309): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1306): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\elementwise.h(1482): error C2440: 'tür dönüştürme': '__m512i' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(522): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(523): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(524): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(525): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(526): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(516): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(521): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(534): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(578): error C2440: 'işlev': 'int' - '__m512h' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\probability.h(563): error C2440: 'başlatılıyor': 'int' - '__m512h' dönüşümü yapılamıyor
+cargo:warning=Failed to compile after disabling SIMSIMD_TARGET_TURIN, trying next configuration...
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:warning=cl: Komut satırı warning D9002: Bilinmeyen '-std:c99' seçeneği yoksayılıyor
+lib.c
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1530): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1567): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1569): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1608): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\dot.h(1611): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1761): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1786): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1787): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\spatial.h(1788): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1216): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1252): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1304): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1305): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1302): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1308): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1309): error C2440: 'tür dönüştürme': '__m512i' - '__m512bh' dönüşümü yapılamıyor
+C:\Users\buzbe\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\simsimd-6.5.16\include\simsimd\curved.h(1306): error C2168: '_mm512_dpbf16_ps': iç işlevin gerçek parametre sayısı az
+cargo:warning=Failed to compile after disabling SIMSIMD_TARGET_SAPPHIRE, trying next configuration...
+cargo:rerun-if-env-changed=CC_FORCE_DISABLE
+CC_FORCE_DISABLE = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+cargo:warning=cl: Komut satırı warning D9002: Bilinmeyen '-std:c99' seçeneği yoksayılıyor
+lib.c
+cargo:rerun-if-env-changed=AR_x86_64-pc-windows-msvc
+AR_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=AR_x86_64_pc_windows_msvc
+AR_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_AR
+HOST_AR = None
+cargo:rerun-if-env-changed=AR
+AR = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=ARFLAGS
+ARFLAGS = None
+cargo:rerun-if-env-changed=HOST_ARFLAGS
+HOST_ARFLAGS = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64_pc_windows_msvc
+ARFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64-pc-windows-msvc
+ARFLAGS_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VCToolsVersion
+VCToolsVersion = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release;C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\deps;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\local\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\bin;C:\Users\buzbe\AppData\Local\hermes\git\mingw64\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Links;C:\Users\buzbe\AppData\Local\hermes\node;C:\Users\buzbe\AppData\Local\hermes\node\bin;C:\Users\buzbe\AppData\Local\hermes\hermes-agent\venv\Scripts;C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\System32\OpenSSH;C:\Users\buzbe\OneDrive\Masaüstü\ffmpeg-8.1-essentials_build\bin;C:\Program Files\dotnet;C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\bin;C:\Program Files\nodejs;C:\Program Files\Tesseract-OCR;C:\Program Files\GitHub CLI;C:\Program Files\Docker\Docker\resources\bin;C:\Users\buzbe\AppData\Local\pnpm\bin;C:\Users\buzbe\.cargo\bin;C:\Users\buzbe\AppData\Local\hermes\bin;C:\Users\buzbe\AppData\Local\Microsoft\WindowsApps;C:\Users\buzbe\AppData\Local\Python\bin;C:\Users\buzbe\AppData\Local\Python\pythoncore-3.14-64\Scripts;C:\Users\buzbe\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\buzbe\.lmstudio\bin;C:\Users\buzbe\AppData\Local\Programs\Ollama;C:\Users\buzbe\.local\bin;C:\Users\buzbe\Tools\EverythingCLI;C:\Users\buzbe\AppData\Roaming\npm;C:\Users\buzbe\AppData\Local\PowerToys\DSCModules;C:\Users\buzbe\AppData\Local\hermes\git\cmd;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\BurntSushi.ripgrep.MSVC_Microsoft.Winget.Source_8wekyb3d8bbwe\ripgrep-15.1.0-x86_64-pc-windows-msvc;C:\Users\buzbe\AppData\Local\GitHubDesktop\bin;C:\Users\buzbe\AppData\Local\Microsoft\WinGet\Packages\SQLite.SQLite_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\Users\buzbe\AppData\Local\Programs\Cua\cua-driver\bin;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\vendor_perl;C:\Users\buzbe\AppData\Local\hermes\git\usr\bin\core_perl;C:\Users\buzbe\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rustc-link-lib=static=simsimd
+cargo:rustc-link-search=native=C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\build\simsimd-ab3bffb9e2e09216\out
+cargo:warning=Successfully compiled after disabling SIMSIMD_TARGET_GENOA
+cargo:rerun-if-changed=c/lib.c
+cargo:rerun-if-changed=rust/lib.rs
+cargo:rerun-if-changed=include/simsimd/simsimd.h
+cargo:rerun-if-changed=include/simsimd/dot.h
+cargo:rerun-if-changed=include/simsimd/spatial.h
+cargo:rerun-if-changed=include/simsimd/probability.h
+cargo:rerun-if-changed=include/simsimd/binary.h
+cargo:rerun-if-changed=include/simsimd/types.h
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_SIERRA
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_TURIN
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_SAPPHIRE
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_GENOA
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_ICE
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_SKYLAKE
+cargo:rerun-if-env-changed=SIMSIMD_TARGET_HASWELL

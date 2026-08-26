@@ -1,0 +1,5 @@
+cargo:rustc-check-cfg=cfg(injected_yields)
+cargo:rustc-check-cfg=cfg(host_shared_wal)
+cargo:rustc-cfg=host_shared_wal
+cargo::rerun-if-changed=build.rs
+cargo::rerun-if-env-changed=SOURCE_DATE_EPOCH
