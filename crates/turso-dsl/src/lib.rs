@@ -53,8 +53,14 @@ pub struct TursoBaglantisi {
 impl TursoBaglantisi {
     pub fn yeni() -> Self {
         let mut mock_db = HashMap::new();
-        mock_db.insert("kullanici:1".to_string(), "Ad: Ahmet, Rol: Yönetici".to_string());
-        mock_db.insert("kullanici:2".to_string(), "Ad: Ayşe, Rol: Mühendis".to_string());
+        mock_db.insert(
+            "kullanici:1".to_string(),
+            "Ad: Ahmet, Rol: Yönetici".to_string(),
+        );
+        mock_db.insert(
+            "kullanici:2".to_string(),
+            "Ad: Ayşe, Rol: Mühendis".to_string(),
+        );
 
         Self {
             veriler: Arc::new(Mutex::new(mock_db)),
@@ -96,6 +102,15 @@ impl TursoBaglantisi {
 
         icerik.remove(anahtar);
         Ok(())
+    }
+
+    /// Veri tabanındaki kayıt sayısını döndürür
+    pub fn adet_say(&self) -> usize {
+        if let Ok(icerik) = self.veriler.lock() {
+            icerik.len()
+        } else {
+            0
+        }
     }
 }
 
@@ -170,7 +185,10 @@ impl Yetenek for TursoYazYetenegi {
 
         self.baglanti.yaz(anahtar, temiz_veri.clone())?;
 
-        Ok(format!("Başarıyla Yazıldı -> Anahtar: {}, Değer: {}", temiz_id, temiz_veri))
+        Ok(format!(
+            "Başarıyla Yazıldı -> Anahtar: {}, Değer: {}",
+            temiz_id, temiz_veri
+        ))
     }
 }
 
@@ -208,7 +226,80 @@ impl Yetenek for TursoSilYetenegi {
     }
 }
 
-// --- 7. ARAÇ ÇAĞRI MERKEZİ (DISPATCHER) ---
+// --- 7. SAYMA YETENEĞİ ARACI ---
+pub struct TursoSayYetenegi {
+    baglanti: TursoBaglantisi,
+}
+
+impl TursoSayYetenegi {
+    pub fn yeni(baglanti: TursoBaglantisi) -> Self {
+        Self { baglanti }
+    }
+}
+
+impl Yetenek for TursoSayYetenegi {
+    fn ad(&self) -> &'static str {
+        "turso_say"
+    }
+
+    fn tanim(&self) -> &'static str {
+        "Turso SQLite tablosundaki kayıt sayısını döndürür."
+    }
+
+    fn imza(&self) -> &'static str {
+        "turso_say()"
+    }
+
+    fn calistir(&self, _girdiler: &str) -> Sonuc<String> {
+        let sayi = self.baglanti.adet_say();
+        Ok(format!("Toplam kayıt sayısı: {}", sayi))
+    }
+}
+
+// --- 8. SKILLS LIBRARY ARAMA YETENEĞİ ---
+pub struct SkillsLibraryYetenegi;
+
+impl SkillsLibraryYetenegi {
+    pub fn yeni() -> Self {
+        Self
+    }
+}
+
+impl Yetenek for SkillsLibraryYetenegi {
+    fn ad(&self) -> &'static str {
+        "skills_library_ara"
+    }
+
+    fn tanim(&self) -> &'static str {
+        "Yapay zeka için yeni bir yeteneğe ihtiyaç duyulduğunda, skills-library.com üzerindeki açık kütüphanede arama yapar ve kurulum bağlantılarını döner."
+    }
+
+    fn imza(&self) -> &'static str {
+        "skills_library_ara(sorgu: metin)"
+    }
+
+    fn calistir(&self, girdiler: &str) -> Sonuc<String> {
+        let temiz_sorgu = girdiler.trim().replace("sorgu=", "").replace("\"", "");
+
+        if temiz_sorgu.is_empty() {
+            return Err(ManzumeAksakligi::GirdiHatasi(
+                "Lütfen aranacak yeteneğin adını belirtin!".to_string(),
+            ));
+        }
+
+        let arama_url = format!(
+            "https://skills-library.com/?search={}",
+            temiz_sorgu.replace(' ', "+")
+        );
+
+        Ok(format!(
+            "Aradığınız '{}' yeteneği için skills-library.com bağlantısı:\n{}",
+            temiz_sorgu, arama_url
+        ))
+    }
+}
+
+// --- 9. ARAÇ ÇAĞRI MERKEZİ (DISPATCHER) ---
 pub struct YetenekYoneticisi {
     yetenekler: HashMap<&'static str, Box<dyn Yetenek>>,
 }
@@ -267,7 +358,7 @@ impl YetenekYoneticisi {
     }
 }
 
-// --- 8. TESTLER (Gemini Design'a Uygun) ---
+// --- 10. TESTLER ---
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -275,7 +366,7 @@ mod tests {
     #[test]
     fn turso_oku_temel_calisir() {
         let db = TursoBaglantisi::yeni();
-        let oku_araci = TursoOkuYetenegi { baglanti: db };
+        let oku_araci = TursoOkuYetenegi::yeni(db);
 
         let sonuc = oku_araci.calistir("1");
         assert!(sonuc.is_ok());
@@ -288,7 +379,7 @@ mod tests {
     fn turso_yaz_ve_oku_entegrasyonu() {
         let db = TursoBaglantisi::yeni();
         let yaz_araci = TursoYazYetenegi::yeni(db.clone());
-        let oku_araci = TursoOkuYetenegi { baglanti: db };
+        let oku_araci = TursoOkuYetenegi::yeni(db);
 
         // Yaz
         let yaz_sonuc = yaz_araci.calistir("3, Ad: Veli, Rol: Tasarımcı");
@@ -315,5 +406,25 @@ mod tests {
         // Tekrar oku (artık yok olmalı)
         let oku_sonuc = oku_araci.calistir("1");
         assert!(oku_sonuc.is_err());
+    }
+
+    #[test]
+    fn turso_say_kayit_sayisini_doner() {
+        let db = TursoBaglantisi::yeni();
+        let say_araci = TursoSayYetenegi::yeni(db.clone());
+        let sonuc = say_araci.calistir("");
+        assert!(sonuc.is_ok());
+        let veri = sonuc.unwrap();
+        assert!(veri.contains("Toplam kayıt sayısı: 2"));
+    }
+
+    #[test]
+    fn skills_library_ara_bosluk_sonrasi_url_kur() {
+        let arama = SkillsLibraryYetenegi::yeni();
+        let sonuc = arama.calistir("sorgu=PDF parser");
+        assert!(sonuc.is_ok());
+        let veri = sonuc.unwrap();
+        assert!(veri.contains("https://skills-library.com/?search=PDF+parser"));
+        assert!(veri.contains("PDF parser"));
     }
 }
