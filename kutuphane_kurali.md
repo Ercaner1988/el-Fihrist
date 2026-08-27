@@ -79,6 +79,32 @@ ibnunnedim tekmil --ajan "ibnunnedim" --yetenek "<yetenek-id>" --puan <0-100> --
 
 ---
 
+## Cezeri/SkillOpt Entegrasyon Prosedürü
+
+**Amaç:** Kütüphanede olan bir yetenek/dosya ile dışarıdaki (daha gelişmiş) bir sürüm aynı işlevi görebiliyorsa, dışardaki sürümün avantajları kütüphaneye aktarılmalı ve Cezeri'ye iletilerek skillopt edilmeli.
+
+### Adım Adım Prosedür
+
+1. **Tespit:** Dışarıda aynı işlevi gören bir dosya/bileşen bulunur.
+2. **Analiz:** Kütüphanedeki sürümle dışardakini karşılaştır:
+   - Farklı işlevler var mı?
+   - Dışardaki sürümde hangi üstünlükler var? (hız, doğruluk, özellik, test coverage)
+3. **Cezeri'ye Gönderim:** `skillopt_kuyrugu` tablosuna yeni bir kayıt ekle:
+   ```sql
+   INSERT INTO skillopt_kuyrugu (yetenek_id, sebep, ozellikler, oncelik) 
+   VALUES ('<yetenek-id>', 'Dışardaki sürümde X üstünlüğü mevcut', 'X, Y, Z', 1);
+   ```
+4. **Cezeri'nin Görevi:** Cezeri, bu talebi işleyip kütüphanedeki yeteneği geliştirir.
+5. **Doğrulama:** Yeni sürüm `kutup_kutuphane.db`'ye işlendikten sonra `tekmil` puanı 100 olana kadar tekrar test edilir.
+
+### Örnek Senaryo
+
+| Durum | Kütüphanede | Dışarda | İşlem |
+|---|---|---|---|
+| `rust-docx-openxml` | Temel XML okuma | OpenXML parsing + styles + metadata | `skillopt_kuyrugu`'na ekle, Cezeri'ye gönder |
+
+---
+
 ## Geçerli Olan
 
 > **"Açıkça istenmedikçe kütüphaneden çağrılmalı"** kuralı **aktiftir**.
