@@ -1,8 +1,14 @@
-//! Turso DSL — SAFE Rust Trait-based DSL for Hermes Agentic Loop
+//! Turso DSL — Hermes ajan döngüsü için trait tabanlı güvenli DSL
 //!
-//! Bu crate, Gemini notebook'tan alınan "Manzume Aksaklık" tasarımını temel alır.
-//! Hermes ile Turso SQLite veritabanı arasındaki ReAct (Düşün-Eylem-Gözlem) döngüsünü
-//! sağlar; token-efficient compact DSL (`CALL:tool(args)`) formatı sunar.
+//! ⚠️ **Bu crate Turso'ya bağlanmaz.** `Cargo.toml`'unda `turso` bağımlılığı
+//! yoktur; `TursoBaglantisi` bellekte bir `HashMap<String, String>`'tir. Adı,
+//! gerçek Turso bağlantısının **takılacağı yeri** işaretler — bugün orada
+//! duran şey bir taklittir (stub). Gerçek Turso kullanan tek yer
+//! `ibnunnedim-cli` crate'idir.
+//!
+//! Bu crate'in verdiği şey depo değil **iskelet**: `Yetenek` ehliyeti,
+//! `ManzumeAksakligi` hata tipi ve `CALL:tool(args)` biçimli kompakt DSL.
+//! ReAct (Düşün-Eylem-Gözlem) döngüsü bu iskelet üzerine kurulur.
 //!
 //! Gemineden alınan kavramlar:
 //! - Yetenek trait (trait-based abstraction, ehliyet sistemi)
@@ -25,6 +31,39 @@ pub enum ManzumeAksakligi {
 // Kolay okunabilir bir takı (Type Alias) tanımlıyoruz
 pub type Sonuc<T> = Result<T, ManzumeAksakligi>;
 
+// --- 1b. SINIR GÜVENLİ AYRIŞTIRMA ---
+// `replace` deseni **her yerde** siler; veri içinde geçen `id=` de gider,
+// tırnak içeren veri tırnağını kaybeder. Ayrıştırma sınırda yapılır.
+
+/// `ad=` önekini **yalnız baştan** soyar, sonra **yalnız çevreleyen** tırnak
+/// çiftini kaldırır. Metnin ortasındaki hiçbir şeye dokunmaz.
+pub fn alan_soy(girdi: &str, ad: &str) -> String {
+    let s = girdi.trim();
+    let s = s.strip_prefix(&format!("{ad}=")).unwrap_or(s).trim();
+    match (s.strip_prefix('"'), s.strip_suffix('"')) {
+        (Some(_), Some(_)) if s.len() >= 2 => s[1..s.len() - 1].to_string(),
+        _ => s.to_string(),
+    }
+}
+
+/// Sorgu dizesi için yüzde kodlama. Yalnız ayrılmamış (unreserved) küme olduğu
+/// gibi kalır; `&`, `=`, `#` ve çok baytlı karakterler kodlanır.
+///
+/// Boşluğu `+` yapmak tek başına yetmez: `a&b=c` girdisi `&` yüzünden ikinci
+/// bir parametreye dönüşür, `#` ise kalanı parçaya çevirir.
+pub fn url_kodla(s: &str) -> String {
+    let mut cikti = String::with_capacity(s.len());
+    for b in s.as_bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                cikti.push(*b as char)
+            }
+            _ => cikti.push_str(&format!("%{b:02X}")),
+        }
+    }
+    cikti
+}
+
 // --- 2. YETENEK (TRAIT) EHLİYETİ ---
 // Bu trait, bir sürücü ehliyeti gibidir. Düzenimiz, aracın arkasında
 // kimin olduğuyla ilgilenmez; yalnızca bu ehliyet niteliğine sahip olup olmadığına bakar.
@@ -42,9 +81,13 @@ pub trait Yetenek: Send + Sync {
     fn calistir(&self, girdiler: &str) -> Sonuc<String>;
 }
 
-// --- 3. GÜVENLİ VE PAYLAŞILABİLİR TURSO BAĞLANTISI ---
+// --- 3. BELLEK İÇİ DEPO (Turso'nun takılacağı yer) ---
 // Verileri hem birden fazla iş parçacığında paylaşmak (Arc) hem de
 // güvenle değiştirebilmek (Mutex - Kilitli Emniyet Sandığı) için sarmalıyoruz.
+
+/// **Taklit depo.** Adı gerçek Turso bağlantısının geleceği yeri işaretler;
+/// bugün içi `HashMap`'tir ve süreç bitince veri kaybolur. Kalıcılık isteyen
+/// hiçbir şey buna dayanmamalıdır.
 #[derive(Clone)]
 pub struct TursoBaglantisi {
     veriler: Arc<Mutex<HashMap<String, String>>>,
@@ -104,13 +147,15 @@ impl TursoBaglantisi {
         Ok(())
     }
 
-    /// Veri tabanındaki kayıt sayısını döndürür
-    pub fn adet_say(&self) -> usize {
-        if let Ok(icerik) = self.veriler.lock() {
-            icerik.len()
-        } else {
-            0
-        }
+    /// Veri tabanındaki kayıt sayısını döndürür.
+    ///
+    /// Kilit açılamazsa **hata döner, 0 dönmez**: "okuyamadım" ile "boş" aynı
+    /// sayıya inerse sayı yalan söyler.
+    pub fn adet_say(&self) -> Sonuc<usize> {
+        let icerik = self.veriler.lock().map_err(|_| {
+            ManzumeAksakligi::VeriTabaniHatasi("Sayım kilidi açılırken aksaklık oluştu!".to_string())
+        })?;
+        Ok(icerik.len())
     }
 }
 
@@ -139,7 +184,7 @@ impl Yetenek for TursoOkuYetenegi {
     }
 
     fn calistir(&self, girdiler: &str) -> Sonuc<String> {
-        let temiz_id = girdiler.trim().replace("id=", "").replace("\"", "");
+        let temiz_id = alan_soy(girdiler, "id");
         let anahtar = format!("kullanici:{}", temiz_id);
         self.baglanti.oku(&anahtar)
     }
@@ -178,8 +223,8 @@ impl Yetenek for TursoYazYetenegi {
         let id_kismi = girdiler[..virgul_konumu].trim();
         let veri_kismi = girdiler[virgul_konumu + 1..].trim();
 
-        let temiz_id = id_kismi.replace("id=", "").replace("\"", "");
-        let temiz_veri = veri_kismi.replace("veri=", "").replace("\"", "");
+        let temiz_id = alan_soy(id_kismi, "id");
+        let temiz_veri = alan_soy(veri_kismi, "veri");
 
         let anahtar = format!("kullanici:{}", temiz_id);
 
@@ -217,7 +262,7 @@ impl Yetenek for TursoSilYetenegi {
     }
 
     fn calistir(&self, girdiler: &str) -> Sonuc<String> {
-        let temiz_id = girdiler.trim().replace("id=", "").replace("\"", "");
+        let temiz_id = alan_soy(girdiler, "id");
         let anahtar = format!("kullanici:{}", temiz_id);
 
         self.baglanti.sil(&anahtar)?;
@@ -251,7 +296,7 @@ impl Yetenek for TursoSayYetenegi {
     }
 
     fn calistir(&self, _girdiler: &str) -> Sonuc<String> {
-        let sayi = self.baglanti.adet_say();
+        let sayi = self.baglanti.adet_say()?;
         Ok(format!("Toplam kayıt sayısı: {}", sayi))
     }
 }
@@ -279,7 +324,7 @@ impl Yetenek for SkillsLibraryYetenegi {
     }
 
     fn calistir(&self, girdiler: &str) -> Sonuc<String> {
-        let temiz_sorgu = girdiler.trim().replace("sorgu=", "").replace("\"", "");
+        let temiz_sorgu = alan_soy(girdiler, "sorgu");
 
         if temiz_sorgu.is_empty() {
             return Err(ManzumeAksakligi::GirdiHatasi(
@@ -289,7 +334,7 @@ impl Yetenek for SkillsLibraryYetenegi {
 
         let arama_url = format!(
             "https://skills-library.com/?search={}",
-            temiz_sorgu.replace(' ', "+")
+            url_kodla(&temiz_sorgu)
         );
 
         Ok(format!(
@@ -336,13 +381,21 @@ impl YetenekYoneticisi {
             ));
         }
 
-        let icerik = ham_cagri.trim_start_matches("CALL:");
+        let icerik = ham_cagri.strip_prefix("CALL:").expect("starts_with yukarida denetlendi");
         let parantez_basi = icerik
             .find('(')
             .ok_or_else(|| ManzumeAksakligi::AracCagriHatasi("Açma parantezi yok!".to_string()))?;
         let parantez_sonu = icerik
-            .find(')')
+            .rfind(')')
             .ok_or_else(|| ManzumeAksakligi::AracCagriHatasi("Kapatma parantezi yok!".to_string()))?;
+
+        // Kapanış açılıştan önce gelirse dilim ters döner ve **panikler**.
+        // Sınır denetimi olmadan `CALL:arac)1(` süreci düşürüyordu.
+        if parantez_sonu < parantez_basi {
+            return Err(ManzumeAksakligi::AracCagriHatasi(
+                "Parantezler ters sırada! FORMAT: CALL:tool_name(args)".to_string(),
+            ));
+        }
 
         let arac_adi = &icerik[..parantez_basi];
         let girdi = &icerik[parantez_basi + 1..parantez_sonu];
@@ -419,12 +472,109 @@ mod tests {
     }
 
     #[test]
-    fn skills_library_ara_bosluk_sonrasi_url_kur() {
+    fn skills_library_ara_url_kurar() {
         let arama = SkillsLibraryYetenegi::yeni();
-        let sonuc = arama.calistir("sorgu=PDF parser");
-        assert!(sonuc.is_ok());
-        let veri = sonuc.unwrap();
-        assert!(veri.contains("https://skills-library.com/?search=PDF+parser"));
-        assert!(veri.contains("PDF parser"));
+        let veri = arama.calistir("sorgu=PDF parser").expect("arama düştü");
+        assert!(
+            veri.contains("https://skills-library.com/?search=PDF%20parser"),
+            "boşluk kodlanmadı: {veri}"
+        );
+        assert!(veri.contains("PDF parser"), "sorgu metni kayboldu");
+    }
+
+    // ---------------------------------------------------------------------
+    // Düşebilen kapılar — yeşil yanan ama hiçbir şey söylemeyen kapı, kapı
+    // değildir. Her biri bozuk girdide kırmızı, sağlamda yeşil olmalı.
+    // ---------------------------------------------------------------------
+
+    /// D2 · Desen sınırı geçmez. Verinin ortasındaki `id=` silinmemeli.
+    #[test]
+    fn kapi_d2_gomulu_desen_silinmez() {
+        let girdi = "kayit-id=3";
+        let eski_davranis = girdi.trim().replace("id=", "").replace('"', "");
+        assert_eq!(eski_davranis, "kayit-3", "eski davranış varsayımı bozuldu");
+        assert_eq!(alan_soy(girdi, "id"), "kayit-id=3", "gömülü desen silindi");
+        assert_ne!(
+            eski_davranis,
+            alan_soy(girdi, "id"),
+            "düzeltme davranışı değiştirmiyorsa süstür"
+        );
+    }
+
+    /// D2 · Yalnız **çevreleyen** tırnak çifti kalkar; içerdeki tırnak kalır.
+    #[test]
+    fn kapi_d2_ic_tirnak_korunur() {
+        assert_eq!(alan_soy(r#"id="7""#, "id"), "7", "çevreleyen çift kalkmadı");
+        assert_eq!(
+            alan_soy(r#"veri=Alinti: "onemli" nokta"#, "veri"),
+            r#"Alinti: "onemli" nokta"#,
+            "içerdeki tırnaklar silindi"
+        );
+        assert_eq!(alan_soy("id=5", "veri"), "id=5", "yanlış alan adı soyuldu");
+    }
+
+    /// D1 · URL ayırıcıları kodlanır; yoksa `&` ikinci bir parametre açar.
+    #[test]
+    fn kapi_d1_url_ayiricilari_kodlanir() {
+        let arama = SkillsLibraryYetenegi::yeni();
+        for (girdi, beklenen) in [("a&b=c", "%26"), ("x#y", "%23"), ("türkçe", "%C3%BC")] {
+            let veri = arama
+                .calistir(&format!("sorgu={girdi}"))
+                .expect("arama düştü");
+            let url = veri.lines().last().expect("URL satırı yok");
+            let sorgu = url
+                .split_once("?search=")
+                .expect("URL biçimi değişmiş")
+                .1;
+            assert!(sorgu.contains(beklenen), "{girdi}: {beklenen} yok → {url}");
+            for ham in ['&', '#', '?'] {
+                assert!(!sorgu.contains(ham), "{girdi}: ham '{ham}' kaldı → {url}");
+            }
+        }
+    }
+
+    /// R2 · "saydım" ≠ "yazdım". Okuyamayan sayım 0 dönmez, hata döner.
+    #[test]
+    fn kapi_r2_sayim_kilit_bozulunca_yalan_soylemez() {
+        let db = TursoBaglantisi::yeni();
+        let klon = db.clone();
+        // Kilidi tutarken panikleyen iş parçacığı mutex'i zehirler.
+        let _ = std::thread::spawn(move || {
+            let _tut = klon.veriler.lock().expect("ilk kilit");
+            panic!("kasıtlı panik — kilit zehirleniyor");
+        })
+        .join();
+        match db.adet_say() {
+            Err(ManzumeAksakligi::VeriTabaniHatasi(_)) => {}
+            Ok(n) => panic!("zehirli kilitte {n} döndü — 'okuyamadım' 'boş' sanıldı"),
+            Err(e) => panic!("beklenmeyen hata türü: {e:?}"),
+        }
+        // Sağlam bağlantıda susmalı (yanlış alarm vermemeli).
+        assert_eq!(TursoBaglantisi::yeni().adet_say().expect("sağlam sayım"), 2);
+    }
+
+    /// Çağrı çözümü: iç parantezli girdi son kapanışa kadar alınmalı ve
+    /// ters dilim (panik) oluşmamalı.
+    #[test]
+    fn kapi_cagri_ic_parantez_ve_bozuk_girdi() {
+        let db = TursoBaglantisi::yeni();
+        let mut y = YetenekYoneticisi::yeni();
+        y.yetenek_ekle(Box::new(TursoYazYetenegi::yeni(db.clone())));
+        y.yetenek_ekle(Box::new(TursoOkuYetenegi::yeni(db)));
+
+        y.cagiriyi_coz_ve_calistir("CALL:turso_yaz(9, Not: (ek bilgi) burada)")
+            .expect("iç parantezli girdi düştü");
+        let okunan = y
+            .cagiriyi_coz_ve_calistir("CALL:turso_oku(9)")
+            .expect("okuma düştü");
+        assert!(okunan.contains("(ek bilgi)"), "iç parantez kırpıldı: {okunan}");
+
+        // Bozuk girdiler: hata dönmeli, panik değil.
+        for bozuk in ["turso_oku(1)", "CALL:turso_oku", "CALL:turso_oku)1("] {
+            assert!(
+                y.cagiriyi_coz_ve_calistir(bozuk).is_err(),
+                "bozuk girdi kabul edildi: {bozuk}"
+            );
+        }
     }
 }

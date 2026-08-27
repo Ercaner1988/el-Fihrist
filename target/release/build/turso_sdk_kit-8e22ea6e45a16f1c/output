@@ -1,2 +1,0 @@
-cargo::rerun-if-changed=build.rs
-cargo::rustc-link-arg-cdylib=C:\Users\buzbe\OneDrive\Masaüstü\Github\turso YZ yetenek ve özellik kütüphanesi\turso YZ yetenek ve özellik kütüphanesi\target\release\build\turso_sdk_kit-8e22ea6e45a16f1c\out\turso_sdk_kit_version.res

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/turso-dsl", "crates/hermes-react", "crates/hermes-tls-server"]
+members = ["ibnunnedim-cli", "crates/turso-dsl", "crates/hermes-react", "crates/hermes-tls-server"]
 resolver = "2"
 
 [workspace.package]
@@ -17,3 +17,5 @@ axum = "0.7"
 tower = "0.4"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+thiserror = "2.0"
+

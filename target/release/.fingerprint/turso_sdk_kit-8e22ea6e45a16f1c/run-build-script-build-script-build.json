@@ -1,1 +1,0 @@
-{"rustc":3720210673988096810,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[5493033947889335808,"build_script_build",false,13600342964112155866]],"local":[{"RerunIfChanged":{"output":"release\\build\\turso_sdk_kit-8e22ea6e45a16f1c\\output","paths":["build.rs"]}}],"rustflags":[],"config":0,"compile_kind":0}

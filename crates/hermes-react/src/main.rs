@@ -4,11 +4,8 @@
 //! Hermes'in ReAct (Düşün-Eylem-Gözlem) döngüsünü simüle eder ve
 //! Rust kütüphanemizle nasıl etkileşime girdiğini gösterir.
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
 // turso-dsl crate'inden gelen yapılar
-use turso_dsl::{ManzumeAksakligi, Sonuc, TursoBaglantisi, Yetenek, YetenekYoneticisi};
+use turso_dsl::{ManzumeAksakligi, TursoBaglantisi, YetenekYoneticisi};
 
 // --- 1. HERMES BENZETİM MOTORU (SIMULATOR) ---
 // Bu yapı, Hermes'in ReAct döngüsündeki davranışlarını taklit eder.

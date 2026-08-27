@@ -1,29 +1,27 @@
-//! İbnünnedîm CLI — Saf Rust Turso SQLite Yetenek Kütüphanesi Arayüzü
+//! İbnünnedîm CLI — Turso SQLite yetenek kütüphanesi arayüzü
 //!
-//! Bu crate, Turso SQLite `kutup_kutuphane.db` veritabanına erişim sağlar
-//! ve FTS5 arama, yetenek listeleme, tekmil puanlama gibi işlevleri sunar.
-//! 
-//! Kullanım:
+//! `kutup_kutuphane.db` üzerinde arama, yetenek listeleme ve tekmil puanlama
+//! yapar. Arama **alt dize** eşleşmesidir: veritabanında FTS5 indeksi tanımlı
+//! olsa da turso 0.7 FTS5 uygulamıyor.
+//!
 //! ```bash
 //! ibnunnedim search "rust"
 //! ibnunnedim list --kategori "software-development"
 //! ibnunnedim info
-//! ibnunnedim tekmil --ajan "Kassam" --yetenek "1" --puan 100 --gerekce "Canlı dış koşu geçti"
+//! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
 //! ```
 
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use thiserror::Error;
-use turso::{Connection, Params};
+use turso::{params, Builder, Connection};
 
-/// Varsayılan Turso SQLite veritabanı yolu
+/// Varsayılan veritabanı yolu. `TURSO_DB_PATH` ile ezilebilir.
 const DB_PATH: &str = r"C:\Users\buzbe\OneDrive\Masaüstü\hermes yazılım\kutuphane\kutup_kutuphane.db";
 
-/// CLI Argümanları
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
-#[command(about = "İbnünnedîm Kütüphaneci CLI - Saf Rust Turso SQLite Arayüzü")]
+#[command(about = "İbnünnedîm Kütüphaneci CLI — Turso SQLite arayüzü")]
 struct Args {
     #[command(subcommand)]
     command: Command,
@@ -31,17 +29,14 @@ struct Args {
 
 #[derive(Parser, Debug)]
 enum Command {
-    /// FTS5 araması yapar
+    /// Alt dize araması yapar (FTS5 değil — bkz. search_skills)
     Search {
-        /// Arama sorgusu
         query: String,
-        /// Maksimum sonuç sayısı (varsayılan: 10)
         #[arg(short, long, default_value = "10")]
         limit: usize,
     },
-    /// Tüm yetenekleri listeler
+    /// Yetenekleri listeler
     List {
-        /// Kategori filtresi (opsiyonel)
         #[arg(short, long)]
         kategori: Option<String>,
     },
@@ -49,18 +44,18 @@ enum Command {
     Info,
     /// Tekmil puanı ekler
     Tekmil {
-        /// Ajan adı
         #[arg(long)]
         ajan: String,
-        /// Yetenek ID
+        /// Yetenek ID (metin slug, örn. "zopay-rust-porting")
         #[arg(long)]
         yetenek: String,
-        /// Verilen puan (0-100)
         #[arg(long)]
         puan: f64,
-        /// Değerlendirme gerekçesi
         #[arg(long)]
         gerekce: String,
+        /// Hafta numarası (YYYYWW)
+        #[arg(long, default_value = "202634")]
+        hafta: i64,
     },
 }
 
@@ -68,156 +63,277 @@ enum Command {
 enum CliError {
     #[error("Veritabanı hatası: {0}")]
     Database(#[from] turso::Error),
-    #[error("SQL hatası: {0}")]
-    Sql(#[from] rusqlite::Error),
     #[error("IO hatası: {0}")]
     Io(#[from] std::io::Error),
+    #[error("Girdi hatası: {0}")]
+    Girdi(String),
 }
 
 type Result<T> = std::result::Result<T, CliError>;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Skill {
-    id: i64,
+    id: String,
     ad: String,
     aciklama: String,
     basari_puani_ort: Option<f64>,
     kategori: Option<String>,
 }
 
-fn get_db_connection() -> Result<Connection> {
-    let db_path = std::env::var("TURSO_DB_PATH")
-        .unwrap_or_else(|_| DB_PATH.to_string());
-    let conn = Connection::open(&db_path)?;
-    Ok(conn)
+/// Karakter sınırında kırpar ve **kırptığını söyler**.
+///
+/// Bayt dilimi (`&s[..n]`) çok baytlı UTF-8'in ortasına düşerse panikler; bu
+/// kütüphanenin metinleri Türkçe. Sessiz kırpma da sayıyı gizler — ne kadarının
+/// gizlendiği çıktıya yazılır.
+fn kisalt(s: &str, azami: usize) -> String {
+    let toplam = s.chars().count();
+    if toplam <= azami {
+        return s.to_string();
+    }
+    let kesik: String = s.chars().take(azami).collect();
+    format!("{kesik}… (+{} karakter)", toplam - azami)
 }
 
+async fn baglan() -> Result<Connection> {
+    let yol = std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.to_string());
+    let db = Builder::new_local(&yol).build().await?;
+    Ok(db.connect()?)
+}
+
+/// Alt dize araması — **FTS5 değil.**
+///
+/// `yetenekler_fts` gerçek bir FTS5 sanal tablosu (129 satır, `sqlite_master`'da
+/// tanımlı) ama **turso 0.7.2 FTS5 uygulamıyor**: kaynağında `fts5` hiç geçmiyor
+/// ve `MATCH` sorgusu `no such table: yetenekler_fts` ile düşüyor. Bu yüzden
+/// arama `LIKE` ile yapılır; sıralama (relevance) yoktur, çıktı bunu söyler.
 async fn search_skills(conn: &Connection, query: &str, limit: usize) -> Result<Vec<Skill>> {
     let sql = r#"
         SELECT id, ad, aciklama, basari_puani_ort, kategori
         FROM yetenekler
-        WHERE rowid IN (
-            SELECT rowid FROM yetenekler_fts WHERE yetenekler_fts MATCH ?
-        )
+        WHERE ad LIKE ? OR aciklama LIKE ? OR tam_metin_md LIKE ?
+        ORDER BY ad ASC
         LIMIT ?
     "#;
-    
-    let skills = conn.query(sql, params![query, limit])?
-        .map(|row| {
-            Ok(Skill {
-                id: row.get::<_, i64>(0)?,
-                ad: row.get::<_, String>(1)?,
-                aciklama: row.get::<_, String>(2)?,
-                basari_puani_ort: row.get::<_, Option<f64>>(3)?,
-                kategori: row.get::<_, Option<String>>(4)?,
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-    
-    Ok(skills)
+    let kalip = format!("%{query}%");
+    let mut satirlar = conn
+        .query(sql, params![kalip.clone(), kalip.clone(), kalip, limit as i64])
+        .await?;
+    let mut sonuc = Vec::new();
+    while let Some(r) = satirlar.next().await? {
+        sonuc.push(Skill {
+            id: r.get::<String>(0)?,
+            ad: r.get::<String>(1)?,
+            aciklama: r.get::<String>(2).unwrap_or_default(),
+            basari_puani_ort: r.get::<f64>(3).ok(),
+            kategori: r.get::<String>(4).ok(),
+        });
+    }
+    Ok(sonuc)
 }
 
 async fn list_all_skills(conn: &Connection, kategori: Option<&str>) -> Result<Vec<Skill>> {
-    let (sql, params): (&str, Params) = if let Some(kat) = kategori {
-        (r#"SELECT id, ad, kategori, basari_puani_ort FROM yetenekler WHERE kategori = ? ORDER BY ad ASC"#, params![kat])
-    } else {
-        (r#"SELECT id, ad, kategori, basari_puani_ort FROM yetenekler ORDER BY kategori, ad ASC"#, Params::Empty)
+    let mut satirlar = match kategori {
+        Some(kat) => {
+            conn.query(
+                "SELECT id, ad, kategori, basari_puani_ort FROM yetenekler \
+                 WHERE kategori = ? ORDER BY ad ASC",
+                params![kat],
+            )
+            .await?
+        }
+        None => {
+            conn.query(
+                "SELECT id, ad, kategori, basari_puani_ort FROM yetenekler \
+                 ORDER BY kategori, ad ASC",
+                (),
+            )
+            .await?
+        }
+    };
+    let mut sonuc = Vec::new();
+    while let Some(r) = satirlar.next().await? {
+        sonuc.push(Skill {
+            id: r.get::<String>(0)?,
+            ad: r.get::<String>(1)?,
+            kategori: r.get::<String>(2).ok(),
+            basari_puani_ort: r.get::<f64>(3).ok(),
+            aciklama: String::new(),
+        });
+    }
+    Ok(sonuc)
+}
+
+async fn say(conn: &Connection, tablo: &str) -> Result<i64> {
+    let mut satirlar = conn.query(&format!("SELECT COUNT(*) FROM {tablo}"), ()).await?;
+    match satirlar.next().await? {
+        Some(r) => Ok(r.get::<i64>(0)?),
+        None => Err(CliError::Girdi(format!("{tablo}: COUNT satır döndürmedi"))),
+    }
+}
+
+/// FTS5 indeksinin **gerçekten** var olup olmadığını sorar.
+///
+/// Önceki sürüm bunu sabit metin olarak "ETKİN" yazıyordu; iddia kaynağa
+/// bağlanmadan basılan bir cümleydi.
+async fn fts_indeksleri(conn: &Connection) -> Result<Vec<String>> {
+    let mut satirlar = conn
+        .query(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_fts' ORDER BY name",
+            (),
+        )
+        .await?;
+    let mut adlar = Vec::new();
+    while let Some(r) = satirlar.next().await? {
+        adlar.push(r.get::<String>(0)?);
+    }
+    Ok(adlar)
+}
+
+async fn tekmil_ver(
+    conn: &Connection,
+    hafta: i64,
+    ajan: &str,
+    yetenek_id: &str,
+    puan: f64,
+    gerekce: &str,
+) -> Result<()> {
+    if !(0.0..=100.0).contains(&puan) {
+        return Err(CliError::Girdi(format!("puan 0-100 aralığında olmalı: {puan}")));
+    }
+    conn.execute(
+        "INSERT INTO ajan_tekmilleri \
+         (hafta_no, ajan_adi, yetenek_id, verilen_puan, degerlendirme_gerekcesi) \
+         VALUES (?, ?, ?, ?, ?)",
+        params![hafta, ajan, yetenek_id, puan, gerekce],
+    )
+    .await?;
+
+    let mut satirlar = conn
+        .query(
+            "SELECT AVG(verilen_puan), COUNT(*) FROM ajan_tekmilleri WHERE yetenek_id = ?",
+            params![yetenek_id],
+        )
+        .await?;
+    let (ort, adet) = match satirlar.next().await? {
+        Some(r) => (r.get::<f64>(0)?, r.get::<i64>(1)?),
+        None => return Err(CliError::Girdi("ortalama hesaplanamadı".into())),
     };
 
-    let skills = conn.query(sql, params)?
-        .map(|row| {
-            Ok(Skill {
-                id: row.get::<_, i64>(0)?,
-                ad: row.get::<_, String>(1)?,
-                kategori: row.get::<_, Option<String>>(2)?,
-                basari_puani_ort: row.get::<_, Option<f64>>(3)?,
-                aciklama: String::new(),
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-    
-    Ok(skills)
-}
-
-async fn show_info(conn: &Connection) -> Result<(usize, usize, usize)> {
-    let tot_yetenek: usize = conn.query_row(r#"SELECT COUNT(*) FROM yetenekler"#, Params::Empty, |r| r.get(0))?;
-    let tot_tekmil: usize = conn.query_row(r#"SELECT COUNT(*) FROM ajan_tekmilleri"#, Params::Empty, |r| r.get(0))?;
-    let tot_kod: usize = conn.query_row(r#"SELECT COUNT(*) FROM kod_hazinesi"#, Params::Empty, |r| r.get(0))?;
-    
-    Ok((tot_yetenek, tot_tekmil, tot_kod))
-}
-
-async fn tekmil_ver(conn: &Connection, ajan: &str, yetenek_id: i64, puan: f64, gerekce: &str) -> Result<()> {
-    let sql = r#"
-        INSERT INTO ajan_tekmilleri (hafta_no, ajan_adi, yetenek_id, verilen_puan, degerlendirme_gerekcesi)
-        VALUES (202634, ?, ?, ?, ?)
-    "#;
-    conn.execute(sql, params![ajan, yetenek_id, puan, gerekce])?;
-
-    // Ortalama ve sayacı güncelle
-    let (avg_puan, count): (f64, usize) = conn.query_row(
-        r#"SELECT AVG(verilen_puan), COUNT(*) FROM ajan_tekmilleri WHERE yetenek_id = ?"#,
-        params![yetenek_id],
-        |r| Ok((r.get(0)?, r.get(1)?)),
-    )?;
-
     conn.execute(
-        r#"UPDATE yetenekler SET basari_puani_ort = ?, puanlayan_ajan_sayisi = ? WHERE id = ?"#,
-        params![avg_puan, count, yetenek_id],
-    )?;
-
+        "UPDATE yetenekler SET basari_puani_ort = ?, puanlayan_ajan_sayisi = ? WHERE id = ?",
+        params![ort, adet, yetenek_id],
+    )
+    .await?;
     Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    let conn = get_db_connection()?;
+    let conn = baglan().await?;
 
     match args.command {
         Command::Search { query, limit } => {
             let skills = search_skills(&conn, &query, limit).await?;
-            println!("\n🔍 İBNÜNNEDÎM KÜTÜPHANE ARAMA SONUÇLARI ('{}'):", query);
+            println!("\nARAMA SONUÇLARI ('{query}') — {} kayıt", skills.len());
+            println!("(alt dize araması — turso 0.7 FTS5 uygulamıyor, sıralama yok)");
             println!("{}", "-".repeat(70));
             for s in skills {
-                println!("📌 [{}] {} | Kategori: {} | Başarı: {:?}", 
-                    s.id, s.ad, s.kategori.unwrap_or_else(|| "-".to_string()),
-                    s.basari_puani_ort.unwrap_or(-1.0));
-                println!("   Açıklama: {}...", &s.aciklama[..s.aciklama.len().min(140)]);
+                println!(
+                    "[{}] {} | Kategori: {} | Başarı: {}",
+                    s.id,
+                    s.ad,
+                    s.kategori.as_deref().unwrap_or("-"),
+                    s.basari_puani_ort
+                        .map(|p| format!("{p:.1}"))
+                        .unwrap_or_else(|| "-".into())
+                );
+                println!("   {}", kisalt(&s.aciklama, 140));
             }
         }
         Command::List { kategori } => {
             let skills = list_all_skills(&conn, kategori.as_deref()).await?;
-            println!("\n📚 İBNÜNNEDÎM KÜTÜPHANESİ TAM YETENEK DÖKÜMÜ ({} Yetenek):", skills.len());
-            println!("{}", "=".repeat(75));
-            let mut current_cat: Option<String> = None;
+            println!("\nYETENEK DÖKÜMÜ — {} kayıt", skills.len());
+            println!("{}", "=".repeat(70));
+            let mut simdiki: Option<String> = None;
             for s in skills {
-                let cat = s.kategori.unwrap_or_else(|| "GENEL".to_string());
-                if Some(&cat) != current_cat.as_ref() {
-                    println!("\n🗂️  KATEGORİ: {}", cat);
-                    println!("{}", "-".repeat(50));
-                    current_cat = Some(cat);
+                let kat = s.kategori.unwrap_or_else(|| "GENEL".to_string());
+                if simdiki.as_ref() != Some(&kat) {
+                    println!("\nKATEGORİ: {kat}\n{}", "-".repeat(50));
+                    simdiki = Some(kat);
                 }
-                println!("  • [{}] {} (Başarı: {:?}/100)", s.id, s.ad, s.basari_puani_ort.unwrap_or(-1.0));
+                println!(
+                    "  [{}] {} (Başarı: {})",
+                    s.id,
+                    s.ad,
+                    s.basari_puani_ort
+                        .map(|p| format!("{p:.1}/100"))
+                        .unwrap_or_else(|| "puanlanmamış".into())
+                );
             }
         }
         Command::Info => {
-            let (yetenek, tekmil, kod) = show_info(&conn).await?;
-            println!("\n📊 İBNÜNNEDÎM KÜTÜPHANESİ DİZİN & İSTATİSTİK RAPORU:");
-            println!("{}", "=".repeat(65));
-            println!("  📍 Veritabanı Konumu: {}", DB_PATH);
-            println!("  📖 Kayıtlı Yetenek Sayısı : {}", yetenek);
-            println!("  📝 Ajan Tekmil Kaydı Sayısı: {}", tekmil);
-            println!("  💻 Kod Hazinesi Sayısı   : {}", kod);
-            println!("  ⚡ Tam Metin İndeks (FTS5): ETKİN (yetenekler_fts & kod_hazinesi_fts)");
+            let yetenek = say(&conn, "yetenekler").await?;
+            let tekmil = say(&conn, "ajan_tekmilleri").await?;
+            let kod = say(&conn, "kod_hazinesi").await?;
+            let fts = fts_indeksleri(&conn).await?;
+            println!("\nKÜTÜPHANE İSTATİSTİĞİ\n{}", "=".repeat(65));
+            println!("  Veritabanı  : {}", std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.into()));
+            println!("  Yetenek     : {yetenek}");
+            println!("  Tekmil      : {tekmil}");
+            println!("  Kod hazinesi: {kod}");
+            println!(
+                "  FTS5 indeks : {} (tanımlı; turso 0.7 sorgulayamıyor)",
+                if fts.is_empty() { "YOK".to_string() } else { fts.join(", ") }
+            );
             println!("{}", "=".repeat(65));
         }
-        Command::Tekmil { ajan, yetenek, puan, gerekce } => {
-            let yetenek_id: i64 = yetenek.parse().unwrap_or(0);
-            tekmil_ver(&conn, &ajan, yetenek_id, puan, &gerekce).await?;
-            println!("✅ TEKMİL KAYDEDİLDİ: {} -> {} (Puan: {})", ajan, yetenek_id, puan);
+        Command::Tekmil { ajan, yetenek, puan, gerekce, hafta } => {
+            tekmil_ver(&conn, hafta, &ajan, &yetenek, puan, &gerekce).await?;
+            println!("TEKMİL KAYDEDİLDİ: {ajan} → yetenek {yetenek} (puan {puan}, hafta {hafta})");
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod testler {
+    use super::*;
+
+    /// Kapı düşebilmeli: eski `&s[..140]` bayt dilimi çok baytlı sınırda paniklerdi.
+    #[test]
+    fn kisalt_utf8_sinirinda_paniklemez() {
+        // Her karakter 2 bayt; 5 karakterde kesmek 10. bayta denk gelir ama
+        // 3 karakterde kesmek bayt ortasına düşerdi.
+        let s = "şçğüöışçğüöı";
+        for n in 0..s.chars().count() + 3 {
+            let c = kisalt(s, n);
+            assert!(std::str::from_utf8(c.as_bytes()).is_ok(), "n={n} geçersiz UTF-8");
         }
     }
 
-    Ok(())
+    #[test]
+    fn kisalt_kirptigini_soyler() {
+        let s = "abcdefghij";
+        let c = kisalt(s, 4);
+        assert!(c.starts_with("abcd"), "önek korunmadı: {c}");
+        assert!(c.contains("+6 karakter"), "kırpma gizlendi: {c}");
+    }
+
+    #[test]
+    fn kisalt_sinir_altinda_dokunmaz() {
+        let s = "kısa metin";
+        assert_eq!(kisalt(s, 100), s);
+        assert_eq!(kisalt(s, s.chars().count()), s, "tam sınırda kırpmamalı");
+    }
+
+    /// Dedektörün kendisi: bayt dilimi gerçekten tehlikeli mi?
+    /// Tehlikeli olmasaydı `kisalt` gereksiz bir sarmalayıcı olurdu.
+    #[test]
+    fn bayt_dilimi_gercekten_tehlikeli() {
+        let s = "şçğ"; // 6 bayt, 3 karakter
+        assert_eq!(s.len(), 6, "fikstür varsayımı bozuldu");
+        assert!(s.get(..3).is_none(), "3. bayt karakter sınırıymış — fikstür kötü seçilmiş");
+        assert!(s.get(..2).is_some(), "2. bayt sınır olmalıydı");
+    }
 }
