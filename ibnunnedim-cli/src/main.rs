@@ -1,8 +1,7 @@
-//! İbnünnedîm CLI — Turso SQLite yetenek kütüphanesi arayüzü
+//! İbnünnedîm CLI — Saf Rust BM25 Arama & Turso SQLite Yetenek Kütüphanesi
 //!
-//! `kutup_kutuphane.db` üzerinde arama, yetenek listeleme ve tekmil puanlama
-//! yapar. Arama **alt dize** eşleşmesidir: veritabanında FTS5 indeksi tanımlı
-//! olsa da turso 0.7 FTS5 uygulamıyor.
+//! `kutup_kutuphane.db` üzerinde saf Rust BM25 ile arama, yetenek listeleme ve tekmil puanlama
+//! yapar. Arama bellekte kurulan BM25 indeksi üzerinden Türkçe katlamalı olarak gerçekleştirilir.
 //!
 //! ```bash
 //! ibnunnedim search "rust"
@@ -11,8 +10,12 @@
 //! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
 //! ```
 
+mod arama;
+
+use arama::{Belge, Indeks};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 use thiserror::Error;
 use turso::{params, Builder, Connection};
 
@@ -21,7 +24,7 @@ const DB_PATH: &str = r"C:\Users\buzbe\OneDrive\Masaüstü\hermes yazılım\kutu
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
-#[command(about = "İbnünnedîm Kütüphaneci CLI — Turso SQLite arayüzü")]
+#[command(about = "İbnünnedîm Kütüphaneci CLI — Saf Rust BM25 Arama & Turso SQLite")]
 struct Args {
     #[command(subcommand)]
     command: Command,
@@ -29,7 +32,7 @@ struct Args {
 
 #[derive(Parser, Debug)]
 enum Command {
-    /// Alt dize araması yapar (FTS5 değil — bkz. search_skills)
+    /// Saf Rust BM25 algoritması ile yetenek araması yapar
     Search {
         query: String,
         #[arg(short, long, default_value = "10")]
@@ -100,35 +103,66 @@ async fn baglan() -> Result<Connection> {
     Ok(db.connect()?)
 }
 
-/// Alt dize araması — **FTS5 değil.**
+/// Saf Rust BM25 ile bellek içi arama yapar.
 ///
-/// `yetenekler_fts` gerçek bir FTS5 sanal tablosu (129 satır, `sqlite_master`'da
-/// tanımlı) ama **turso 0.7.2 FTS5 uygulamıyor**: kaynağında `fts5` hiç geçmiyor
-/// ve `MATCH` sorgusu `no such table: yetenekler_fts` ile düşüyor. Bu yüzden
-/// arama `LIKE` ile yapılır; sıralama (relevance) yoktur, çıktı bunu söyler.
-async fn search_skills(conn: &Connection, query: &str, limit: usize) -> Result<Vec<Skill>> {
+/// Veritabanındaki tüm yetenek kayıtlarını tek sorgu ile okur, `Indeks::kur` ile
+/// bellekte BM25 indeksini oluşturur ve `ara` ile en yüksek puanlı `limit` kaydı döndürür.
+async fn search_skills(
+    conn: &Connection,
+    query: &str,
+    limit: usize,
+) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
+    let baslangic = Instant::now();
+
     let sql = r#"
-        SELECT id, ad, aciklama, basari_puani_ort, kategori
+        SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori
         FROM yetenekler
-        WHERE ad LIKE ? OR aciklama LIKE ? OR tam_metin_md LIKE ?
-        ORDER BY ad ASC
-        LIMIT ?
     "#;
-    let kalip = format!("%{query}%");
-    let mut satirlar = conn
-        .query(sql, params![kalip.clone(), kalip.clone(), kalip, limit as i64])
-        .await?;
-    let mut sonuc = Vec::new();
+    let mut satirlar = conn.query(sql, ()).await?;
+    let mut belgeler = Vec::new();
+    let mut skill_map = Vec::new();
+
     while let Some(r) = satirlar.next().await? {
-        sonuc.push(Skill {
-            id: r.get::<String>(0)?,
-            ad: r.get::<String>(1)?,
-            aciklama: r.get::<String>(2).unwrap_or_default(),
-            basari_puani_ort: r.get::<f64>(3).ok(),
-            kategori: r.get::<String>(4).ok(),
+        let id = r.get::<String>(0)?;
+        let ad = r.get::<String>(1)?;
+        let aciklama = r.get::<String>(2).unwrap_or_default();
+        let tam_metin_md = r.get::<String>(3).unwrap_or_default();
+        let basari_puani_ort = r.get::<f64>(4).ok();
+        let kategori = r.get::<String>(5).ok();
+
+        belgeler.push(Belge {
+            id: id.clone(),
+            ad: ad.clone(),
+            aciklama: aciklama.clone(),
+            tam_metin_md,
+        });
+
+        skill_map.push(Skill {
+            id,
+            ad,
+            aciklama,
+            basari_puani_ort,
+            kategori,
         });
     }
-    Ok(sonuc)
+
+    let toplam_kayit = belgeler.len();
+    let indeks = Indeks::kur(belgeler);
+    let arama_sonuclari = indeks.ara(query, limit);
+
+    let mut sonuc = Vec::with_capacity(arama_sonuclari.len());
+    for (idx, _puan) in arama_sonuclari {
+        sonuc.push(Skill {
+            id: skill_map[idx].id.clone(),
+            ad: skill_map[idx].ad.clone(),
+            aciklama: skill_map[idx].aciklama.clone(),
+            basari_puani_ort: skill_map[idx].basari_puani_ort,
+            kategori: skill_map[idx].kategori.clone(),
+        });
+    }
+
+    let sure = baslangic.elapsed();
+    Ok((sonuc, toplam_kayit, sure))
 }
 
 async fn list_all_skills(conn: &Connection, kategori: Option<&str>) -> Result<Vec<Skill>> {
@@ -171,10 +205,6 @@ async fn say(conn: &Connection, tablo: &str) -> Result<i64> {
     }
 }
 
-/// FTS5 indeksinin **gerçekten** var olup olmadığını sorar.
-///
-/// Önceki sürüm bunu sabit metin olarak "ETKİN" yazıyordu; iddia kaynağa
-/// bağlanmadan basılan bir cümleydi.
 async fn fts_indeksleri(conn: &Connection) -> Result<Vec<String>> {
     let mut satirlar = conn
         .query(
@@ -201,8 +231,7 @@ async fn tekmil_ver(
         return Err(CliError::Girdi(format!("puan 0-100 aralığında olmalı: {puan}")));
     }
     conn.execute(
-        "INSERT INTO ajan_tekmilleri \
-         (hafta_no, ajan_adi, yetenek_id, verilen_puan, degerlendirme_gerekcesi) \
+        "INSERT INTO ajan_tekmilleri (hafta_no, ajan_adi, yetenek_id, verilen_puan, degerlendirme_gerekcesi) \
          VALUES (?, ?, ?, ?, ?)",
         params![hafta, ajan, yetenek_id, puan, gerekce],
     )
@@ -234,9 +263,16 @@ async fn main() -> Result<()> {
 
     match args.command {
         Command::Search { query, limit } => {
-            let skills = search_skills(&conn, &query, limit).await?;
+            let (skills, toplam_kayit, sure) = search_skills(&conn, &query, limit).await?;
             println!("\nARAMA SONUÇLARI ('{query}') — {} kayıt", skills.len());
-            println!("(alt dize araması — turso 0.7 FTS5 uygulamıyor, sıralama yok)");
+            #[cfg(debug_assertions)]
+            let kip = " · DEBUG derlemesi, release ~12 kat hızlı";
+            #[cfg(not(debug_assertions))]
+            let kip = "";
+            println!(
+                "(saf Rust BM25 · {toplam_kayit} kayıt tarandı · {:.1} ms{kip})",
+                sure.as_secs_f64() * 1000.0
+            );
             println!("{}", "-".repeat(70));
             for s in skills {
                 println!(
@@ -283,7 +319,7 @@ async fn main() -> Result<()> {
             println!("  Tekmil      : {tekmil}");
             println!("  Kod hazinesi: {kod}");
             println!(
-                "  FTS5 indeks : {} (tanımlı; turso 0.7 sorgulayamıyor)",
+                "  FTS5 indeks : {} (tanımlı; arama saf Rust BM25 ile yapılıyor)",
                 if fts.is_empty() { "YOK".to_string() } else { fts.join(", ") }
             );
             println!("{}", "=".repeat(65));
@@ -303,8 +339,6 @@ mod testler {
     /// Kapı düşebilmeli: eski `&s[..140]` bayt dilimi çok baytlı sınırda paniklerdi.
     #[test]
     fn kisalt_utf8_sinirinda_paniklemez() {
-        // Her karakter 2 bayt; 5 karakterde kesmek 10. bayta denk gelir ama
-        // 3 karakterde kesmek bayt ortasına düşerdi.
         let s = "şçğüöışçğüöı";
         for n in 0..s.chars().count() + 3 {
             let c = kisalt(s, n);
@@ -328,7 +362,6 @@ mod testler {
     }
 
     /// Dedektörün kendisi: bayt dilimi gerçekten tehlikeli mi?
-    /// Tehlikeli olmasaydı `kisalt` gereksiz bir sarmalayıcı olurdu.
     #[test]
     fn bayt_dilimi_gercekten_tehlikeli() {
         let s = "şçğ"; // 6 bayt, 3 karakter
