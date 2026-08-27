@@ -28,7 +28,7 @@ pub fn belirtecle(metin: &str) -> Vec<String> {
         match c {
             'İ' => katlanmis.push('i'),
             'I' => katlanmis.push('ı'),
-            other => katlanmis.extend(other.to_lowercase()),
+            other => katlanmis.extend(other.to_lowercase().chars()),
         }
     }
     katlanmis
