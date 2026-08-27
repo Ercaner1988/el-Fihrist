@@ -15,6 +15,9 @@ pub struct MultilingualReadme {
     pub en: String,
     pub ar: String,
     pub ja: String,
+    pub zh: String,
+    pub ru: String,
+    pub es: String,
 }
 
 pub fn generate_multilingual_readme(meta: &ProjectMeta) -> MultilingualReadme {
@@ -38,7 +41,22 @@ pub fn generate_multilingual_readme(meta: &ProjectMeta) -> MultilingualReadme {
         meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
     );
 
-    MultilingualReadme { tr, en, ar, ja }
+    let zh = format!(
+        "# {}\n\n> {}\n\n版本: `{}` | 许可证: `{}` | 作者: `{}`\n\n## 安装\n```bash\ncargo add {}\n```\n\n## 使用方法\n添加到您的项目中并开始运行。\n",
+        meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
+    );
+
+    let ru = format!(
+        "# {}\n\n> {}\n\nВерсия: `{}` | Лицензия: `{}` | Автор: `{}`\n\n## Установка\n```bash\ncargo add {}\n```\n\n## Использование\nДобавьте в свой проект и запустите.\n",
+        meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
+    );
+
+    let es = format!(
+        "# {}\n\n> {}\n\nVersión: `{}` | Licencia: `{}` | Autor: `{}`\n\n## Instalación\n```bash\ncargo add {}\n```\n\n## Uso\nAñádelo a tu proyecto y comienza a ejecutar.\n",
+        meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
+    );
+
+    MultilingualReadme { tr, en, ar, ja, zh, ru, es }
 }
 
 #[cfg(test)]
@@ -59,5 +77,8 @@ mod testler {
         assert!(readme.en.contains("Version: `0.1.0`"));
         assert!(readme.ar.contains("الإصدار: `0.1.0`"));
         assert!(readme.ja.contains("バージョン: `0.1.0`"));
+        assert!(readme.zh.contains("版本: `0.1.0`"));
+        assert!(readme.ru.contains("Версия: `0.1.0`"));
+        assert!(readme.es.contains("Versión: `0.1.0`"));
     }
 }
