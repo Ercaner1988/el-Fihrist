@@ -1,0 +1,10 @@
+[package]
+name = "hermes-tools-core"
+version.workspace = true
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

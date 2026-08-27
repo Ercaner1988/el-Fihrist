@@ -1,5 +1,5 @@
 [workspace]
-members = ["ibnunnedim-cli", "crates/turso-dsl", "crates/hermes-react", "crates/hermes-tls-server"]
+members = ["ibnunnedim-cli", "crates/turso-dsl", "crates/hermes-react", "crates/hermes-tls-server", "crates/hermes-tools-core"]
 resolver = "2"
 
 [workspace.package]
