@@ -20,7 +20,7 @@ use thiserror::Error;
 use turso::{params, Builder, Connection};
 
 /// Varsayılan veritabanı yolu. `TURSO_DB_PATH` ile ezilebilir.
-const DB_PATH: &str = r"C:\Users\buzbe\OneDrive\Masaüstü\hermes yazılım\kutuphane\kutup_kutuphane.db";
+const DB_PATH: &str = "kutup_kutuphane.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]

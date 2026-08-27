@@ -25,7 +25,7 @@ impl Default for SkillOptConfig {
             batch_size: 2,
             train_size: 400,
             max_steps: 1,
-            out_root: r"C:\Users\buzbe\OneDrive\Masaüstü\hermes yazılım\output\skillopt-smoke".into(),
+            out_root: "./output/skillopt-smoke".into(),
             auto_adopt: false,
         }
     }

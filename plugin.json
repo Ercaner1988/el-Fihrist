@@ -1,0 +1,21 @@
+{
+  "name": "el-fihrist",
+  "version": "1.0.0",
+  "description": "el-Fihrist (İbnü'n-Nedîm): Turso SQLite tabanlı yapay zekâ yetenek, araç, prompt ve hafıza kütüphanesi motoru.",
+  "main": "crates/hermes-tools-core/src/lib.rs",
+  "type": "module",
+  "mcpServers": {
+    "el-fihrist": {
+      "command": "./target/release/ibnunnedim",
+      "args": ["search", "rust"],
+      "env": {
+        "TURSO_DB_PATH": "./kutup_kutuphane.db"
+      }
+    }
+  },
+  "hermes": {
+    "plugin": true,
+    "tools": ["search_skills", "list_skills", "tekmil_ver", "info"],
+    "supported_platforms": ["hermes-agent", "claude-desktop", "deepseek-harness", "opencode", "codex"]
+  }
+}

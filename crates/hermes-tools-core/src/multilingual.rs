@@ -13,13 +13,13 @@ pub struct ProjectMeta {
 pub struct MultilingualReadme {
     pub tr: String,
     pub en: String,
-    pub de: String,
-    pub fr: String,
+    pub ar: String,
+    pub ja: String,
 }
 
 pub fn generate_multilingual_readme(meta: &ProjectMeta) -> MultilingualReadme {
     let tr = format!(
-        "# {}\n\n> {}\n\nSürüm: `{}` | Lisans: `{}` | Yazar: `{}`\n\n## Kurulum\n```bash\ncargo add {}\n```\n\n## Kullanım\nProjenize ekleyin ve çalıştırmaya başlayın.\n",
+        "# {}\n\n> {}\n\nSürüm: `{}` | Lisans: `{}` | Yazar: `{}`\n\n## Kurulum\n```bash\ncargo add {}\n```\n\n## Kullanım\nProjenize ekleyin ve çalıştırın.\n",
         meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
     );
 
@@ -28,17 +28,17 @@ pub fn generate_multilingual_readme(meta: &ProjectMeta) -> MultilingualReadme {
         meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
     );
 
-    let de = format!(
-        "# {}\n\n> {}\n\nVersion: `{}` | Lizenz: `{}` | Autor: `{}`\n\n## Installation\n```bash\ncargo add {}\n```\n\n## Verwendung\nFügen Sie es Ihrem Projekt hinzu und starten Sie.\n",
+    let ar = format!(
+        "# {}\n\n> {}\n\nالإصدار: `{}` | الترخيص: `{}` | المؤلف: `{}`\n\n## التثبيت\n```bash\ncargo add {}\n```\n\n## الاستخدام\nأضفه إلى مشروعك وابدأ في التشغيل.\n",
         meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
     );
 
-    let fr = format!(
-        "# {}\n\n> {}\n\nVersion: `{}` | Licence: `{}` | Auteur: `{}`\n\n## Installation\n```bash\ncargo add {}\n```\n\n## Utilisation\nAjoutez à votre projet et commencez l'exécution.\n",
+    let ja = format!(
+        "# {}\n\n> {}\n\nバージョン: `{}` | ライセンス: `{}` | 著者: `{}`\n\n## インストール\n```bash\ncargo add {}\n```\n\n## 使い方\nプロジェクトに追加して実行を開始します。\n",
         meta.name, meta.description, meta.version, meta.license, meta.author, meta.name
     );
 
-    MultilingualReadme { tr, en, de, fr }
+    MultilingualReadme { tr, en, ar, ja }
 }
 
 #[cfg(test)]
@@ -57,7 +57,7 @@ mod testler {
         let readme = generate_multilingual_readme(&meta);
         assert!(readme.tr.contains("Sürüm: `0.1.0`"));
         assert!(readme.en.contains("Version: `0.1.0`"));
-        assert!(readme.de.contains("Lizenz: `MIT`"));
-        assert!(readme.fr.contains("Licence: `MIT`"));
+        assert!(readme.ar.contains("الإصدار: `0.1.0`"));
+        assert!(readme.ja.contains("バージョン: `0.1.0`"));
     }
 }
