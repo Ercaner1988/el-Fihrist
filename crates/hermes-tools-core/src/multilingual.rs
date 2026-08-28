@@ -15,7 +15,7 @@ pub const ISLAMIC_OPENING_RU: &str = "Во имя Аллаха, Милостив
 
 pub const ISLAMIC_OPENING_ES: &str = "En nombre de Dios, el Más Clemente, el Más Misericordioso. Alabado sea el Señor de los mundos, y que la paz y las bendiciones sean con Su Mensajero. Este proyecto toma su nombre y espíritu del gran bibliógrafo Abu al-Faraj Muhammad b. Ishaq al-Nadim, quien vivió en Bagdad en el siglo X, y de su obra inmortal *al-Fihrist*. Heredando el legado del primer bibliotecario de nuestra civilización, hemos construido una biblioteca de habilidades, códigos y memoria basada en Rust puro y Turso SQLite para agentes de IA.";
 
-pub const LANGUAGE_BANNER: &str = "🇹🇷 [Türkçe](#-türkçe) | 🇬🇧 [English](#-english) | 🇸🇦 [العربية](#-العربية) | 🇯🇵 [日本語](#-日本語) | 🇨🇳 [中文](#-中文) | 🇷🇺 [Русский](#-русский) | 🇪🇸 [Español](#-español)";
+pub const LANGUAGE_BANNER: &str = "🇹🇷 [Türkçe](README.md) | 🇬🇧 [English](README.en.md) | 🇸🇦 [العربية](README.ar.md) | 🇯🇵 [日本語](README.ja.md) | 🇨🇳 [中文](README.zh.md) | 🇷🇺 [Русский](README.ru.md) | 🇪🇸 [Español](README.es.md)";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModuleInfo {
