@@ -1,6 +1,7 @@
+use crate::error::{ToolError, ToolResult};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SessionTurn {
     pub role: String,
     pub content: String,
@@ -13,7 +14,21 @@ pub struct SessionSearchResult {
     pub matches: Vec<SessionTurn>,
 }
 
-pub fn parse_session_transcript(transcript: &str) -> Vec<SessionTurn> {
+pub const MAX_TRANSCRIPT_SIZE: usize = 10 * 1024 * 1024; // 10 MB limit
+
+pub fn parse_session_transcript(transcript: &str) -> ToolResult<Vec<SessionTurn>> {
+    if transcript.trim().is_empty() {
+        return Err(ToolError::InvalidInput("Oturum metni boş olamaz".into()));
+    }
+
+    if transcript.len() > MAX_TRANSCRIPT_SIZE {
+        return Err(ToolError::MaxLimitExceeded(format!(
+            "Oturum dökümü azami sınırı aştı: {} > {}",
+            transcript.len(),
+            MAX_TRANSCRIPT_SIZE
+        )));
+    }
+
     let mut turns = Vec::new();
     let mut current_role = String::new();
     let mut current_content = String::new();
@@ -59,11 +74,19 @@ pub fn parse_session_transcript(transcript: &str) -> Vec<SessionTurn> {
         });
     }
 
-    turns
+    Ok(turns)
 }
 
-pub fn search_session(transcript: &str, query: &str, role_filter: Option<&str>) -> SessionSearchResult {
-    let turns = parse_session_transcript(transcript);
+pub fn search_session(
+    transcript: &str,
+    query: &str,
+    role_filter: Option<&str>,
+) -> ToolResult<SessionSearchResult> {
+    if query.trim().is_empty() {
+        return Err(ToolError::InvalidInput("Arama sorgusu boş olamaz".into()));
+    }
+
+    let turns = parse_session_transcript(transcript)?;
     let q_lower = query.to_lowercase();
 
     let matches = turns
@@ -78,10 +101,10 @@ pub fn search_session(transcript: &str, query: &str, role_filter: Option<&str>) 
         })
         .collect::<Vec<_>>();
 
-    SessionSearchResult {
+    Ok(SessionSearchResult {
         total_turns: matches.len(),
         matches,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -91,9 +114,16 @@ mod testler {
     #[test]
     fn oturum_gecmisi_arama() {
         let transcript = "[user] Selam, Rust kodunu incele\n[assistant] Tabii ki inceleyelim.\n[user] FTS5 hatası neydi?";
-        let res = search_session(transcript, "FTS5", Some("user"));
+        let res = search_session(transcript, "FTS5", Some("user")).expect("Arama başarılı olmalı");
         assert_eq!(res.total_turns, 1);
         assert_eq!(res.matches[0].role, "user");
         assert!(res.matches[0].content.contains("FTS5"));
+    }
+
+    #[test]
+    fn bos_sorgu_hatasi() {
+        let transcript = "[user] Test";
+        let res = search_session(transcript, "   ", None);
+        assert!(matches!(res, Err(ToolError::InvalidInput(_))));
     }
 }

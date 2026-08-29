@@ -1,6 +1,7 @@
+use crate::error::{ToolError, ToolResult};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CitationMarker {
     pub raw_tag: String,
     pub citation_content: String,
@@ -15,7 +16,25 @@ pub struct CitationReport {
     pub markers: Vec<CitationMarker>,
 }
 
-pub fn verify_citations(document_md: &str) -> CitationReport {
+pub const MAX_DOC_SIZE: usize = 5 * 1024 * 1024; // 5 MB limit
+pub const MAX_PARAGRAPHS: usize = 50_000;
+
+/// Belgedeki [[ATIF: ...]] formatındaki atıfları doğrular ve raporlar.
+/// D1 (Boşluk) ve D2 (Desen/Uzunluk) kapılarını çalıştırır.
+pub fn verify_citations(document_md: &str) -> ToolResult<CitationReport> {
+    // D1 Kapısı: Artefakt mevcut mu?
+    if document_md.trim().is_empty() {
+        return Err(ToolError::InvalidInput("Belge içeriği boş olamaz".into()));
+    }
+
+    if document_md.len() > MAX_DOC_SIZE {
+        return Err(ToolError::MaxLimitExceeded(format!(
+            "Belge boyutu azami sınırı aştı: {} > {}",
+            document_md.len(),
+            MAX_DOC_SIZE
+        )));
+    }
+
     let mut markers = Vec::new();
     let mut total_paragraphs = 0;
     let mut cited_paragraphs = 0;
@@ -29,7 +48,7 @@ pub fn verify_citations(document_md: &str) -> CitationReport {
         total_paragraphs += 1;
         let mut has_citation = false;
 
-        // Check for [[ATIF: ...]] format
+        // D2 Kapısı: [[ATIF: ...]] deseni sınırları
         let mut start_idx = 0;
         while let Some(pos) = trimmed[start_idx..].find("[[ATIF:") {
             let abs_pos = start_idx + pos;
@@ -53,18 +72,27 @@ pub fn verify_citations(document_md: &str) -> CitationReport {
         }
     }
 
+    // D3 Kapısı: Paragraf sırası ve sayım bütünlüğü
+    if total_paragraphs > MAX_PARAGRAPHS {
+        return Err(ToolError::MaxLimitExceeded(format!(
+            "Paragraf sayısı azami sınırı aştı: {} > {}",
+            total_paragraphs, MAX_PARAGRAPHS
+        )));
+    }
+
     let coverage_percent = if total_paragraphs == 0 {
         0.0
     } else {
         (cited_paragraphs as f64 / total_paragraphs as f64) * 100.0
     };
 
-    CitationReport {
+    // R2 Kapısı: Saf hesaplama, yan etki yok
+    Ok(CitationReport {
         total_paragraphs,
         cited_paragraphs,
         coverage_percent,
         markers,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -73,11 +101,25 @@ mod testler {
 
     #[test]
     fn atif_dogrulama() {
-        let doc = "Bu birinci cümledir. [[ATIF: Kaynak A, s. 12]]\n\nBu ikinci cümledir atıfsız.\n\nBu üçüncü cümledir. [[ATIF: Kaynak B, s. 45]]";
-        let rep = verify_citations(doc);
+        let doc = "Bu birinci cümle. [[ATIF: Kaynak A, s. 12]]\n\nBu ikinci cümle atıfsız.\n\nBu üçüncü cümle. [[ATIF: Kaynak B, s. 45]]";
+        let rep = verify_citations(doc).expect("Doğrulama başarılı olmalı");
         assert_eq!(rep.total_paragraphs, 3);
         assert_eq!(rep.cited_paragraphs, 2);
         assert_eq!(rep.markers.len(), 2);
         assert_eq!(rep.markers[0].citation_content, "Kaynak A, s. 12");
+    }
+
+    #[test]
+    fn bos_belge_d1_ihlali() {
+        let res = verify_citations("   ");
+        assert!(matches!(res, Err(ToolError::InvalidInput(_))));
+    }
+
+    #[test]
+    fn kapali_atif_d2_ihlali() {
+        let doc = "Bu metinde kapalı bir [[ATIF: kaynak var ama kapanış yok";
+        let res = verify_citations(doc).expect("Doğrulama successful olmalı");
+        assert_eq!(res.markers.len(), 0);
+        assert_eq!(res.cited_paragraphs, 0);
     }
 }

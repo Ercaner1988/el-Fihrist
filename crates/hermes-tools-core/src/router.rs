@@ -1,8 +1,9 @@
+use crate::error::{ToolError, ToolResult};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, BinaryHeap};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Edge {
     pub target: String,
     pub weight: f64,
@@ -13,7 +14,7 @@ pub struct Graph {
     pub adjacency: HashMap<String, Vec<Edge>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RouteResult {
     pub found: bool,
     pub total_distance: f64,
@@ -40,6 +41,8 @@ impl PartialOrd for State {
     }
 }
 
+pub const MAX_NODES: usize = 10_000;
+
 impl Graph {
     pub fn new() -> Self {
         Self {
@@ -47,33 +50,71 @@ impl Graph {
         }
     }
 
-    pub fn add_edge(&mut self, from: &str, to: &str, weight: f64) {
-        self.adjacency.entry(from.to_string()).or_default().push(Edge {
-            target: to.to_string(),
-            weight,
-        });
+    pub fn add_edge(&mut self, from: &str, to: &str, weight: f64) -> ToolResult<()> {
+        if weight < 0.0 || weight.is_nan() || weight.is_infinite() {
+            return Err(ToolError::InvalidInput(format!(
+                "Geçersiz kenar ağırlığı ({})",
+                weight
+            )));
+        }
+        self.adjacency
+            .entry(from.to_string())
+            .or_default()
+            .push(Edge {
+                target: to.to_string(),
+                weight,
+            });
+        Ok(())
     }
 
-    pub fn shortest_path(&self, start: &str, goal: &str) -> RouteResult {
+    pub fn shortest_path(&self, start: &str, goal: &str) -> ToolResult<RouteResult> {
+        if start.trim().is_empty() || goal.trim().is_empty() {
+            return Err(ToolError::InvalidInput("Düğüm isimleri boş olamaz".into()));
+        }
+
         if start == goal {
-            return RouteResult {
+            return Ok(RouteResult {
                 found: true,
                 total_distance: 0.0,
                 path: vec![start.to_string()],
-            };
+            });
         }
 
         let nodes: Vec<String> = self.adjacency.keys().cloned().collect();
-        let node_map: HashMap<String, usize> = nodes.iter().enumerate().map(|(i, n)| (n.clone(), i)).collect();
+        if nodes.len() > MAX_NODES {
+            return Err(ToolError::MaxLimitExceeded(format!(
+                "Graf düğüm sayısı azami sınırı aştı: {} > {}",
+                nodes.len(),
+                MAX_NODES
+            )));
+        }
+
+        let node_map: HashMap<String, usize> = nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.clone(), i))
+            .collect();
 
         let start_idx = match node_map.get(start) {
             Some(&i) => i,
-            None => return RouteResult { found: false, total_distance: 0.0, path: Vec::new() },
+            None => {
+                return Ok(RouteResult {
+                    found: false,
+                    total_distance: 0.0,
+                    path: Vec::new(),
+                })
+            }
         };
 
         let goal_idx = match node_map.get(goal) {
             Some(&i) => i,
-            None => return RouteResult { found: false, total_distance: 0.0, path: Vec::new() },
+            None => {
+                return Ok(RouteResult {
+                    found: false,
+                    total_distance: 0.0,
+                    path: Vec::new(),
+                })
+            }
         };
 
         let mut dist: Vec<f64> = vec![f64::INFINITY; nodes.len()];
@@ -81,7 +122,10 @@ impl Graph {
         let mut heap = BinaryHeap::new();
 
         dist[start_idx] = 0.0;
-        heap.push(State { cost: 0.0, node: start_idx });
+        heap.push(State {
+            cost: 0.0,
+            node: start_idx,
+        });
 
         while let Some(State { cost, node }) = heap.pop() {
             if cost > dist[node] {
@@ -100,7 +144,10 @@ impl Graph {
                         if next_cost < dist[v_idx] {
                             dist[v_idx] = next_cost;
                             prev[v_idx] = Some(node);
-                            heap.push(State { cost: next_cost, node: v_idx });
+                            heap.push(State {
+                                cost: next_cost,
+                                node: v_idx,
+                            });
                         }
                     }
                 }
@@ -108,11 +155,11 @@ impl Graph {
         }
 
         if dist[goal_idx].is_infinite() {
-            return RouteResult {
+            return Ok(RouteResult {
                 found: false,
                 total_distance: 0.0,
                 path: Vec::new(),
-            };
+            });
         }
 
         let mut path = Vec::new();
@@ -123,11 +170,11 @@ impl Graph {
         }
         path.reverse();
 
-        RouteResult {
+        Ok(RouteResult {
             found: true,
             total_distance: dist[goal_idx],
             path,
-        }
+        })
     }
 }
 
@@ -138,15 +185,22 @@ mod testler {
     #[test]
     fn graf_en_kisa_yol_dijkstra() {
         let mut g = Graph::new();
-        g.add_edge("A", "B", 4.0);
-        g.add_edge("A", "C", 2.0);
-        g.add_edge("C", "B", 1.0);
-        g.add_edge("B", "D", 5.0);
-        g.add_edge("C", "D", 8.0);
+        g.add_edge("A", "B", 4.0).unwrap();
+        g.add_edge("A", "C", 2.0).unwrap();
+        g.add_edge("C", "B", 1.0).unwrap();
+        g.add_edge("B", "D", 5.0).unwrap();
+        g.add_edge("C", "D", 8.0).unwrap();
 
-        let route = g.shortest_path("A", "B");
+        let route = g.shortest_path("A", "B").expect("Yol bulunabilmeli");
         assert!(route.found);
         assert_eq!(route.total_distance, 3.0); // A -> C -> B (2 + 1 = 3)
         assert_eq!(route.path, vec!["A", "C", "B"]);
+    }
+
+    #[test]
+    fn negatif_agirlik_hatasi() {
+        let mut g = Graph::new();
+        let res = g.add_edge("A", "B", -1.5);
+        assert!(matches!(res, Err(ToolError::InvalidInput(_))));
     }
 }

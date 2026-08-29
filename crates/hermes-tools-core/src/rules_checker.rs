@@ -1,6 +1,7 @@
+use crate::error::{ToolError, ToolResult};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RuleViolation {
     pub line_number: usize,
     pub rule_name: String,
@@ -15,7 +16,22 @@ pub struct QualityReport {
     pub violations: Vec<RuleViolation>,
 }
 
-pub fn check_rust_code_rules(code: &str) -> QualityReport {
+pub const MAX_CODE_SIZE: usize = 5 * 1024 * 1024; // 5 MB limit
+
+/// Rust kaynak kod kurallarını ve güvenlik ihlallerini denetler.
+pub fn check_rust_code_rules(code: &str) -> ToolResult<QualityReport> {
+    if code.trim().is_empty() {
+        return Err(ToolError::InvalidInput("Denetlenecek kod içeriği boş olamaz".into()));
+    }
+
+    if code.len() > MAX_CODE_SIZE {
+        return Err(ToolError::MaxLimitExceeded(format!(
+            "Kod boyutu azami sınırı aştı: {} > {}",
+            code.len(),
+            MAX_CODE_SIZE
+        )));
+    }
+
     let mut violations = Vec::new();
     let mut penalty = 0.0;
     let mut total_lines = 0;
@@ -72,11 +88,11 @@ pub fn check_rust_code_rules(code: &str) -> QualityReport {
 
     let safety_score = f64::max(100.0 - penalty, 0.0);
 
-    QualityReport {
+    Ok(QualityReport {
         total_lines,
         safety_score,
         violations,
-    }
+    })
 }
 
 #[cfg(test)]
@@ -86,8 +102,14 @@ mod testler {
     #[test]
     fn kural_denetimi_unwrap_ve_panic() {
         let code = "fn run() {\n    let val = res.unwrap();\n    panic!(\"Hata\");\n}\n";
-        let report = check_rust_code_rules(code);
+        let report = check_rust_code_rules(code).expect("Denetim başarılı olmalı");
         assert_eq!(report.violations.len(), 2);
         assert_eq!(report.safety_score, 70.0);
+    }
+
+    #[test]
+    fn bos_kod_hatasi() {
+        let res = check_rust_code_rules("   ");
+        assert!(matches!(res, Err(ToolError::InvalidInput(_))));
     }
 }

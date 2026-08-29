@@ -1,3 +1,4 @@
+use crate::error::{ToolError, ToolResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,27 +53,47 @@ impl HardGateCheck {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SoftScoreMatrix {
-    pub safety: f64,        // %25
-    pub equivalence: f64,   // %20
-    pub architecture: f64,  // %20
-    pub performance: f64,   // %15
-    pub clarity: f64,       // %10
+    pub safety: f64,          // %25
+    pub equivalence: f64,     // %20
+    pub architecture: f64,    // %20
+    pub performance: f64,     // %15
+    pub clarity: f64,         // %10
     pub maintainability: f64, // %10
 }
 
 impl SoftScoreMatrix {
-    pub fn calculate_total_score(&self) -> f64 {
-        (self.safety * 0.25)
+    pub fn calculate_total_score(&self) -> ToolResult<f64> {
+        let scores = [
+            self.safety,
+            self.equivalence,
+            self.architecture,
+            self.performance,
+            self.clarity,
+            self.maintainability,
+        ];
+        for s in &scores {
+            if *s < 0.0 || *s > 100.0 || s.is_nan() || s.is_infinite() {
+                return Err(ToolError::InvalidInput(format!(
+                    "Geçersiz başarı skoru: {}. Skorlar 0-100 aralığında olmalıdır.",
+                    s
+                )));
+            }
+        }
+
+        Ok((self.safety * 0.25)
             + (self.equivalence * 0.20)
             + (self.architecture * 0.20)
             + (self.performance * 0.15)
             + (self.clarity * 0.10)
-            + (self.maintainability * 0.10)
+            + (self.maintainability * 0.10))
     }
 }
 
-pub fn generate_skillopt_command(config: &SkillOptConfig, config_yaml_path: &str) -> String {
-    format!(
+pub fn generate_skillopt_command(config: &SkillOptConfig, config_yaml_path: &str) -> ToolResult<String> {
+    if config_yaml_path.trim().is_empty() {
+        return Err(ToolError::InvalidInput("Konfigürasyon dosya yolu boş olamaz".into()));
+    }
+    Ok(format!(
         "skillopt-train --config {} --optimizer_backend {} --target_backend {} --optimizer_model \"{}\" --target_model \"{}\" --num_epochs {} --batch_size {} --train_size {} --max_steps {} --out_root \"{}\"",
         config_yaml_path,
         config.optimizer_backend,
@@ -84,7 +105,7 @@ pub fn generate_skillopt_command(config: &SkillOptConfig, config_yaml_path: &str
         config.train_size,
         config.max_steps,
         config.out_root
-    )
+    ))
 }
 
 #[cfg(test)]
@@ -110,6 +131,19 @@ mod testler {
             clarity: 100.0,
             maintainability: 100.0,
         };
-        assert_eq!(score.calculate_total_score(), 100.0);
+        assert_eq!(score.calculate_total_score().unwrap(), 100.0);
+    }
+
+    #[test]
+    fn gecersiz_skor_hatasi() {
+        let score = SoftScoreMatrix {
+            safety: 150.0,
+            equivalence: 100.0,
+            architecture: 100.0,
+            performance: 100.0,
+            clarity: 100.0,
+            maintainability: 100.0,
+        };
+        assert!(score.calculate_total_score().is_err());
     }
 }
