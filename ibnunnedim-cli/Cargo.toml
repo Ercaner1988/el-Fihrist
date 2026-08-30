@@ -4,6 +4,10 @@ version.workspace = true
 edition = "2021"
 license.workspace = true
 
+[lib]
+name = "ibnunnedim_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "ibnunnedim"
 path = "src/main.rs"
