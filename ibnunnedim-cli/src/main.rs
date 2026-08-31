@@ -198,7 +198,9 @@ async fn list_all_skills(conn: &Connection, kategori: Option<&str>) -> Result<Ve
 }
 
 async fn say(conn: &Connection, tablo: &str) -> Result<i64> {
-    let mut satirlar = conn.query(&format!("SELECT COUNT(*) FROM {tablo}"), ()).await?;
+    let mut satirlar = conn
+        .query(&format!("SELECT COUNT(*) FROM {tablo}"), ())
+        .await?;
     match satirlar.next().await? {
         Some(r) => Ok(r.get::<i64>(0)?),
         None => Err(CliError::Girdi(format!("{tablo}: COUNT satır döndürmedi"))),
@@ -228,7 +230,9 @@ async fn tekmil_ver(
     gerekce: &str,
 ) -> Result<()> {
     if !(0.0..=100.0).contains(&puan) {
-        return Err(CliError::Girdi(format!("puan 0-100 aralığında olmalı: {puan}")));
+        return Err(CliError::Girdi(format!(
+            "puan 0-100 aralığında olmalı: {puan}"
+        )));
     }
     conn.execute(
         "INSERT INTO ajan_tekmilleri (hafta_no, ajan_adi, yetenek_id, verilen_puan, degerlendirme_gerekcesi) \
@@ -314,17 +318,30 @@ async fn main() -> Result<()> {
             let kod = say(&conn, "kod_hazinesi").await?;
             let fts = fts_indeksleri(&conn).await?;
             println!("\nKÜTÜPHANE İSTATİSTİĞİ\n{}", "=".repeat(65));
-            println!("  Veritabanı  : {}", std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.into()));
+            println!(
+                "  Veritabanı  : {}",
+                std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.into())
+            );
             println!("  Yetenek     : {yetenek}");
             println!("  Tekmil      : {tekmil}");
             println!("  Kod hazinesi: {kod}");
             println!(
                 "  FTS5 indeks : {} (tanımlı; arama saf Rust BM25 ile yapılıyor)",
-                if fts.is_empty() { "YOK".to_string() } else { fts.join(", ") }
+                if fts.is_empty() {
+                    "YOK".to_string()
+                } else {
+                    fts.join(", ")
+                }
             );
             println!("{}", "=".repeat(65));
         }
-        Command::Tekmil { ajan, yetenek, puan, gerekce, hafta } => {
+        Command::Tekmil {
+            ajan,
+            yetenek,
+            puan,
+            gerekce,
+            hafta,
+        } => {
             tekmil_ver(&conn, hafta, &ajan, &yetenek, puan, &gerekce).await?;
             println!("TEKMİL KAYDEDİLDİ: {ajan} → yetenek {yetenek} (puan {puan}, hafta {hafta})");
         }
@@ -342,7 +359,10 @@ mod testler {
         let s = "şçğüöışçğüöı";
         for n in 0..s.chars().count() + 3 {
             let c = kisalt(s, n);
-            assert!(std::str::from_utf8(c.as_bytes()).is_ok(), "n={n} geçersiz UTF-8");
+            assert!(
+                std::str::from_utf8(c.as_bytes()).is_ok(),
+                "n={n} geçersiz UTF-8"
+            );
         }
     }
 
@@ -366,7 +386,10 @@ mod testler {
     fn bayt_dilimi_gercekten_tehlikeli() {
         let s = "şçğ"; // 6 bayt, 3 karakter
         assert_eq!(s.len(), 6, "fikstür varsayımı bozuldu");
-        assert!(s.get(..3).is_none(), "3. bayt karakter sınırıymış — fikstür kötü seçilmiş");
+        assert!(
+            s.get(..3).is_none(),
+            "3. bayt karakter sınırıymış — fikstür kötü seçilmiş"
+        );
         assert!(s.get(..2).is_some(), "2. bayt sınır olmalıydı");
     }
 }

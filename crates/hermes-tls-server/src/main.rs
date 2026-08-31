@@ -4,13 +4,7 @@
 //! Hermes'ten gelen ham `CALL:turso_oku(1)` metnini kabul eder, Rust kütüphanesiyle çözer
 //! ve sonucu HTTP cevabı olarak geri döndürür.
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::Json,
-    routing::post,
-    Router,
-};
+use axum::{extract::State, http::StatusCode, response::Json, routing::post, Router};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -88,7 +82,10 @@ async fn main() {
         .unwrap();
 
     println!("=== Hermes TLS Server Başlatıldı ===");
-    println!("Sunucu {} adresinde dinliyor...", listener.local_addr().unwrap());
+    println!(
+        "Sunucu {} adresinde dinliyor...",
+        listener.local_addr().unwrap()
+    );
     println!("Endpoint: POST http://127.0.0.1:3000/api/call");
     println!("Örnek Gövde: {{\"call\": \"CALL:turso_oku(1)\"}}");
 

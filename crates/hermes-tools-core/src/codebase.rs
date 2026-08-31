@@ -114,14 +114,16 @@ pub fn summarize_codebase(stats: Vec<LanguageStat>) -> ToolResult<CodebaseSummar
         total_files += s.file_count;
         total_lines += s.total_lines;
 
-        let entry = map.entry(s.language.clone()).or_insert_with(|| LanguageStat {
-            language: s.language.clone(),
-            file_count: 0,
-            total_lines: 0,
-            code_lines: 0,
-            comment_lines: 0,
-            blank_lines: 0,
-        });
+        let entry = map
+            .entry(s.language.clone())
+            .or_insert_with(|| LanguageStat {
+                language: s.language.clone(),
+                file_count: 0,
+                total_lines: 0,
+                code_lines: 0,
+                comment_lines: 0,
+                blank_lines: 0,
+            });
 
         entry.file_count += s.file_count;
         entry.total_lines += s.total_lines;

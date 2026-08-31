@@ -89,9 +89,14 @@ impl SoftScoreMatrix {
     }
 }
 
-pub fn generate_skillopt_command(config: &SkillOptConfig, config_yaml_path: &str) -> ToolResult<String> {
+pub fn generate_skillopt_command(
+    config: &SkillOptConfig,
+    config_yaml_path: &str,
+) -> ToolResult<String> {
     if config_yaml_path.trim().is_empty() {
-        return Err(ToolError::InvalidInput("Konfigürasyon dosya yolu boş olamaz".into()));
+        return Err(ToolError::InvalidInput(
+            "Konfigürasyon dosya yolu boş olamaz".into(),
+        ));
     }
     Ok(format!(
         "skillopt-train --config {} --optimizer_backend {} --target_backend {} --optimizer_model \"{}\" --target_model \"{}\" --num_epochs {} --batch_size {} --train_size {} --max_steps {} --out_root \"{}\"",

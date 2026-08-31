@@ -113,10 +113,9 @@ impl TursoBaglantisi {
     /// Veri tabanından güvenli okuma yapan işlevimiz
     pub fn oku(&self, anahtar: &str) -> Sonuc<String> {
         // Sandığın kilidini geçici olarak açıp içeriği okuyoruz
-        let icerik = self
-            .veriler
-            .lock()
-            .map_err(|_| ManzumeAksakligi::VeriTabaniHatasi("Kilidi açarken aksaklık oluştu!".to_string()))?;
+        let icerik = self.veriler.lock().map_err(|_| {
+            ManzumeAksakligi::VeriTabaniHatasi("Kilidi açarken aksaklık oluştu!".to_string())
+        })?;
 
         icerik
             .get(anahtar)
@@ -127,10 +126,11 @@ impl TursoBaglantisi {
     /// Veri tabanına yeni veri yazan güvenli işlevimiz
     pub fn yaz(&self, anahtar: String, deger: String) -> Sonuc<()> {
         // Sandığın kilidini açıp yazma işlemi için tek kişilik geçici yetki (&mut) alıyoruz
-        let mut icerik = self
-            .veriler
-            .lock()
-            .map_err(|_| ManzumeAksakligi::VeriTabaniHatasi("Yazma kilidi açılırken aksaklık oluştu!".to_string()))?;
+        let mut icerik = self.veriler.lock().map_err(|_| {
+            ManzumeAksakligi::VeriTabaniHatasi(
+                "Yazma kilidi açılırken aksaklık oluştu!".to_string(),
+            )
+        })?;
 
         icerik.insert(anahtar, deger);
         Ok(())
@@ -138,10 +138,11 @@ impl TursoBaglantisi {
 
     /// Veri tabanından güvenli silme yapan işlevimiz
     pub fn sil(&self, anahtar: &str) -> Sonuc<()> {
-        let mut icerik = self
-            .veriler
-            .lock()
-            .map_err(|_| ManzumeAksakligi::VeriTabaniHatasi("Silme kilidi açılırken aksaklık oluştu!".to_string()))?;
+        let mut icerik = self.veriler.lock().map_err(|_| {
+            ManzumeAksakligi::VeriTabaniHatasi(
+                "Silme kilidi açılırken aksaklık oluştu!".to_string(),
+            )
+        })?;
 
         icerik.remove(anahtar);
         Ok(())
@@ -153,7 +154,9 @@ impl TursoBaglantisi {
     /// sayıya inerse sayı yalan söyler.
     pub fn adet_say(&self) -> Sonuc<usize> {
         let icerik = self.veriler.lock().map_err(|_| {
-            ManzumeAksakligi::VeriTabaniHatasi("Sayım kilidi açılırken aksaklık oluştu!".to_string())
+            ManzumeAksakligi::VeriTabaniHatasi(
+                "Sayım kilidi açılırken aksaklık oluştu!".to_string(),
+            )
         })?;
         Ok(icerik.len())
     }
@@ -216,9 +219,9 @@ impl Yetenek for TursoYazYetenegi {
 
     fn calistir(&self, girdiler: &str) -> Sonuc<String> {
         // Girdiler örn: "3, Ad: Veli, Rol: Tasarımcı"
-        let virgul_konumu = girdiler
-            .find(',')
-            .ok_or_else(|| ManzumeAksakligi::GirdiHatasi("Yazma girdisi eksik! Örnek: 3, Ad: Veli".to_string()))?;
+        let virgul_konumu = girdiler.find(',').ok_or_else(|| {
+            ManzumeAksakligi::GirdiHatasi("Yazma girdisi eksik! Örnek: 3, Ad: Veli".to_string())
+        })?;
 
         let id_kismi = girdiler[..virgul_konumu].trim();
         let veri_kismi = girdiler[virgul_konumu + 1..].trim();
@@ -381,13 +384,15 @@ impl YetenekYoneticisi {
             ));
         }
 
-        let icerik = ham_cagri.strip_prefix("CALL:").expect("starts_with yukarida denetlendi");
+        let icerik = ham_cagri
+            .strip_prefix("CALL:")
+            .expect("starts_with yukarida denetlendi");
         let parantez_basi = icerik
             .find('(')
             .ok_or_else(|| ManzumeAksakligi::AracCagriHatasi("Açma parantezi yok!".to_string()))?;
-        let parantez_sonu = icerik
-            .rfind(')')
-            .ok_or_else(|| ManzumeAksakligi::AracCagriHatasi("Kapatma parantezi yok!".to_string()))?;
+        let parantez_sonu = icerik.rfind(')').ok_or_else(|| {
+            ManzumeAksakligi::AracCagriHatasi("Kapatma parantezi yok!".to_string())
+        })?;
 
         // Kapanış açılıştan önce gelirse dilim ters döner ve **panikler**.
         // Sınır denetimi olmadan `CALL:arac)1(` süreci düşürüyordu.
@@ -522,10 +527,7 @@ mod tests {
                 .calistir(&format!("sorgu={girdi}"))
                 .expect("arama düştü");
             let url = veri.lines().last().expect("URL satırı yok");
-            let sorgu = url
-                .split_once("?search=")
-                .expect("URL biçimi değişmiş")
-                .1;
+            let sorgu = url.split_once("?search=").expect("URL biçimi değişmiş").1;
             assert!(sorgu.contains(beklenen), "{girdi}: {beklenen} yok → {url}");
             for ham in ['&', '#', '?'] {
                 assert!(!sorgu.contains(ham), "{girdi}: ham '{ham}' kaldı → {url}");
@@ -567,7 +569,10 @@ mod tests {
         let okunan = y
             .cagiriyi_coz_ve_calistir("CALL:turso_oku(9)")
             .expect("okuma düştü");
-        assert!(okunan.contains("(ek bilgi)"), "iç parantez kırpıldı: {okunan}");
+        assert!(
+            okunan.contains("(ek bilgi)"),
+            "iç parantez kırpıldı: {okunan}"
+        );
 
         // Bozuk girdiler: hata dönmeli, panik değil.
         for bozuk in ["turso_oku(1)", "CALL:turso_oku", "CALL:turso_oku)1("] {

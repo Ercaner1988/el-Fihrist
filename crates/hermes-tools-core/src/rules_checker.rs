@@ -21,7 +21,9 @@ pub const MAX_CODE_SIZE: usize = 5 * 1024 * 1024; // 5 MB limit
 /// Rust kaynak kod kurallarını ve güvenlik ihlallerini denetler.
 pub fn check_rust_code_rules(code: &str) -> ToolResult<QualityReport> {
     if code.trim().is_empty() {
-        return Err(ToolError::InvalidInput("Denetlenecek kod içeriği boş olamaz".into()));
+        return Err(ToolError::InvalidInput(
+            "Denetlenecek kod içeriği boş olamaz".into(),
+        ));
     }
 
     if code.len() > MAX_CODE_SIZE {

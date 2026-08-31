@@ -81,12 +81,17 @@ impl ReActOrkestrator {
             println!("Yakalanan Sıkıştırılmış Komut: {}", arac_cagrisi);
 
             // Kütüphanemiz komutu yorumlayıp çalıştırıyor
-            match self.yetenek_yonetici.cagiriyi_coz_ve_calistir(&arac_cagrisi) {
+            match self
+                .yetenek_yonetici
+                .cagiriyi_coz_ve_calistir(&arac_cagrisi)
+            {
                 Ok(gozlem_sonucu) => {
                     println!("Veri Tabanından Alınan Sonuç (Gözlem): {}", gozlem_sonucu);
 
                     // Adım 2: Çıkan sonucu telsizden Hermes'e geri fısıldıyoruz
-                    let hermes_yaniti_2 = self.hermes.yanit_uret(2, kullanici_sorusu, Some(&gozlem_sonucu));
+                    let hermes_yaniti_2 =
+                        self.hermes
+                            .yanit_uret(2, kullanici_sorusu, Some(&gozlem_sonucu));
                     println!("\n[Hermes - 2. Adım]:\n{}", hermes_yaniti_2);
                     Ok(hermes_yaniti_2)
                 }

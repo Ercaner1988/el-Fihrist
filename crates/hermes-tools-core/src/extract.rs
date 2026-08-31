@@ -37,7 +37,9 @@ pub fn html_ayikla(html: &str) -> ToolResult<ExtractResult> {
 
     // Karakter bütünlüğü kontrolü (Null byte koruması)
     if html.contains('\0') {
-        return Err(ToolError::InvalidInput("HTML içinde geçersiz null karakter saptandı".into()));
+        return Err(ToolError::InvalidInput(
+            "HTML içinde geçersiz null karakter saptandı".into(),
+        ));
     }
 
     let mut title = String::new();
@@ -55,7 +57,9 @@ pub fn html_ayikla(html: &str) -> ToolResult<ExtractResult> {
         if c == '<' {
             tag_depth += 1;
             if tag_depth > MAX_TAG_DEPTH {
-                return Err(ToolError::ParseError("Etiket yuvalama derinliği sınırı aşıldı (Olası DoS)".into()));
+                return Err(ToolError::ParseError(
+                    "Etiket yuvalama derinliği sınırı aşıldı (Olası DoS)".into(),
+                ));
             }
 
             let mut current_tag = String::new();
@@ -93,11 +97,19 @@ pub fn html_ayikla(html: &str) -> ToolResult<ExtractResult> {
                             text: current_a_text.trim().to_string(),
                             url: current_href.clone(),
                         });
-                        markdown.push_str(&format!(" [{}]({}) ", current_a_text.trim(), current_href));
+                        markdown.push_str(&format!(
+                            " [{}]({}) ",
+                            current_a_text.trim(),
+                            current_href
+                        ));
                     }
                     in_a = false;
                 }
-            } else if lower_tag == "p" || lower_tag == "/p" || lower_tag == "br" || lower_tag == "br/" {
+            } else if lower_tag == "p"
+                || lower_tag == "/p"
+                || lower_tag == "br"
+                || lower_tag == "br/"
+            {
                 markdown.push('\n');
             } else if lower_tag.starts_with("h1") {
                 markdown.push_str("\n# ");

@@ -34,7 +34,9 @@ pub fn extract_paragraphs_from_xml(xml_content: &str) -> ToolResult<DocxExtractR
     }
 
     if xml_content.contains('\0') {
-        return Err(ToolError::InvalidInput("XML içinde geçersiz null karakter var".into()));
+        return Err(ToolError::InvalidInput(
+            "XML içinde geçersiz null karakter var".into(),
+        ));
     }
 
     let mut paragraphs = Vec::new();
@@ -50,7 +52,9 @@ pub fn extract_paragraphs_from_xml(xml_content: &str) -> ToolResult<DocxExtractR
         if c == '<' {
             depth += 1;
             if depth > MAX_XML_DEPTH {
-                return Err(ToolError::ParseError("XML etiket yuvalama sınırı aşıldı".into()));
+                return Err(ToolError::ParseError(
+                    "XML etiket yuvalama sınırı aşıldı".into(),
+                ));
             }
 
             let mut tag = String::new();
