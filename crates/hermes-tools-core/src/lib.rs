@@ -1,3 +1,4 @@
+pub mod ayikla;
 pub mod citation;
 pub mod codebase;
 pub mod docx;
@@ -10,6 +11,10 @@ pub mod rules_checker;
 pub mod session;
 pub mod skillopt;
 
+pub use ayikla::{
+    ayikla_plani_kur, eksik_dosyalari_bul, senkron_plani_kur, AyiklamaKarari, AyiklamaPlani,
+    DizinSayimi, DosyaDurumu, Karar, KopyaIsi, KopyaNedeni, SenkronPlani,
+};
 pub use citation::{verify_citations, CitationReport};
 pub use codebase::{analyze_file_content, summarize_codebase, CodebaseSummary, LanguageStat};
 pub use docx::{extract_paragraphs_from_xml, DocxExtractResult, DocxParagraph};
