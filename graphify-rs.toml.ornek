@@ -1,0 +1,13 @@
+# graphify-rs — el-Fihrist yapilandirmasi
+# NEDEN Omniroute: LLM cikarimi yerel Omniroute uzerinden gider (localhost:20128).
+# Boylece ayri bir OpenAI/Ollama hesabi gerekmez, mevcut combo zinciri kullanilir.
+# Bu dosya API anahtari icerir -> .gitignore'da. Ornek icin graphify-rs.toml.ornek
+
+output = "graphify-rs-out"
+formats = ["json", "report", "html"]
+
+[llm]
+provider = "openai_compatible"
+model = "hermes-kas"
+openai_compatible_base_url = "http://localhost:20128/v1"
+openai_compatible_api_key = "<HERMES_CUSTOM_LOCALHOST_20128_API_KEY buraya>"

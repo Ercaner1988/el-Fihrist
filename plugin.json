@@ -7,15 +7,56 @@
   "mcpServers": {
     "el-fihrist": {
       "command": "./target/release/ibnunnedim",
-      "args": ["search", "rust"],
+      "args": [
+        "search",
+        "rust"
+      ],
       "env": {
         "TURSO_DB_PATH": "./kutup_kutuphane.db"
       }
+    },
+    "graphify": {
+      "command": "graphify-rs",
+      "args": [
+        "serve",
+        "--graph",
+        "graphify-rs-out/graph.json"
+      ],
+      "env": {}
     }
   },
   "hermes": {
     "plugin": true,
-    "tools": ["search_skills", "list_skills", "tekmil_ver", "info"],
-    "supported_platforms": ["hermes-agent", "claude-desktop", "deepseek-harness", "opencode", "codex"]
+    "tools": [
+      "search_skills",
+      "list_skills",
+      "tekmil_ver",
+      "info"
+    ],
+    "supported_platforms": [
+      "hermes-agent",
+      "claude-desktop",
+      "deepseek-harness",
+      "opencode",
+      "codex"
+    ],
+    "graphify_tools": [
+      "query_graph",
+      "explore",
+      "graph_stats",
+      "god_nodes",
+      "get_node",
+      "get_neighbors",
+      "get_community",
+      "shortest_path",
+      "find_all_paths",
+      "weighted_path",
+      "community_bridges",
+      "graph_diff",
+      "pagerank",
+      "detect_cycles",
+      "smart_summary",
+      "find_similar"
+    ]
   }
 }

@@ -7,6 +7,8 @@
 //! ibnunnedim search "rust"
 //! ibnunnedim list --kategori "software-development"
 //! ibnunnedim info
+//! ibnunnedim graph --kur
+//! ibnunnedim graph "atif dogrulama nerede gecer"
 //! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
 //! ```
 
@@ -45,6 +47,14 @@ enum Command {
     },
     /// Veritabanı istatistiklerini gösterir
     Info,
+    /// Bilgi grafını kurar (--kur) ya da doğal dille sorgular
+    Graph {
+        /// Sorulacak soru; boş bırakılırsa --kur gerekir
+        soru: Option<String>,
+        /// Grafı baştan kur (graphify-rs build)
+        #[arg(long)]
+        kur: bool,
+    },
     /// Tekmil puanı ekler
     Tekmil {
         #[arg(long)]
@@ -260,9 +270,56 @@ async fn tekmil_ver(
     Ok(())
 }
 
+/// `graphify-rs` alt süreç argümanlarını kurar.
+///
+/// NEDEN ayrı fonksiyon: dış süreç çağrısının kendisi sınanamaz, argüman
+/// kurulumu sınanabilir. Yanlış bayrak sessizce YANLIŞ grafı sorgular —
+/// kırılması gereken yer burası.
+fn graf_argumanlari(soru: Option<&str>, kur: bool, cikti: &str) -> Result<Vec<String>> {
+    if kur {
+        return Ok(vec!["build".into(), "--path".into(), ".".into()]);
+    }
+    match soru {
+        Some(s) if !s.trim().is_empty() => Ok(vec![
+            "query".into(),
+            s.to_string(),
+            "--graph".into(),
+            format!("{cikti}/graph.json"),
+        ]),
+        _ => Err(CliError::Girdi(
+            "graph: ya bir soru ver ya da --kur kullan".into(),
+        )),
+    }
+}
+
+/// Grafı kurar ya da sorgular. Binary PATH'tedir (`cargo install`).
+fn graf_calistir(soru: Option<&str>, kur: bool) -> Result<()> {
+    let cikti = std::env::var("GRAPHIFY_OUT").unwrap_or_else(|_| "graphify-rs-out".to_string());
+    let argumanlar = graf_argumanlari(soru, kur, &cikti)?;
+    let durum = std::process::Command::new("graphify-rs")
+        .args(&argumanlar)
+        .status()
+        .map_err(|e| {
+            CliError::Girdi(format!(
+                "graphify-rs çalıştırılamadı ({e}). Kurulum:                  cargo install --path <graphify-rs klasörü>"
+            ))
+        })?;
+    if !durum.success() {
+        return Err(CliError::Girdi(format!("graphify-rs başarısız: {durum}")));
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
+
+    // ponytail: graf komutu Turso'ya dokunmaz — DB bağlantısından ÖNCE ele
+    // alınır ki kütüphane dosyası olmasa da graf kurulup sorgulanabilsin.
+    if let Command::Graph { soru, kur } = &args.command {
+        return graf_calistir(soru.as_deref(), *kur);
+    }
+
     let conn = baglan().await?;
 
     match args.command {
@@ -335,6 +392,8 @@ async fn main() -> Result<()> {
             );
             println!("{}", "=".repeat(65));
         }
+        // Yukarıda ele alındı; buraya düşmez.
+        Command::Graph { .. } => unreachable!("graf komutu DB bağlantısından önce ele alınır"),
         Command::Tekmil {
             ajan,
             yetenek,
@@ -352,6 +411,25 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod testler {
     use super::*;
+
+    #[test]
+    fn graf_argumanlari_kur_build_der() {
+        let a = graf_argumanlari(None, true, "cikti").unwrap();
+        assert_eq!(a, vec!["build", "--path", "."]);
+    }
+
+    #[test]
+    fn graf_argumanlari_sorgu_graf_yolunu_verir() {
+        let a = graf_argumanlari(Some("nedir"), false, "cikti").unwrap();
+        assert_eq!(a, vec!["query", "nedir", "--graph", "cikti/graph.json"]);
+    }
+
+    /// Sessizce yanlış graf sorgulamaktansa açıkça reddetsin.
+    #[test]
+    fn graf_argumanlari_bos_soru_reddeder() {
+        assert!(graf_argumanlari(None, false, "c").is_err());
+        assert!(graf_argumanlari(Some("   "), false, "c").is_err());
+    }
 
     /// Kapı düşebilmeli: eski `&s[..140]` bayt dilimi çok baytlı sınırda paniklerdi.
     #[test]

@@ -31,3 +31,8 @@
 *.out
 *.app
 /target
+
+# graphify-rs yerel yapilandirmasi (API anahtari icerir)
+graphify-rs.toml
+graphify-rs-out/
+.graphify-nobet.pid
