@@ -22,13 +22,32 @@ pub struct Indeks {
 /// Standard Rust `.to_lowercase()` fonksiyonu `İ` karakterini `i` + `U+0307` (birleşen nokta)
 /// olarak ayrıştırır ve `I` karakterini `ı` yerine `i` yapar. Bu yüzden Türkçe katlama
 /// elle yapılır: `İ` -> `i`, `I` -> `ı`, ardından `.to_lowercase()`.
+///
+/// 2026-09-04 (pasli-beyin PB-06 ölçümü sonrası): altı Türkçe harf de ASCII
+/// karşılığına katlanır (`ı ş ğ ü ö ç` → `i s g u o c`) — pasli-beyin'in
+/// `gomme::katla` ile AYNI kural. Gerekçe: altın sette 'kaynakça' (ç'li)
+/// sorgusu ç/ş katlanmadığı için 0 sonuç veriyordu; belge tarafı ASCII adlı
+/// ('kaynakca') parçaları bulamıyordu. İki taraf da belirteçle bu işlevden
+/// geçtiği için katlama sorgu-belge tutarlılığını bozmaz.
 pub fn belirtecle(metin: &str) -> Vec<String> {
     let mut katlanmis = String::with_capacity(metin.len());
     for c in metin.chars() {
         match c {
             'İ' => katlanmis.push('i'),
-            'I' => katlanmis.push('ı'),
-            other => katlanmis.extend(other.to_lowercase()),
+            'I' => katlanmis.push('i'),
+            other => {
+                for k in other.to_lowercase() {
+                    katlanmis.push(match k {
+                        'ı' => 'i',
+                        'ş' => 's',
+                        'ğ' => 'g',
+                        'ü' => 'u',
+                        'ö' => 'o',
+                        'ç' => 'c',
+                        _ => k,
+                    });
+                }
+            }
         }
     }
     katlanmis
@@ -134,8 +153,20 @@ mod testler {
         let res_istanbul = belirtecle("İSTANBUL");
         assert_eq!(res_istanbul, vec!["istanbul"]);
 
+        // 2026-09-04: davranış değişimi — 'IŞIK' artık 'ışık' değil 'isik'
+        // (altı harf ASCII'ye katlanıyor; pasli-beyin gomme::katla ile aynı).
         let res_isik = belirtecle("IŞIK");
-        assert_eq!(res_isik, vec!["ışık"]);
+        assert_eq!(res_isik, vec!["isik"]);
+    }
+
+    #[test]
+    fn belirtec_alti_harf_asciiye_katlanir() {
+        // PB-06 ölçümünden doğan kural: ç ş ğ ü ö ı (ve büyükleri) ASCII'ye.
+        assert_eq!(belirtecle("kaynakça"), vec!["kaynakca"]);
+        assert_eq!(belirtecle("KAYNAKÇA"), vec!["kaynakca"]);
+        assert_eq!(belirtecle("ağaç şüphe örgü"), vec!["agac", "suphe", "orgu"]);
+        // Sorgu-belge tutarlılığı: iki taraf da aynı katlamadan geçer.
+        assert_eq!(belirtecle("KAYNAKça"), belirtecle("kaynakca"));
     }
 
     #[test]
