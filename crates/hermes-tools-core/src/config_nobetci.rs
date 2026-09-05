@@ -99,6 +99,11 @@ pub struct NobetRaporu {
     pub kaybolan_anahtarlar: Vec<String>,
     /// Eklenen üst düzey anahtarlar (alfabetik).
     pub eklenen_anahtarlar: Vec<String>,
+    /// `true` iken `false` olmuş bayraklar; noktalı yol biçiminde (alfabetik).
+    ///
+    /// Anahtar yerinde durduğu için anahtar kaybı sayılmaz, ama bir yeteneğin
+    /// sessizce kapanması tam da yakalanması gereken bozulmadır.
+    pub kapanan_bayraklar: Vec<String>,
     /// Satır bazlı farklar; `azami_fark` ile sınırlanır.
     pub farklar: Vec<SatirFarki>,
     /// Fark listesi sınıra takılıp kırpıldı mı.
@@ -167,6 +172,8 @@ pub fn nobet_tut(onceki: &str, guncel: &str, azami_fark: usize) -> ToolResult<No
 
     let (farklar, kirpildi) = satir_farklari(&onceki_satirlar, &guncel_satirlar, azami_fark);
 
+    let kapanan = kapanan_bayraklari_bul(onceki, guncel);
+
     let mut gerekceler = Vec::new();
     let mut suphe = if onceki == guncel {
         SuphePuani::Degismemis
@@ -193,6 +200,13 @@ pub fn nobet_tut(onceki: &str, guncel: &str, azami_fark: usize) -> ToolResult<No
             gerekceler.push(format!(
                 "Üst düzey anahtar kayboldu: {}",
                 kaybolan.join(", ")
+            ));
+        }
+        if !kapanan.is_empty() {
+            suphe = SuphePuani::IcerikKaybi;
+            gerekceler.push(format!(
+                "Bayrak sessizce kapandı (true → false): {}",
+                kapanan.join(", ")
             ));
         }
         if !onceki.is_empty() && (guncel.len() as f64) < (onceki.len() as f64) * KUCULME_ESIGI {
@@ -226,6 +240,7 @@ pub fn nobet_tut(onceki: &str, guncel: &str, azami_fark: usize) -> ToolResult<No
         guncel_satir: guncel_satirlar.len(),
         kaybolan_anahtarlar: kaybolan,
         eklenen_anahtarlar: eklenen,
+        kapanan_bayraklar: kapanan,
         farklar,
         farklar_kirpildi: kirpildi,
         gerekceler,
@@ -263,6 +278,81 @@ fn ust_duzey_anahtarlar(metin: &str) -> BTreeSet<String> {
         }
     }
     anahtarlar
+}
+
+/// `true` iken `false` olmuş bayrakları bulur; noktalı yol döndürür.
+///
+/// `memory.memory_enabled` gibi iç içe anahtarları da yakalar: girinti
+/// derinliğinden bir yığın kurup tam yolu oluşturur. Anahtar yerinde durduğu
+/// için [`ust_duzey_anahtarlar`] bunu göremez; sessiz kapanma tam da bu yüzden
+/// ayrı taranır.
+///
+/// Yalnızca `true → false` yönü bildirilir. Ters yön (bir yeteneğin açılması)
+/// bozulma değildir.
+fn kapanan_bayraklari_bul(onceki: &str, guncel: &str) -> Vec<String> {
+    let onceki_bayraklar = bayraklari_topla(onceki);
+    let guncel_bayraklar = bayraklari_topla(guncel);
+
+    let mut kapanan: Vec<String> = onceki_bayraklar
+        .iter()
+        .filter(|(yol, eski)| **eski && guncel_bayraklar.get(*yol) == Some(&false))
+        .map(|(yol, _)| yol.clone())
+        .collect();
+    kapanan.sort();
+    kapanan
+}
+
+/// Metindeki tüm mantıksal bayrakları noktalı yol → değer olarak toplar.
+///
+/// Girintiyi boşluk sayısıyla ölçer; sekme girintisi zaten söz dizimi şüphesi
+/// olarak ayrıca bildirildiğinden burada boşluğa eşdeğer sayılır.
+fn bayraklari_topla(metin: &str) -> BTreeMap<String, bool> {
+    let mut bayraklar = BTreeMap::new();
+    // (girinti, anahtar) yığını: içinde bulunduğumuz kapsamı taşır.
+    let mut yigin: Vec<(usize, String)> = Vec::new();
+
+    for satir in metin.lines() {
+        let kirpik = satir.trim();
+        if kirpik.is_empty() || kirpik.starts_with('#') || kirpik.starts_with('-') {
+            continue;
+        }
+        let Some(ikinokta) = kirpik.find(':') else {
+            continue;
+        };
+
+        let girinti = satir.len() - satir.trim_start().len();
+        let ad = kirpik[..ikinokta].trim();
+        if ad.is_empty()
+            || !ad
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+        {
+            continue;
+        }
+
+        // Bu satırdan daha derin ya da eşit kapsamları yığından at.
+        while yigin.last().is_some_and(|(g, _)| *g >= girinti) {
+            yigin.pop();
+        }
+
+        let deger = kirpik[ikinokta + 1..]
+            .split('#')
+            .next()
+            .unwrap_or("")
+            .trim()
+            .trim_matches(['"', '\''].as_ref())
+            .to_ascii_lowercase();
+
+        if deger == "true" || deger == "false" {
+            let mut yol: Vec<&str> = yigin.iter().map(|(_, a)| a.as_str()).collect();
+            yol.push(ad);
+            bayraklar.insert(yol.join("."), deger == "true");
+        } else if deger.is_empty() {
+            // Değersiz anahtar bir kapsam açar.
+            yigin.push((girinti, ad.to_string()));
+        }
+    }
+    bayraklar
 }
 
 /// Girintisinde sekme bulunan ilk satırın numarasını döndürür.
@@ -461,7 +551,8 @@ mod testler {
 
     #[test]
     fn azami_sifir_farksiz_rapor_verir() {
-        let yeni = ORNEK.replace("true", "false");
+        // Bayrak değil, düz değer değişimi: kapanan bayrak dedektörü tetiklenmemeli.
+        let yeni = ORNEK.replace("hermes-beyin", "gpt-5");
         let r = nobet_tut(ORNEK, &yeni, 0).unwrap();
         assert!(r.farklar.is_empty());
         assert!(r.farklar_kirpildi);
@@ -476,6 +567,90 @@ mod testler {
         let r = nobet_tut(onceki, guncel, 100).unwrap();
         assert!(r.farklar.is_empty(), "sıra değişimi fark sayılmamalı");
         assert_eq!(r.suphe, SuphePuani::Olagan);
+    }
+
+    #[test]
+    fn kapanan_bayrak_icerik_kaybi_sayilir() {
+        // 2026-09-02 gerçek olayı: memory_enabled sessizce false oldu,
+        // anahtar yerinde durduğu için anahtar kaybı taraması bunu görmedi.
+        let onceki = "memory:\n  provider: supermemory\n  memory_enabled: true\n  user_profile_enabled: true\n";
+        let guncel = "memory:\n  provider: supermemory\n  memory_enabled: false\n  user_profile_enabled: false\n";
+
+        let r = nobet_tut(onceki, guncel, 100).unwrap();
+
+        assert_eq!(r.suphe, SuphePuani::IcerikKaybi);
+        assert!(r.suphe.dikkat_ister());
+        assert!(r.kaybolan_anahtarlar.is_empty(), "anahtar kaybolmadı");
+        assert_eq!(
+            r.kapanan_bayraklar,
+            vec![
+                "memory.memory_enabled".to_string(),
+                "memory.user_profile_enabled".to_string()
+            ]
+        );
+        assert!(r.gerekceler.iter().any(|g| g.contains("sessizce kapandı")));
+    }
+
+    #[test]
+    fn acilan_bayrak_bozulma_sayilmaz() {
+        let onceki = "memory:\n  memory_enabled: false\n";
+        let guncel = "memory:\n  memory_enabled: true\n";
+
+        let r = nobet_tut(onceki, guncel, 100).unwrap();
+
+        assert_eq!(r.suphe, SuphePuani::Olagan);
+        assert!(r.kapanan_bayraklar.is_empty());
+    }
+
+    #[test]
+    fn ic_ice_bayrak_yolu_dogru_kurulur() {
+        let metin = "a:\n  b:\n    c: true\nd: false\ne:\n  f: true\n";
+        let bayraklar = bayraklari_topla(metin);
+
+        assert_eq!(bayraklar.get("a.b.c"), Some(&true));
+        assert_eq!(bayraklar.get("d"), Some(&false));
+        assert_eq!(bayraklar.get("e.f"), Some(&true));
+        assert_eq!(bayraklar.len(), 3);
+    }
+
+    #[test]
+    fn kapsam_cikisinda_yol_kirilmaz() {
+        // İkinci bölüme geçince önceki kapsam yığından atılmalı.
+        let metin = "birinci:\n  ic: true\nikinci:\n  ic: true\n";
+        let bayraklar = bayraklari_topla(metin);
+
+        assert_eq!(bayraklar.get("birinci.ic"), Some(&true));
+        assert_eq!(bayraklar.get("ikinci.ic"), Some(&true));
+        assert_eq!(bayraklar.len(), 2, "aynı adlı anahtarlar karışmamalı");
+    }
+
+    #[test]
+    fn tirnakli_ve_yorumlu_bayrak_okunur() {
+        let metin = "a: \"true\"\nb: 'false'\nc: true  # açıklama\n";
+        let bayraklar = bayraklari_topla(metin);
+
+        assert_eq!(bayraklar.get("a"), Some(&true));
+        assert_eq!(bayraklar.get("b"), Some(&false));
+        assert_eq!(bayraklar.get("c"), Some(&true));
+    }
+
+    #[test]
+    fn bayrak_olmayan_deger_toplanmaz() {
+        let metin = "sayi: 42\nmetin: merhaba\nbayrak: true\n";
+        let bayraklar = bayraklari_topla(metin);
+
+        assert_eq!(bayraklar.len(), 1);
+        assert!(bayraklar.contains_key("bayrak"));
+    }
+
+    #[test]
+    fn soz_dizimi_suphesi_kapanan_bayragi_da_ezer() {
+        let onceki = "memory:\n  memory_enabled: true\n";
+        let guncel = "memory:\n\tmemory_enabled: false\n";
+
+        let r = nobet_tut(onceki, guncel, 100).unwrap();
+
+        assert_eq!(r.suphe, SuphePuani::SozDizimiSuphesi);
     }
 
     #[test]

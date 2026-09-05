@@ -143,6 +143,7 @@ fn json_uret(r: &NobetRaporu) -> String {
         "guncel_boyut": r.guncel_boyut,
         "kaybolan_anahtarlar": r.kaybolan_anahtarlar,
         "eklenen_anahtarlar": r.eklenen_anahtarlar,
+        "kapanan_bayraklar": r.kapanan_bayraklar,
         "gerekceler": r.gerekceler,
         "farklar_kirpildi": r.farklar_kirpildi,
         "farklar": r.farklar.iter().map(|f| serde_json::json!({
