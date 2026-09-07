@@ -17,12 +17,13 @@ mod arama;
 use arama::{Belge, Indeks};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::time::Instant;
 use thiserror::Error;
 use turso::{params, Builder, Connection};
 
-/// Varsayılan veritabanı yolu. `TURSO_DB_PATH` ile ezilebilir.
-const DB_PATH: &str = "kutup_kutuphane.db";
+/// Kütüphane dosyasının adı. Aranacak yerler için `kutuphane_yolu`.
+const DB_ADI: &str = "kutup_kutuphane.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
@@ -107,9 +108,59 @@ fn kisalt(s: &str, azami: usize) -> String {
     format!("{kesik}… (+{} karakter)", toplam - azami)
 }
 
+/// Kütüphaneyi bul: önce `TURSO_DB_PATH`, sonra çalışma dizini, sonra bilinen yeri.
+///
+/// Eski hâli çıplak bir göreli addı ve `Builder::new_local` olmayan dosyayı
+/// **yaratır**. Kütüphane dizini dışından çalıştırınca sessizce boş bir DB
+/// açılıyor, komut "no such table: yetenekler" diye düşüyor ve geride bir
+/// çöp dosya kalıyordu — okuyan kişiye kütüphane bozukmuş gibi görünüyor.
+/// Bulunamadıysa yaratmak değil, nereye baktığını söyleyip durmak doğrusu.
+fn kutuphane_yolu() -> std::result::Result<PathBuf, String> {
+    let mut denenen = Vec::new();
+    let mut aday = |p: PathBuf| -> Option<PathBuf> {
+        if p.is_file() {
+            return Some(p);
+        }
+        denenen.push(p.display().to_string());
+        None
+    };
+
+    if let Ok(v) = std::env::var("TURSO_DB_PATH") {
+        // Açıkça verilmişse tahmin yürütme: ya odur ya hata.
+        let p = PathBuf::from(&v);
+        return if p.is_file() {
+            Ok(p)
+        } else {
+            Err(format!("TURSO_DB_PATH bir dosyayı göstermiyor: {v}"))
+        };
+    }
+    if let Some(p) = aday(PathBuf::from(DB_ADI)) {
+        return Ok(p);
+    }
+    for kok in ["USERPROFILE", "HOME"] {
+        if let Ok(h) = std::env::var(kok) {
+            let p = PathBuf::from(h)
+                .join("Desktop")
+                .join("hermes yazılım")
+                .join("kutuphane")
+                .join(DB_ADI);
+            if let Some(p) = aday(p) {
+                return Ok(p);
+            }
+        }
+    }
+    Err(format!(
+        "kütüphane bulunamadı. Bakılan yerler:\n  {}\n\
+         TURSO_DB_PATH ile açıkça gösterebilirsin.",
+        denenen.join("\n  ")
+    ))
+}
+
 async fn baglan() -> Result<Connection> {
-    let yol = std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.to_string());
-    let db = Builder::new_local(&yol).build().await?;
+    let yol = kutuphane_yolu().map_err(CliError::Girdi)?;
+    let db = Builder::new_local(yol.to_string_lossy().as_ref())
+        .build()
+        .await?;
     Ok(db.connect()?)
 }
 
@@ -377,7 +428,11 @@ async fn main() -> Result<()> {
             println!("\nKÜTÜPHANE İSTATİSTİĞİ\n{}", "=".repeat(65));
             println!(
                 "  Veritabanı  : {}",
-                std::env::var("TURSO_DB_PATH").unwrap_or_else(|_| DB_PATH.into())
+                // Cozulen yol, ham env degeri degil: "hangi dosyaya baktin"
+                // sorusunun cevabi bu satirsa, tahmini degil gercegi yazmali.
+                kutuphane_yolu()
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|e| e)
             );
             println!("  Yetenek     : {yetenek}");
             println!("  Tekmil      : {tekmil}");
@@ -411,6 +466,27 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod testler {
     use super::*;
+
+    // Asil gerileme: eskiden olmayan yol sessizce YARATILIYORDU. Artik hata
+    // vermeli ve geride dosya birakmamali.
+    #[test]
+    fn olmayan_kutuphane_yaratilmaz_hata_verir() {
+        let yok = std::env::temp_dir().join("ibnunnedim-olmayan-kutuphane.db");
+        let _ = std::fs::remove_file(&yok);
+        // SAFETY: cargo testleri paralel kosar, yani "tek is parcacigi" degil.
+        // Gecerli kilan sey su: TURSO_DB_PATH'i okuyan baska bir test yok.
+        // Boyle bir test eklenirse ikisi de bu degiskeni ceker; o zaman ya
+        // serial_test ya da yol cozumunu parametre alan bir ic fonksiyon gerekir.
+        unsafe { std::env::set_var("TURSO_DB_PATH", &yok) };
+        let sonuc = kutuphane_yolu();
+        unsafe { std::env::remove_var("TURSO_DB_PATH") };
+
+        assert!(sonuc.is_err(), "olmayan yol icin Ok dondu: {sonuc:?}");
+        assert!(
+            !yok.exists(),
+            "yol cozumu dosyayi yaratti — Builder::new_local'a dusmus olmali"
+        );
+    }
 
     #[test]
     fn graf_argumanlari_kur_build_der() {

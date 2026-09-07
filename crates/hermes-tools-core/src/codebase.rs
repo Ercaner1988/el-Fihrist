@@ -43,7 +43,7 @@ pub fn analyze_file_content(filename: &str, content: &str) -> ToolResult<Languag
         )));
     }
 
-    let ext = filename.split('.').last().unwrap_or("").to_lowercase();
+    let ext = filename.split('.').next_back().unwrap_or("").to_lowercase();
     let lang = match ext.as_str() {
         "rs" => "Rust",
         "py" => "Python",
@@ -133,7 +133,7 @@ pub fn summarize_codebase(stats: Vec<LanguageStat>) -> ToolResult<CodebaseSummar
     }
 
     let mut languages: Vec<LanguageStat> = map.into_values().collect();
-    languages.sort_by(|a, b| b.total_lines.cmp(&a.total_lines));
+    languages.sort_by_key(|l| std::cmp::Reverse(l.total_lines));
 
     Ok(CodebaseSummary {
         total_files,

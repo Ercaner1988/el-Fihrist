@@ -31,7 +31,11 @@ pub struct BadgeInfo {
 }
 
 impl BadgeInfo {
-    pub fn new(label: impl Into<String>, message: impl Into<String>, color: impl Into<String>) -> Self {
+    pub fn new(
+        label: impl Into<String>,
+        message: impl Into<String>,
+        color: impl Into<String>,
+    ) -> Self {
         Self {
             label: label.into(),
             message: message.into(),
@@ -49,7 +53,10 @@ impl BadgeInfo {
         let clean_label = escape_badge_text(&self.label);
         let clean_msg = escape_badge_text(&self.message);
         let clean_color = escape_badge_text(&self.color);
-        format!("https://img.shields.io/badge/{}-{}-{}.svg", clean_label, clean_msg, clean_color)
+        format!(
+            "https://img.shields.io/badge/{}-{}-{}.svg",
+            clean_label, clean_msg, clean_color
+        )
     }
 
     pub fn to_markdown(&self) -> String {
@@ -201,7 +208,9 @@ pub fn parse_cargo_toml_content(content: &str) -> ProjectMeta {
                 match key {
                     "name" if meta.name.is_empty() => meta.name = val.to_string(),
                     "version" if meta.version == "0.1.0" => meta.version = val.to_string(),
-                    "description" if meta.description.is_empty() => meta.description = val.to_string(),
+                    "description" if meta.description.is_empty() => {
+                        meta.description = val.to_string()
+                    }
                     "license" => meta.license = val.to_string(),
                     "authors" => {
                         // authors = ["Adı Soyadı <eposta>"]
@@ -424,7 +433,10 @@ pub fn generate_yolbulucu_readme(meta: &ProjectMeta) -> MultilingualReadme {
     let all_badges = build_standard_badges(meta);
     let badge_str = format_badges(&all_badges);
 
-    let install_cmd = meta.install_command.as_deref().unwrap_or("cargo add <paket-adi>");
+    let install_cmd = meta
+        .install_command
+        .as_deref()
+        .unwrap_or("cargo add <paket-adi>");
     let usage_cmd = meta.usage_command.as_deref().unwrap_or("cargo run");
     let test_cmd = meta.test_command.as_deref().unwrap_or("cargo test");
 
@@ -440,7 +452,10 @@ pub fn generate_yolbulucu_readme(meta: &ProjectMeta) -> MultilingualReadme {
             parts.push(format!("* Twitter: [@{}](https://twitter.com/{})", tw, tw));
         }
         if let Some(ref li) = meta.author_linkedin {
-            parts.push(format!("* LinkedIn: [@{}](https://linkedin.com/in/{})", li, li));
+            parts.push(format!(
+                "* LinkedIn: [@{}](https://linkedin.com/in/{})",
+                li, li
+            ));
         }
         if let Some(ref ws) = meta.author_website {
             parts.push(format!("* Web Sitesi: {}", ws));
@@ -464,7 +479,10 @@ pub fn generate_yolbulucu_readme(meta: &ProjectMeta) -> MultilingualReadme {
             parts.push(format!("* Twitter: [@{}](https://twitter.com/{})", tw, tw));
         }
         if let Some(ref li) = meta.author_linkedin {
-            parts.push(format!("* LinkedIn: [@{}](https://linkedin.com/in/{})", li, li));
+            parts.push(format!(
+                "* LinkedIn: [@{}](https://linkedin.com/in/{})",
+                li, li
+            ));
         }
         if let Some(ref ws) = meta.author_website {
             parts.push(format!("* Website: {}", ws));
@@ -671,8 +689,8 @@ fn replace_section_content(
     let header_level = header_line.chars().take_while(|c| *c == '#').count();
 
     let mut end_line = lines.len();
-    for i in (start_line + 1)..lines.len() {
-        let line = lines[i].trim();
+    for (i, ham) in lines.iter().enumerate().skip(start_line + 1) {
+        let line = ham.trim();
         if line.starts_with("---") {
             end_line = i;
             break;
@@ -687,8 +705,8 @@ fn replace_section_content(
     }
 
     let mut result = String::new();
-    for i in 0..=start_line {
-        result.push_str(lines[i]);
+    for line in lines.iter().take(start_line + 1) {
+        result.push_str(line);
         result.push('\n');
     }
 
@@ -788,13 +806,13 @@ mod testler {
             documentation_url: Some("https://docs.yerel/fihrist".into()),
             homepage_url: Some("https://fihrist.yerel".into()),
             issues_url: Some("https://github.com/Ercaner1988/el-fihrist/issues".into()),
-            contributing_url: Some("https://github.com/Ercaner1988/el-fihrist/blob/main/CONTRIBUTING.md".into()),
+            contributing_url: Some(
+                "https://github.com/Ercaner1988/el-fihrist/blob/main/CONTRIBUTING.md".into(),
+            ),
             install_command: Some("cargo add el-fihrist".into()),
             usage_command: Some("cargo run -p ibnunnedim-cli".into()),
             test_command: Some("cargo test -p hermes-tools-core".into()),
-            badges: vec![
-                BadgeInfo::new("Rust", "100%", "orange"),
-            ],
+            badges: vec![BadgeInfo::new("Rust", "100%", "orange")],
             co_authors: vec![
                 "İbnünnedîm (hermes-agent)".into(),
                 "Mihenk (Claude Opus 5)".into(),
@@ -827,7 +845,10 @@ mod testler {
     fn badge_kacis_ve_url_testi() {
         let badge = BadgeInfo::new("Maintained?", "yes", "brightgreen");
         let url = badge.to_shields_url();
-        assert_eq!(url, "https://img.shields.io/badge/Maintained?-yes-brightgreen.svg");
+        assert_eq!(
+            url,
+            "https://img.shields.io/badge/Maintained?-yes-brightgreen.svg"
+        );
 
         let badge_with_dash = BadgeInfo::new("my-crate", "v1.0.0-beta_1", "blue");
         let clean_label = escape_badge_text(&badge_with_dash.label);
@@ -853,7 +874,10 @@ repository = "https://github.com/ornek/ornek-paket"
         assert_eq!(meta.description, "Harika bir Rust kütüphanesi");
         assert_eq!(meta.license, "Apache-2.0");
         assert_eq!(meta.author, "Test Geliştirici <test@ornek.com>");
-        assert_eq!(meta.install_command, Some("cargo add ornek-paket".to_string()));
+        assert_eq!(
+            meta.install_command,
+            Some("cargo add ornek-paket".to_string())
+        );
     }
 
     #[test]
@@ -876,7 +900,10 @@ repository = "https://github.com/ornek/ornek-paket"
         assert_eq!(meta.name, "ornek-js");
         assert_eq!(meta.version, "2.0.0");
         assert_eq!(meta.author, "JS Uzmanı");
-        assert_eq!(meta.author_website, Some("https://js.ornek.com".to_string()));
+        assert_eq!(
+            meta.author_website,
+            Some("https://js.ornek.com".to_string())
+        );
         assert_eq!(meta.install_command, Some("npm install".to_string()));
         assert_eq!(meta.test_command, Some("npm test".to_string()));
         assert_eq!(meta.usage_command, Some("npm start".to_string()));
