@@ -36,3 +36,6 @@
 graphify-rs.toml
 graphify-rs-out/
 .graphify-nobet.pid
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
