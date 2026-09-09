@@ -52,6 +52,20 @@ done
   exit 0
 }
 
+# Ayni dar ortam sorunu, bu kez rc.exe icin. turso_sdk_kit'in build.rs'i once
+# PATH'e, sonra ProgramFiles(x86)'ya bakar; GitHub Desktop ikisini de vermez ve
+# derleme "rc.exe was not found in PATH and ProgramFiles(x86) is not set" ile
+# duser — oysa ayni komut normal kabukta yesil. Windows Kits'in en yeni x64
+# bin'ini PATH'e ekle. Bulunamazsa dokunma: Linux/CI bu daldan hic gecmez.
+# ponytail: yol C: varsayar; Kits baska surucudeyse burasi guncellenir.
+command -v rc.exe >/dev/null 2>&1 || {
+  RC_DIR=""
+  for k in "/c/Program Files (x86)/Windows Kits/10/bin/"*/x64; do
+    [ -x "$k/rc.exe" ] && RC_DIR="$k"
+  done
+  [ -n "$RC_DIR" ] && { PATH="$RC_DIR:$PATH"; export PATH; }
+}
+
 echo "pre-push: CI'in kontrolleri kosuyor (ag yok)…" >&2
 basla=$(date +%s)
 
