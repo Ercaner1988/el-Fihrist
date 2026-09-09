@@ -9,10 +9,12 @@
 //! ibnunnedim info
 //! ibnunnedim graph --kur
 //! ibnunnedim graph "atif dogrulama nerede gecer"
+//! ibnunnedim mcp   # stdio MCP sunucusu (ajan/istemci bağlanır)
 //! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
 //! ```
 
 mod arama;
+mod mcp;
 
 use arama::{Belge, Indeks};
 use clap::Parser;
@@ -56,6 +58,8 @@ enum Command {
         #[arg(long)]
         kur: bool,
     },
+    /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
+    Mcp,
     /// Tekmil puanı ekler
     Tekmil {
         #[arg(long)]
@@ -449,6 +453,7 @@ async fn main() -> Result<()> {
         }
         // Yukarıda ele alındı; buraya düşmez.
         Command::Graph { .. } => unreachable!("graf komutu DB bağlantısından önce ele alınır"),
+        Command::Mcp => mcp::calistir(&conn).await?,
         Command::Tekmil {
             ajan,
             yetenek,

@@ -28,23 +28,21 @@
 
 * **Saf Rust BM25 Arama Motoru:** Bellek içi, Türkçe karakter katlamalı (`İ→i`, `I→ı`, `Ş→ş`) yüksek hızlı alaka arama motoru.
 * **Turso / SQLite Çekirdeği:** 140+ dış yetenek verisi, yerleşik Rust araçları ve taşınabilir SQLite veritabanı (`kutup_kutuphane.db`).
-* **Çoklu Crate Mimarisi:** CLI, Core, Turso-DSL, React ve TLS Sunucu modülleriyle modüler Rust yapısı.
+* **Çoklu Crate Mimarisi:** CLI (`ibnunnedim-cli`) ve Core (`hermes-tools-core`) olmak üzere iki crate'lik modüler Rust yapısı.
 * **Katı Doğrulama (Maşa Döngüsü):** D1-D3 ve R2 Altın hygiene denetim kapılarıyla güvenli kod ve tekmil denetimi.
 
 ##### 🧰 Mevcut Yetenekler ve Sistem Modülleri
-Çekirdek kütüphanede (`hermes-tools-core` ve çalışma alanında) an itibarıyla doğrudan kullanılabilen 12 temel yetenek ve modül bulunmaktadır:
+`hermes-tools-core` KÜTÜPHANESİNDE 10 modül bulunur. Bunlar Rust API'sidir; `ibnunnedim` ikilisi bu crate'e bağlı değildir — ikilinin komutları için aşağıdaki Kullanım bölümüne bakın.
 1. **citation:** Tez ve akademik metinler için Zopay altyapısıyla atıf doğrulama ve raporlama (`verify_citations`).
 2. **codebase:** Kaynak kod özetleme, dosya içerik analizi ve kalite tespiti (`analyze_file_content`).
 3. **docx:** MS Word XML katmanı ayrıştırma ve düşük form faktörlü okuma (`extract_paragraphs_from_xml`).
 4. **extract:** Akıllı, gürültüden arındırılmış temiz HTML ve içerik ayıklama motoru (`html_ayikla`).
-5. **masa_dongusu:** 6 kapılı doğrulama ve otonom kapı geçiş kilit mekanizmaları (`validate_masa_dongusu`).
+5. **masa_dongusu:** 4 kapılı doğrulama (D1, D2, D3, R2) ve kapı geçiş raporu (`validate_masa_dongusu`).
 6. **multilingual:** Standartlara oturtulmuş, paralel çok dilli README motoru ve kalite denetleyicisi.
-7. **router:** Ajan alt ağları yönlendirmesi, semantik çizge mimarisi (graph) ve Edge/Route yönetimi (`RouteResult`).
+7. **router:** Ajan alt ağları yönlendirmesi, çizge üzerinde Dijkstra ile en kısa yol ve Edge/Route yönetimi (`RouteResult`).
 8. **rules_checker:** Gelişmiş Rust kaynak kod kuralları, kalite standartları denetçisi (`check_rust_code_rules`).
-9. **session:** İletişim oturumları ve hafıza verileri için geçmiş yapılandırılmış BM25 sorgu modülü (`search_session`).
+9. **session:** İletişim oturumları ve hafıza verileri için alt dize (substring) eşleşmeli arama modülü (`search_session`).
 10. **skillopt:** Ajan yeteneklerinin otonom evrimi, puan matrisli doğrulama (Soft/Hard gates) komut altyapısı.
-11. **turso-dsl:** Edge SQLite yapıları için özelleştirilmiş şema tanım komutları ve soyutlama katmanı bağımlılıkları.
-12. **hermes-react & hermes-tls:** Dış sistemlerle ajanın güvenli asenkron etkileşimine imkân tanıyan sunucu modülleri.
 
 ---
 
@@ -52,7 +50,7 @@
 
 ##### Bağımlılıklar & Crate'ler
 * **Rust 1.63+** (Edition 2021)
-* Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`, `crates/turso-dsl`, `crates/hermes-react`, `crates/hermes-tls-server`
+* Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`
 * Sistem Veritabanı: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
 
 ##### Derleme ve Çalıştırma
@@ -68,6 +66,9 @@ cargo build --release --workspace
 
 # Tekmil puanı verme
 ./target/release/ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
+
+# Stdio MCP sunucusu olarak koş (ajan/istemci bağlanır)
+./target/release/ibnunnedim mcp
 ```
 
 ---
@@ -75,13 +76,14 @@ cargo build --release --workspace
 #### 🏗️ Altyapı ve Çalışma Mantığı
 * **BM25 İndeksleme:** Veritabanındaki tüm yetenekler tek sorguda okunup bellek içinde BM25 indeksine alınır. UTF-8 kararlı `kisalt` fonksiyonu ile güvenle sınırlandırılır.
 * **Veritabanı Entegrasyonu:** `turso::Builder::new_local` sürücüsüyle zero-copy uzak & yerel eşitlemeli SQLite bağlantısı kurulur.
-* **Katman Araçları:** `tokio` (asenkron çalışma zamanı), `clap` (CLI argüman ayrıştırcı), `axum` & `tower` (HTTP/REST sunucuları), `serde_json` (manifest işlemleri).
+* **Katman Araçları:** `tokio` (asenkron çalışma zamanı), `clap` (CLI argüman ayrıştırıcı), `serde_json` (MCP protokolü ve manifest işlemleri).
 
 ---
 
 #### 🗺️ Yol Haritası
 - [x] Saf Rust BM25 arama motoru ve Türkçe karakter katlaması.
 - [x] Turso SQLite `kutup_kutuphane.db` entegrasyonu ve tekmil scoring mekanizması.
+- [x] Ajanlar için stdio MCP (JSON-RPC 2.0) sunucusu — `ibnunnedim mcp`, 4 araç.
 - [ ] Anlambilimsel (heuristic, hermeneutic, epistemologic, moral vb.) canlı ve değişken veritabanı/yetenek sınıflandırma yapısının kurularak, otonom ve doğrudan nokta atışı hedef bulan, çok daha hızlı araç çağırma (tool calling) mimarisine geçilmesi.
 - [ ] Ajanlar için yerel MCP (Model Context Protocol) GraphQL/gRPC köprüsü inşası.
 - [ ] Otonom SkillOpt gece evrim döngüsü (sleep engine) ile Turso'nun doğrudan modifikasyonu.

@@ -28,23 +28,21 @@
 
 * **纯 Rust BM25 搜索引擎:** 高速的内存相关性搜索引擎，支持土耳其语字符折叠（例如 `İ→i`, `I→ı`, `Ş→ş`）。
 * **Turso / SQLite 核心:** 便携式 SQLite 数据库（`kutup_kutuphane.db`），包含 140 多个外部技能及内置 Rust 工具。
-* **多 Crate 架构:** 模块化的 Rust 结构，包括 CLI、Core、Turso-DSL、React 和 TLS Server 模块。
+* **多 Crate 架构:** 由 CLI (`ibnunnedim-cli`) 和 Core (`hermes-tools-core`) 两个 crate 组成的模块化 Rust 结构。
 * **严格验证机制 (Maşa Döngüsü):** 通过 D1-D3 门和 R2 黄金卫生检查门实现安全的代码和报告审计。
 
 ##### 🧰 可用技能与系统模块
-核心库（`hermes-tools-core` 及工作区）当前提供 12 个可直接使用的核心技能和模块：
+`hermes-tools-core` 库提供 10 个模块。它们是 Rust API；`ibnunnedim` 二进制文件并不依赖该 crate —— 二进制文件的命令请参见下方的使用章节。
 1. **citation:** 基于 Zopay 基础设施的论文和学术文本引用验证与报告（`verify_citations`）。
 2. **codebase:** 源代码摘要、文件内容分析和质量检测（`analyze_file_content`）。
 3. **docx:** MS Word XML 层解析及轻量级读取（`extract_paragraphs_from_xml`）。
 4. **extract:** 智能、无噪音的纯净 HTML 和内容提取引擎（`html_ayikla`）。
-5. **masa_dongusu:** 6 门验证机制及自治式门过渡锁定机制（`validate_masa_dongusu`）。
+5. **masa_dongusu:** 4 门验证机制（D1、D2、D3、R2）及门过渡报告（`validate_masa_dongusu`）。
 6. **multilingual:** 标准化的并行多语言 README 引擎和质量控制器。
-7. **router:** 智能体子网路由、语义图架构以及 Edge/Route 管理（`RouteResult`）。
+7. **router:** 智能体子网路由、图上的 Dijkstra 最短路径以及 Edge/Route 管理（`RouteResult`）。
 8. **rules_checker:** 高级 Rust 源代码规则与质量标准审核器（`check_rust_code_rules`）。
-9. **session:** 针对通信会话和内存数据的历史结构化 BM25 查询模块（`search_session`）。
+9. **session:** 针对通信会话和内存数据的子串匹配搜索模块（`search_session`）。
 10. **skillopt:** 智能体技能自治进化模块；带评分矩阵的软/硬门验证命令基础设施。
-11. **turso-dsl:** 针对 Edge SQLite 结构的自定义架构定义命令及抽象层依赖。
-12. **hermes-react & hermes-tls:** 允许智能体与外部系统进行安全异步交互的服务器模块。
 
 ---
 
@@ -52,7 +50,7 @@
 
 ##### 依赖与 Crates
 * **Rust 1.63+** (Edition 2021)
-* 工作区 Crates: `ibnunnedim-cli`, `crates/hermes-tools-core`, `crates/turso-dsl`, `crates/hermes-react`, `crates/hermes-tls-server`
+* 工作区 Crates: `ibnunnedim-cli`, `crates/hermes-tools-core`
 * 系统数据库: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
 
 ##### 构建与执行
@@ -68,6 +66,9 @@ cargo build --release --workspace
 
 # 提交报告 (Tekmil) 分数
 ./target/release/ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Passed outer gauntlet"
+
+# 作为 stdio MCP 服务器运行（供智能体/客户端连接）
+./target/release/ibnunnedim mcp
 ```
 
 ---
@@ -75,13 +76,14 @@ cargo build --release --workspace
 #### 🏗️ 架构与工作原理
 * **BM25 索引构建:** 数据库中的所有技能均单次查询读取，并加载到内存 BM25 索引中。使用稳定的 UTF-8 `kisalt` 函数安全地截断文本。
 * **数据库集成:** 使用 `turso::Builder::new_local` 驱动程序建立零拷贝的远程及本地同步 SQLite 连接。
-* **分层工具:** `tokio` (异步运行时), `clap` (CLI 参数解析器), `axum` & `tower` (HTTP/REST 服务器), `serde_json` (配置清单操作).
+* **分层工具:** `tokio` (异步运行时), `clap` (CLI 参数解析器), `serde_json` (MCP 协议与配置清单操作).
 
 ---
 
 #### 🗺️ 路线图
 - [x] 纯 Rust BM25 搜索引擎，支持土耳其语字符折叠。
 - [x] Turso SQLite `kutup_kutuphane.db` 集成与 Tekmil 计分机制。
+- [x] 面向智能体的 stdio MCP (JSON-RPC 2.0) 服务器 —— `ibnunnedim mcp`，4 个工具。
 - [ ] 向语义（启发式、诠释学、认识论、道德等）动态数据库/技能分类结构过渡，实现自治、指哪打哪的工具调用架构。
 - [ ] 为智能体构建本地 MCP (Model Context Protocol) GraphQL/gRPC 桥接。
 - [ ] 通过自治式 SkillOpt 睡眠引擎直接修改 Turso。

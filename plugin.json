@@ -6,14 +6,10 @@
   "type": "module",
   "mcpServers": {
     "el-fihrist": {
-      "command": "./target/release/ibnunnedim",
+      "command": "ibnunnedim",
       "args": [
-        "search",
-        "rust"
-      ],
-      "env": {
-        "TURSO_DB_PATH": "./kutup_kutuphane.db"
-      }
+        "mcp"
+      ]
     },
     "graphify": {
       "command": "graphify-rs",

@@ -1,5 +1,5 @@
 [workspace]
-members = ["ibnunnedim-cli", "crates/turso-dsl", "crates/hermes-react", "crates/hermes-tls-server", "crates/hermes-tools-core"]
+members = ["ibnunnedim-cli", "crates/hermes-tools-core"]
 resolver = "2"
 
 [workspace.package]
@@ -13,9 +13,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { version = "1.43", features = ["full"] }
-axum = "0.7"
-tower = "0.4"
 tracing = "0.1"
-tracing-subscriber = "0.3"
 thiserror = "2.0"
 
