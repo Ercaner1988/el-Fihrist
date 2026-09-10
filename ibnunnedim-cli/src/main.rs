@@ -10,12 +10,14 @@
 //! ibnunnedim graph --kur
 //! ibnunnedim graph "atif dogrulama nerede gecer"
 //! ibnunnedim mcp   # stdio MCP sunucusu (ajan/istemci bağlanır)
+//! ibnunnedim tara ~/Desktop/Github   # depoları kataloğa yaz
 //! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
 //! ```
 
 mod arama;
 mod gomme;
 mod mcp;
+mod tara;
 
 use arama::{Belge, Indeks};
 use clap::Parser;
@@ -27,6 +29,9 @@ use turso::{params, Builder, Connection};
 
 /// Kütüphane dosyasının adı. Aranacak yerler için `kutuphane_yolu`.
 const DB_ADI: &str = "kutup_kutuphane.db";
+
+/// Depo kataloğu — ana kütüphanenin yanında ayrı dosya. Gerekçesi `depo_baglan`.
+const DEPO_DB_ADI: &str = "kutup_depolar.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
@@ -73,6 +78,18 @@ enum Command {
     },
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
     Mcp,
+    /// Verilen kökler altındaki git depolarını kataloğa yazar (depo başına TEK satır).
+    Tara {
+        /// Taranacak kökler. Kişisel yol depoya gömülmesin diye varsayılan YOK.
+        #[arg(required = true)]
+        koklar: Vec<PathBuf>,
+        /// Kökten itibaren kaç kat inilir.
+        #[arg(long, default_value = "3")]
+        derinlik: usize,
+        /// Yazma; yalnız ne olacağını göster.
+        #[arg(long)]
+        kuru: bool,
+    },
     /// Tekmil puanı ekler
     Tekmil {
         #[arg(long)]
@@ -181,38 +198,18 @@ async fn baglan() -> Result<Connection> {
     Ok(db.connect()?)
 }
 
-/// Saf Rust BM25 ile bellek içi arama yapar.
+/// Bir sorgunun satırlarını üç PARALEL diziye okur.
 ///
-/// Veritabanındaki tüm yetenek kayıtlarını tek sorgu ile okur, `Indeks::kur` ile
-/// bellekte BM25 indeksini oluşturur ve `ara` ile en yüksek puanlı `limit` kaydı döndürür.
-/// BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
-///
-/// Gömme sütunu yoksa ya da imzası tutmuyorsa o satır KOSİNÜSE GİRMEZ ama
-/// BM25'te kalır — hiçbir kayıt vektörü eksik diye kaybolmaz. Kullanılabilir
-/// vektör hiç yoksa saf BM25'e düşer ve bunu stderr'e YAZAR: sessiz düşüş,
-/// "arama bozuldu" diye görünen ama sebebi görünmeyen hatanın ta kendisidir.
-async fn search_skills(
+/// Ayrı fonksiyon çünkü gövde iki DOSYADAN geliyor (`yetenekler` + depo
+/// kataloğu) ve iki kopya okuma döngüsü tutmak, ikisinden birinin sessizce
+/// kaymasını beklemek demek. Sütun sırası sabit: id, ad, açıklama, tam metin,
+/// puan, kategori, [gomme, gomme_imza, icerik_hash].
+async fn satirlari_oku(
     conn: &Connection,
-    query: &str,
-    limit: usize,
+    sql: &str,
+    gomme_var: bool,
     kip: gomme::Cekirdek,
-) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
-    let baslangic = Instant::now();
-
-    // gomme/gomme_imza göç edilmemiş DB'de yoktur; o yüzden şema önce yoklanır.
-    let gomme_var = gomme_sutunu_var(conn).await?;
-    let sql = if gomme_var {
-        r#"
-        SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori,
-               gomme, gomme_imza, icerik_hash
-        FROM yetenekler
-    "#
-    } else {
-        r#"
-        SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori
-        FROM yetenekler
-    "#
-    };
+) -> Result<(Vec<Belge>, Vec<Skill>, Vec<Option<Vec<f32>>>)> {
     let mut satirlar = conn.query(sql, ()).await?;
     let mut belgeler = Vec::new();
     let mut skill_map = Vec::new();
@@ -260,6 +257,62 @@ async fn search_skills(
             basari_puani_ort,
             kategori,
         });
+    }
+    Ok((belgeler, skill_map, vektorler))
+}
+
+/// Saf Rust BM25 ile bellek içi arama yapar.
+///
+/// Veritabanındaki tüm yetenek kayıtlarını tek sorgu ile okur, `Indeks::kur` ile
+/// bellekte BM25 indeksini oluşturur ve `ara` ile en yüksek puanlı `limit` kaydı döndürür.
+/// BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
+///
+/// Gömme sütunu yoksa ya da imzası tutmuyorsa o satır KOSİNÜSE GİRMEZ ama
+/// BM25'te kalır — hiçbir kayıt vektörü eksik diye kaybolmaz. Kullanılabilir
+/// vektör hiç yoksa saf BM25'e düşer ve bunu stderr'e YAZAR: sessiz düşüş,
+/// "arama bozuldu" diye görünen ama sebebi görünmeyen hatanın ta kendisidir.
+async fn search_skills(
+    conn: &Connection,
+    query: &str,
+    limit: usize,
+    kip: gomme::Cekirdek,
+) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
+    let baslangic = Instant::now();
+
+    // gomme/gomme_imza göç edilmemiş DB'de yoktur; o yüzden şema önce yoklanır.
+    let gomme_var = gomme_sutunu_var(conn).await?;
+    let vektor_sutunlari = if gomme_var {
+        ", gomme, gomme_imza, icerik_hash"
+    } else {
+        ""
+    };
+    let (mut belgeler, mut skill_map, mut vektorler) = satirlari_oku(
+        conn,
+        &format!(
+            "SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori{vektor_sutunlari} \
+             FROM yetenekler"
+        ),
+        gomme_var,
+        kip,
+    )
+    .await?;
+
+    // Depo satırları AYRI DOSYADA (nedeni: `depo_baglan` belgesi). İki gövde
+    // aynı BM25 indeksine ve aynı füzyona girer; ayrım yalnız nereden okundukları.
+    if let Some(depo) = depo_baglan(false).await? {
+        let (b, s, v) = satirlari_oku(
+            &depo,
+            &format!(
+                "SELECT id, ad, aciklama, tam_metin_md, NULL, 'depo'{vektor_sutunlari} \
+                 FROM depolar"
+            ),
+            gomme_var,
+            kip,
+        )
+        .await?;
+        belgeler.extend(b);
+        skill_map.extend(s);
+        vektorler.extend(v);
     }
 
     let toplam_kayit = belgeler.len();
@@ -488,15 +541,19 @@ async fn gomme_gocu(conn: &Connection) -> Result<bool> {
 }
 
 /// Vektörleri üretir. İmzası tutan satırlar atlanır (`--zorla` hepsini yeniler).
+///
+/// `tablo` ile çağrılır çünkü gövde iki tabloya yayılmış durumda
+/// (`yetenekler` + `depolar`); ikisinin de bu altı sütunu var.
 async fn gomme_uret(
     conn: &Connection,
+    tablo: &str,
     k: gomme::Cekirdek,
     zorla: bool,
 ) -> Result<(usize, usize, std::time::Duration)> {
     let baslangic = Instant::now();
     let mut satirlar = conn
         .query(
-            "SELECT id, ad, aciklama, tam_metin_md, icerik_hash, gomme_imza FROM yetenekler",
+            &format!("SELECT id, ad, aciklama, tam_metin_md, icerik_hash, gomme_imza FROM {tablo}"),
             (),
         )
         .await?;
@@ -528,12 +585,142 @@ async fn gomme_uret(
 
     for ((id, _, imza), v) in isler.iter().zip(vektorler.iter()) {
         conn.execute(
-            "UPDATE yetenekler SET gomme = ?, gomme_imza = ? WHERE id = ?",
+            &format!("UPDATE {tablo} SET gomme = ?, gomme_imza = ? WHERE id = ?"),
             params![gomme::blob_yaz(v), imza.as_str(), id.as_str()],
         )
         .await?;
     }
     Ok((isler.len(), toplam, baslangic.elapsed()))
+}
+
+/// Bir tablo var mı? Göç edilmemiş DB'de SELECT'i patlatmamak için.
+///
+/// Ad SQL'e gömülü, bağlı DEĞİL: Turso 0.7.2'de `sqlite_master` üzerinde
+/// parametre bağlaması eşleşme döndürmüyor (var olan tabloya "yok" dedi).
+/// Çağrı yerlerinin hepsi sabit — dışarıdan ad gelmiyor.
+async fn tablo_var(conn: &Connection, ad: &str) -> Result<bool> {
+    let mut satirlar = conn
+        .query(
+            &format!("SELECT 1 FROM sqlite_master WHERE type='table' AND name='{ad}'"),
+            (),
+        )
+        .await?;
+    Ok(satirlar.next().await?.is_some())
+}
+
+/// Depo kataloğu tablosu. `IF NOT EXISTS` YOK: Turso 0.7.2 onu yok sayıp yine
+/// de "table already exists" ile düşüyor; varlık `tablo_var` ile önce sorulur.
+const DEPO_TABLOSU: &str = "CREATE TABLE depolar (\
+     id TEXT PRIMARY KEY, ad TEXT NOT NULL, aciklama TEXT NOT NULL, \
+     tam_metin_md TEXT NOT NULL, icerik_hash TEXT NOT NULL, \
+     gomme BLOB, gomme_imza TEXT, \
+     guncelleme_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP)";
+
+/// Depo kataloğunu açar — ana kütüphanenin YANINDA, AYRI DOSYA.
+///
+/// NEDEN AYRI DOSYA (2026-09-10, gerçek DB'nin kopyaları üzerinde ölçüldü):
+/// ana kütüphanede fts5 SANAL TABLOLARI var (`yetenekler_fts` 145 satır,
+/// `kod_hazinesi_fts` 11) ve Turso 0.7.2 fts5'i uygulamıyor. İki sonucu var,
+/// ikisi de sessiz:
+///
+/// 1. **İndeksler sürdürülmüyor.** Aynı tablo iki DB'de kuruldu, tek fark
+///    fts5'in varlığıydı: fts5 yok → `integrity_check` = ok, `COUNT(*)` = 21;
+///    fts5 var → `wrong # of entries in index sqlite_autoindex_hedef_1`,
+///    `COUNT(*)` = 1 ama tam tarama 21 — indeks taraması yeni satırları
+///    GÖRMÜYOR. `REINDEX` de onarmıyor.
+/// 2. **Şema fts5'te kesiliyor.** Aynı dosyada kurulan `depolar` tablosu
+///    `sqlite_master`ın SONUNA (fts5 girdilerinden sonra) düştü; Turso onu
+///    bir sonraki bağlantıda "no such table" diye reddetti, oysa satır
+///    oradaydı ve SQLite 85 satırı okuyordu.
+///
+/// Bu fts5 tabloları ölü değil — Python tarafı (`ibnunnedim_cli.py`,
+/// `ilkleme.py`) onları kullanıyor, silinemezler. O yüzden depo satırları
+/// hiç oraya girmiyor: kendi dosyasında Turso indeksi de şemayı da düzgün
+/// yönetiyor ve `yetenekler` ile fts5 hiç dokunulmamış kalıyor.
+///
+/// `yarat` false ise dosya yoksa `None` döner — arama yanında çöp dosya
+/// bırakmasın (`kutuphane_yolu`nun aynı gerekçesi).
+async fn depo_baglan(yarat: bool) -> Result<Option<Connection>> {
+    let yol = kutuphane_yolu()
+        .map_err(CliError::Girdi)?
+        .with_file_name(DEPO_DB_ADI);
+    if !yol.is_file() && !yarat {
+        return Ok(None);
+    }
+    let db = Builder::new_local(yol.to_string_lossy().as_ref())
+        .build()
+        .await?;
+    Ok(Some(db.connect()?))
+}
+
+/// Depo satırlarını yazar: değişmeyeni atlar, değişeni günceller, yenisini ekler.
+///
+/// Kimlik `id` üzerinden ve tablo TEK SEFERDE okunup eşlenerek kurulur —
+/// indeks olmadığı için satır başına `WHERE id = ?` tam tarama demek olurdu.
+///
+/// `icerik_hash` değişince `gomme_imza` kendiliğinden bayatlar (o sütuna
+/// dokunulmaz) — bir sonraki `ibnunnedim gomme` vektörü yeniler.
+async fn depolari_yaz(
+    conn: &Connection,
+    satirlar: &[tara::DepoSatiri],
+    kuru: bool,
+) -> Result<(usize, usize, usize)> {
+    let mut mevcut: std::collections::HashMap<String, String> = Default::default();
+    if tablo_var(conn, "depolar").await? {
+        let mut oku = conn
+            .query("SELECT id, icerik_hash FROM depolar", ())
+            .await?;
+        while let Some(r) = oku.next().await? {
+            mevcut.insert(r.get::<String>(0)?, r.get::<String>(1).unwrap_or_default());
+        }
+    } else if !kuru {
+        conn.execute(DEPO_TABLOSU, ()).await?;
+    }
+
+    let (mut eklenen, mut guncellenen, mut ayni) = (0, 0, 0);
+    for s in satirlar {
+        match mevcut.get(&s.id) {
+            Some(h) if *h == s.icerik_hash => {
+                ayni += 1;
+                continue;
+            }
+            Some(_) => {
+                guncellenen += 1;
+                if !kuru {
+                    conn.execute(
+                        "UPDATE depolar SET ad = ?, aciklama = ?, tam_metin_md = ?, \
+                         icerik_hash = ?, guncelleme_tarihi = CURRENT_TIMESTAMP WHERE id = ?",
+                        params![
+                            s.ad.as_str(),
+                            s.aciklama.as_str(),
+                            s.tam_metin_md.as_str(),
+                            s.icerik_hash.as_str(),
+                            s.id.as_str()
+                        ],
+                    )
+                    .await?;
+                }
+            }
+            None => {
+                eklenen += 1;
+                if !kuru {
+                    conn.execute(
+                        "INSERT INTO depolar (id, ad, aciklama, tam_metin_md, icerik_hash) \
+                         VALUES (?, ?, ?, ?, ?)",
+                        params![
+                            s.id.as_str(),
+                            s.ad.as_str(),
+                            s.aciklama.as_str(),
+                            s.tam_metin_md.as_str(),
+                            s.icerik_hash.as_str()
+                        ],
+                    )
+                    .await?;
+                }
+            }
+        }
+    }
+    Ok((eklenen, guncellenen, ayni))
 }
 
 #[tokio::main]
@@ -611,6 +798,11 @@ async fn main() -> Result<()> {
                     .unwrap_or_else(|e| e)
             );
             println!("  Yetenek     : {yetenek}");
+            let depo = match depo_baglan(false).await? {
+                Some(d) => say(&d, "depolar").await?.to_string(),
+                None => "YOK (ibnunnedim tara <kök>)".to_string(),
+            };
+            println!("  Depo        : {depo}");
             println!("  Tekmil      : {tekmil}");
             println!("  Kod hazinesi: {kod}");
             println!(
@@ -629,14 +821,76 @@ async fn main() -> Result<()> {
             if gomme_gocu(&conn).await? {
                 println!("göç: gomme + gomme_imza sütunları eklendi.");
             }
-            let (yenilenen, toplam, sure) = gomme_uret(&conn, kip, zorla).await?;
-            println!(
-                "GÖMME [{}] {yenilenen}/{toplam} satır yenilendi · {:.1} ms",
-                kip.kip(),
-                sure.as_secs_f64() * 1000.0
-            );
+            // Gövde iki dosyaya yayılı; ikisi de vektörlenmeli, yoksa depo
+            // satırları BM25'te kalıp kosinüse hiç girmez.
+            let depo = depo_baglan(false).await?;
+            let hedefler: Vec<(&Connection, &str)> = std::iter::once((&conn, "yetenekler"))
+                .chain(depo.as_ref().map(|d| (d, "depolar")))
+                .collect();
+            for (c, t) in hedefler {
+                let (yenilenen, toplam, sure) = gomme_uret(c, t, kip, zorla).await?;
+                println!(
+                    "GÖMME [{}] {t}: {yenilenen}/{toplam} satır yenilendi · {:.1} ms",
+                    kip.kip(),
+                    sure.as_secs_f64() * 1000.0
+                );
+            }
         }
         Command::Mcp => mcp::calistir(&conn).await?,
+        Command::Tara {
+            koklar,
+            derinlik,
+            kuru,
+        } => {
+            let baslangic = Instant::now();
+            let mut satirlar: Vec<tara::DepoSatiri> = Vec::new();
+            let mut gorulen: std::collections::HashMap<String, PathBuf> = Default::default();
+            for kok in &koklar {
+                if !kok.is_dir() {
+                    return Err(CliError::Girdi(format!(
+                        "kök dizin değil: {}",
+                        kok.display()
+                    )));
+                }
+                for yol in tara::depolari_bul(kok, derinlik) {
+                    let Some(s) = tara::dizinden_satir(&yol) else {
+                        continue;
+                    };
+                    // Aynı ada sahip iki depo (örn. iki "turso" klonu) tek id'ye
+                    // düşer; ikincisi birincisini SESSİZCE ezerdi. Söyle, geç.
+                    if let Some(onceki) = gorulen.insert(s.id.clone(), yol.clone()) {
+                        eprintln!(
+                            "! ad çakışması '{}': {} yerine {} kullanılıyor",
+                            s.ad,
+                            onceki.display(),
+                            yol.display()
+                        );
+                        satirlar.retain(|v| v.id != s.id);
+                    }
+                    satirlar.push(s);
+                }
+            }
+            // `kuru` iken dosya YOKSA yaratma: kuru koşum diske dokunmamalı.
+            let depo = depo_baglan(!kuru).await?;
+            let (eklenen, guncellenen, ayni) = match &depo {
+                Some(d) => depolari_yaz(d, &satirlar, kuru).await?,
+                None => (satirlar.len(), 0, 0),
+            };
+            if kuru {
+                for s in &satirlar {
+                    println!("{}  —  {}", s.id, kisalt(&s.aciklama, 90));
+                }
+            }
+            println!(
+                "TARAMA{} {} depo · {eklenen} eklendi · {guncellenen} güncellendi · {ayni} değişmedi · {:.0} ms",
+                if kuru { " [KURU]" } else { "" },
+                satirlar.len(),
+                baslangic.elapsed().as_secs_f64() * 1000.0
+            );
+            if !kuru && eklenen + guncellenen > 0 {
+                println!("Vektörler bayat — çalıştır: ibnunnedim gomme");
+            }
+        }
         Command::Tekmil {
             ajan,
             yetenek,
