@@ -36,6 +36,11 @@ pub enum Cekirdek {
     #[default]
     #[value(name = "hash256")]
     Hash256,
+    /// `intfloat/multilingual-e5-small` (384 boyut, ONNX). Diller arası
+    /// hizalama tam olarak eğitildiği şey — (c) öbeğinin tek umudu.
+    #[cfg(feature = "onnx")]
+    #[value(name = "e5s384")]
+    E5s384,
 }
 
 impl Cekirdek {
@@ -44,12 +49,16 @@ impl Cekirdek {
     pub fn kip(self) -> &'static str {
         match self {
             Cekirdek::Hash256 => "hash256",
+            #[cfg(feature = "onnx")]
+            Cekirdek::E5s384 => "e5s384",
         }
     }
 
     pub fn boyut(self) -> usize {
         match self {
             Cekirdek::Hash256 => BOYUT_HASH,
+            #[cfg(feature = "onnx")]
+            Cekirdek::E5s384 => 384,
         }
     }
 
@@ -58,9 +67,15 @@ impl Cekirdek {
     /// gömme kanalının anlamadığı sorgularda 0,25-0,37 bandında güvenli
     /// görünen gürültü döndürdüğünü kaydetmiş. Normalize füzyonda bu taban
     /// onu bastırır; RRF'te bastıramazdık (RRF puan büyüklüğünü atar).
+    ///
+    /// E5 kosinüsleri DAR VE YÜKSEK bantta durur (ölçüldü: 0,76-0,90), yani
+    /// hash'in 0,05'i orada hiçbir şey elemez. Ama E5 için ÇALIŞAN bir eşik
+    /// de yok — gerekçe `E5_TABAN` sabitinde, ölçülen sayılarla.
     pub fn taban(self) -> f32 {
         match self {
             Cekirdek::Hash256 => 0.05,
+            #[cfg(feature = "onnx")]
+            Cekirdek::E5s384 => E5_TABAN,
         }
     }
 }
@@ -130,6 +145,90 @@ fn hash_gomme(metin: &str) -> Vec<f32> {
     v
 }
 
+/// E5 kosinüs gürültü tabanı: **0,0 — yani eleme YOK.** Tahmin değil, ölçüm.
+///
+/// Plan ~0,75 öngörüyordu. 18 altın sorguda 230 belgeye karşı kosinüs
+/// dağılımı ölçüldü ve tabanın burada İŞE YARAMADIĞI çıktı: isabetli ve
+/// ıskalı sorguların bantları TAMAMEN örtüşüyor.
+///   `github pull request` (isabet)       top1 0,8836
+///   `engellenmiş sayfayı aç` (ıska)      top1 0,8497
+///   `obsidian` (isabet)                  top1 0,8490
+///   `kod deposu satır sayısı` (isabet)   top1 0,8420
+///   `sunum için ... animasyonu` (isabet) top1 0,8296
+///   `haftalık gözden geçirme` (ıska)     top1 0,8231
+/// Iskanın en iyi puanı isabetinkinden YÜKSEK. Hiçbir eşik "E5 anladı" ile
+/// "E5 tahmin ediyor"u ayırmıyor; eleyen her değer gerçek isabeti de eler.
+/// Uydurma bir sayı yazmaktansa düğme kapalı bırakıldı ve nedeni yazıldı.
+///
+/// Sonucu şu: normalize füzyon, anlamayan kanalın çöpünü kendi maksimumuna
+/// bölüp 1,0'a çıkarıyor ve taban bunu bastıramıyor. `karmasik` MRR'inin
+/// hash256'da 0,56 iken e5s384'te 0,53'e DÜŞMESİNİN nedeni bu.
+#[cfg(feature = "onnx")]
+const E5_TABAN: f32 = 0.0;
+
+/// ONNX bacağı: `multilingual-e5-small`, fastembed üzerinden.
+#[cfg(feature = "onnx")]
+mod e5 {
+    use super::Rol;
+    use std::sync::OnceLock;
+
+    /// Model TEK SEFER yüklenir. `search` sorgu başına, `olcum` 54 kez
+    /// çağırıyor; her çağrıda ONNX oturumu kurmak saniyeler sürerdi.
+    ///
+    /// Hata METNİ saklanır: `TextEmbedding` de fastembed hatası da `Clone`
+    /// değil, ama ikinci çağrının da nedeni GÖRMESİ gerek — `OnceLock<Option>`
+    /// olsaydı ilk hatadan sonra sessizce "model yok" derdik.
+    static MODEL: OnceLock<Result<fastembed::TextEmbedding, String>> = OnceLock::new();
+
+    /// Model önbelleği. fastembed'in varsayılanı ÇALIŞMA DİZİNİNDE
+    /// `.fastembed_cache` — nereden koşarsan oraya ~120 MB bırakır, depoların
+    /// içine bile. Kalıcı bir yere sabitlenir; `FASTEMBED_CACHE_DIR`
+    /// verilmişse ona uyulur. Varsayılan yer bu makinede model zaten orada
+    /// durduğu için seçildi (setup-rustified indirmiş) — yeniden inmesin.
+    fn onbellek_dizini() -> std::path::PathBuf {
+        if let Ok(v) = std::env::var("FASTEMBED_CACHE_DIR") {
+            return v.into();
+        }
+        for kok in ["USERPROFILE", "HOME"] {
+            if let Ok(h) = std::env::var(kok) {
+                return std::path::PathBuf::from(h)
+                    .join(".claude")
+                    .join("fastembed_cache");
+            }
+        }
+        ".fastembed_cache".into()
+    }
+
+    pub fn model() -> crate::Result<&'static fastembed::TextEmbedding> {
+        MODEL
+            .get_or_init(|| {
+                fastembed::TextEmbedding::try_new(
+                    fastembed::InitOptions::new(fastembed::EmbeddingModel::MultilingualE5Small)
+                        .with_cache_dir(onbellek_dizini())
+                        .with_show_download_progress(true),
+                )
+                .map_err(|h| h.to_string())
+            })
+            .as_ref()
+            .map_err(|h| {
+                crate::CliError::Girdi(format!(
+                    "e5s384 yüklenemedi: {h}\n  Önbellek: {}\n  Başka yer: FASTEMBED_CACHE_DIR",
+                    onbellek_dizini().display()
+                ))
+            })
+    }
+
+    /// E5 ÖNEK İSTER ve fastembed onu EKLEMEZ (kendi belgesindeki örnekte de
+    /// çağıran ekliyor). Öneksiz hata vermez, yalnız sessizce kötü sıralar —
+    /// bu yüzden `Rol` en baştan arayüzde duruyor.
+    pub fn onek(rol: Rol) -> &'static str {
+        match rol {
+            Rol::Sorgu => "query: ",
+            Rol::Belge => "passage: ",
+        }
+    }
+}
+
 /// Metinleri vektöre çevirir.
 ///
 /// TOPLU imza (tekil değil): ONNX çekirdeği modeli bir kez yükleyip toplu
@@ -140,6 +239,17 @@ pub fn gomme(metinler: &[String], rol: Rol, k: Cekirdek) -> crate::Result<Vec<Ve
         Cekirdek::Hash256 => {
             let _ = rol; // hash çekirdeği rolü yok sayar
             Ok(metinler.iter().map(|m| hash_gomme(m)).collect())
+        }
+        #[cfg(feature = "onnx")]
+        Cekirdek::E5s384 => {
+            let model = e5::model()?;
+            let onek = e5::onek(rol);
+            let onekli: Vec<String> = metinler.iter().map(|m| format!("{onek}{m}")).collect();
+            // fastembed çıktıyı L2 normalize ediyor (text_embedding/output.rs)
+            // → `kosinus` nokta çarpımı olarak kalır, ikinci normalize yok.
+            model
+                .embed(onekli, None)
+                .map_err(|h| crate::CliError::Girdi(format!("e5s384 gömme başarısız: {h}")))
         }
     }
 }
@@ -210,6 +320,43 @@ mod testler {
         assert_eq!(blob_oku(&[1, 2, 3]), None);
         assert_eq!(blob_oku(&[]), None);
         assert_eq!(blob_yaz(&v).len(), v.len() * 4);
+    }
+
+    /// Modelsiz koşar: iki çekirdek KARIŞMAMALI. İmza aynı olsaydı 256'lık
+    /// vektör 384'lük sanılır, boyut kontrolü olmasa saçma kosinüs üretilirdi.
+    #[cfg(feature = "onnx")]
+    #[test]
+    fn e5_hash_ile_karismaz() {
+        assert_eq!(Cekirdek::E5s384.boyut(), 384);
+        assert_ne!(Cekirdek::E5s384.kip(), Cekirdek::Hash256.kip());
+        assert_ne!(
+            imza(Cekirdek::E5s384.kip(), "abc"),
+            imza(Cekirdek::Hash256.kip(), "abc")
+        );
+        // Taban için "E5 daha yüksek olmalı" diye bir kural YOK: ölçüm
+        // E5'te ayıran eşik bulunmadığını gösterdi (bkz. `E5_TABAN`).
+        // Tutması gereken sözleşme boyut ayrımı — 256'lık vektör 384'lük
+        // sanılırsa `kosinus` sessizce 0 döndürür, arama da sessizce körelir.
+        assert_ne!(Cekirdek::E5s384.boyut(), Cekirdek::Hash256.boyut());
+    }
+
+    /// MODEL GEREKTİRİR (~120 MB, ilk koşumda indirir) — bu yüzden `ignore`.
+    /// Koşumu: `cargo test --features onnx -- --ignored e5_`
+    #[cfg(feature = "onnx")]
+    #[test]
+    #[ignore = "ONNX modeli gerekir"]
+    fn e5_rol_oneki_vektoru_degistirir() {
+        let m = vec!["dosya arama motoru".to_string()];
+        let s = gomme(&m, Rol::Sorgu, Cekirdek::E5s384).unwrap();
+        let b = gomme(&m, Rol::Belge, Cekirdek::E5s384).unwrap();
+        assert_eq!(s[0].len(), 384);
+        let norm: f32 = s[0].iter().map(|x| x * x).sum();
+        assert!((norm - 1.0).abs() < 1e-3, "L2 normalize değil: {norm}");
+        // "query:" ve "passage:" AYNI vektörü verirse önek uygulanmıyordur.
+        assert!(
+            kosinus(&s[0], &b[0]) < 0.9999,
+            "rol öneki vektöre yansımadı"
+        );
     }
 
     #[test]

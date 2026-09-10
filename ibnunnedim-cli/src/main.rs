@@ -911,14 +911,34 @@ async fn main() -> Result<()> {
                 )));
             }
             // Gövde BİR KEZ yüklenir: ölçülen sorgu süresi olsun, disk değil.
-            let g = govde_yukle(&conn, kip).await?;
+            let mut g = govde_yukle(&conn, kip).await?;
+
+            // Belge vektörleri BELLEKTE üretilir, DB'dekiler kullanılmaz.
+            // Neden: tek bir `gomme` sütunu var, onu son koşan çekirdek tutar.
+            // DB'dekine güvenseydik `--kip e5s384` ölçmek için hash256'nın
+            // vektörlerini EZMEK gerekirdi — iki çekirdeği karşılaştırmanın
+            // yolu, karşılaştırılanlardan birini yok etmek olamaz. Yan fayda:
+            // bayat satır ölçümü kirletemez.
+            let uretim = Instant::now();
+            let metinler: Vec<String> = g
+                .indeks
+                .belgeler
+                .iter()
+                .map(|b| gomme::belge_metni(&b.ad, &b.aciklama, &b.tam_metin_md))
+                .collect();
+            g.vektorler = gomme::gomme(&metinler, gomme::Rol::Belge, kip)?
+                .into_iter()
+                .map(Some)
+                .collect();
+            let uretim_ms = uretim.elapsed().as_secs_f64() * 1000.0;
             // Derleme kipi yazılmazsa ms sayıları yanıltır: debug ~12 kat yavaş.
             #[cfg(debug_assertions)]
             let dbg = " · DEBUG derlemesi, süreler release'te ~12 kat düşer";
             #[cfg(not(debug_assertions))]
             let dbg = " · release";
             println!(
-                "\naltın set: {} sorgu · limit {limit} · {} kayıt · çekirdek {}{dbg}\n",
+                "\naltın set: {} sorgu · limit {limit} · {} kayıt · çekirdek {} \
+                 (belge vektörleri bellekte, {uretim_ms:.0} ms){dbg}\n",
                 sorgular.len(),
                 g.kayitlar.len(),
                 kip.kip()

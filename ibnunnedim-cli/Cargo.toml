@@ -12,8 +12,16 @@ path = "src/lib.rs"
 name = "ibnunnedim"
 path = "src/main.rs"
 
+[features]
+# Varsayılan KAPALI. Açık olsaydı her derleme ONNX Runtime ikilisini indirir
+# ve `ort` + `tokenizers` ağacını kurardı; `hash256` ise sıfır bağımlılık.
+# Bu yüzden ci.yml'nin clippy satırında `--all-features` YOK.
+onnx = ["dep:fastembed"]
+
 [dependencies]
 turso.workspace = true
+# ONNX gömme çekirdeği (multilingual-e5-small, 384 boyut). Yalnız `--features onnx`.
+fastembed = { version = "4.9", optional = true }
 serde.workspace = true
 serde_json.workspace = true
 clap.workspace = true
