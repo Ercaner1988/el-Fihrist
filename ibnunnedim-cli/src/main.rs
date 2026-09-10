@@ -17,6 +17,7 @@
 mod arama;
 mod gomme;
 mod mcp;
+mod olcum;
 mod tara;
 
 use arama::{Belge, Indeks};
@@ -75,6 +76,18 @@ enum Command {
         /// İmzası tutan satırları da yeniden üret.
         #[arg(long)]
         zorla: bool,
+    },
+    /// Altın sorgu setini üç kanala koşar: geri çağrım@k, MRR, ms/sorgu.
+    /// ÖLÇER, karar vermez.
+    Olcum {
+        /// Altın sorgu seti (TOML).
+        #[arg(long, default_value = "olcum/altin-sorgular.toml")]
+        set: PathBuf,
+        #[arg(long, default_value = "5")]
+        limit: usize,
+        /// Ölçülecek gömme çekirdeği — iki çekirdek aynı sette karşılaştırılır.
+        #[arg(long, value_enum, default_value_t = gomme::Cekirdek::default())]
+        kip: gomme::Cekirdek,
     },
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
     Mcp,
@@ -261,24 +274,23 @@ async fn satirlari_oku(
     Ok((belgeler, skill_map, vektorler))
 }
 
-/// Saf Rust BM25 ile bellek içi arama yapar.
+/// Aranacak gövde: BM25 indeksi + kayıtlar + PARALEL vektörler.
+struct Govde {
+    indeks: Indeks,
+    kayitlar: Vec<Skill>,
+    vektorler: Vec<Option<Vec<f32>>>,
+}
+
+/// Gövdeyi BİR KEZ yükler (iki dosya, tek indeks).
 ///
-/// Veritabanındaki tüm yetenek kayıtlarını tek sorgu ile okur, `Indeks::kur` ile
-/// bellekte BM25 indeksini oluşturur ve `ara` ile en yüksek puanlı `limit` kaydı döndürür.
-/// BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
+/// `search`ten ayrı durması `olcum` için şart: 18 sorgu koşarken gövde her
+/// sorguda yeniden yüklenirse ölçülen şey arama değil disk olur.
 ///
 /// Gömme sütunu yoksa ya da imzası tutmuyorsa o satır KOSİNÜSE GİRMEZ ama
 /// BM25'te kalır — hiçbir kayıt vektörü eksik diye kaybolmaz. Kullanılabilir
 /// vektör hiç yoksa saf BM25'e düşer ve bunu stderr'e YAZAR: sessiz düşüş,
 /// "arama bozuldu" diye görünen ama sebebi görünmeyen hatanın ta kendisidir.
-async fn search_skills(
-    conn: &Connection,
-    query: &str,
-    limit: usize,
-    kip: gomme::Cekirdek,
-) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
-    let baslangic = Instant::now();
-
+async fn govde_yukle(conn: &Connection, kip: gomme::Cekirdek) -> Result<Govde> {
     // gomme/gomme_imza göç edilmemiş DB'de yoktur; o yüzden şema önce yoklanır.
     let gomme_var = gomme_sutunu_var(conn).await?;
     let vektor_sutunlari = if gomme_var {
@@ -286,7 +298,7 @@ async fn search_skills(
     } else {
         ""
     };
-    let (mut belgeler, mut skill_map, mut vektorler) = satirlari_oku(
+    let (mut belgeler, mut kayitlar, mut vektorler) = satirlari_oku(
         conn,
         &format!(
             "SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori{vektor_sutunlari} \
@@ -311,55 +323,106 @@ async fn search_skills(
         )
         .await?;
         belgeler.extend(b);
-        skill_map.extend(s);
+        kayitlar.extend(s);
         vektorler.extend(v);
     }
 
-    let toplam_kayit = belgeler.len();
-    let indeks = Indeks::kur(belgeler);
+    if gomme_var && !vektorler.iter().any(|v| v.is_some()) {
+        eprintln!(
+            "! gömme bayat (0/{} satır kullanılabilir) — yalnız BM25.",
+            belgeler.len()
+        );
+        eprintln!("  Onarım: ibnunnedim gomme --kip {}", kip.kip());
+    }
+    Ok(Govde {
+        indeks: Indeks::kur(belgeler),
+        kayitlar,
+        vektorler,
+    })
+}
+
+/// Hangi kanalın koşacağı. `olcum` üçünü de AYNI sıralama kodundan geçirir —
+/// kopya bir sıralayıcıyı ölçmek, aramanın kendisini ölçmemek olurdu.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kanal {
+    Bm25,
+    Gomme,
+    Karmasik,
+}
+
+/// Gömme kanalı: sorgu vektörü ile gövdenin kosinüsü, taban altı elenmiş.
+fn kosinusla(
+    g: &Govde,
+    sorgu: &str,
+    kip: gomme::Cekirdek,
+    genis: usize,
+) -> Result<Vec<(usize, f64)>> {
+    let q = gomme::gomme(&[sorgu.to_string()], gomme::Rol::Sorgu, kip)?;
+    let taban = kip.taban();
+    let mut v: Vec<(usize, f64)> = g
+        .vektorler
+        .iter()
+        .enumerate()
+        .filter_map(|(i, ov)| ov.as_ref().map(|x| (i, gomme::kosinus(&q[0], x))))
+        .filter(|(_, p)| *p > taban)
+        .map(|(i, p)| (i, p as f64))
+        .collect();
+    v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    v.truncate(genis);
+    Ok(v)
+}
+
+/// Tek sorguyu sıralar. `search` de `olcum` da BURADAN geçer.
+fn sirala(
+    g: &Govde,
+    sorgu: &str,
+    limit: usize,
+    kip: gomme::Cekirdek,
+    kanal: Kanal,
+) -> Result<Vec<(usize, f64)>> {
     // Füzyon iki kanalın BİRLEŞİMİNİ alır; iç tarama limitin 4 katı yapılır ki
     // BM25 kesiminden düşen ama kosinüsün öne çıkardığı belge kaybolmasın.
     let genis = limit.saturating_mul(4).max(8);
-    let bm = indeks.ara(query, genis);
-
-    let kullanilabilir = vektorler.iter().filter(|v| v.is_some()).count();
-    let kos: Vec<(usize, f64)> = if kullanilabilir == 0 {
-        if gomme_var {
-            eprintln!("! gömme bayat (0/{toplam_kayit} satır kullanılabilir) — yalnız BM25.");
-            eprintln!("  Onarım: ibnunnedim gomme --kip {}", kip.kip());
-        }
-        Vec::new()
-    } else {
-        let q = gomme::gomme(&[query.to_string()], gomme::Rol::Sorgu, kip)?;
-        let taban = kip.taban();
-        let mut v: Vec<(usize, f64)> = vektorler
-            .iter()
-            .enumerate()
-            .filter_map(|(i, ov)| ov.as_ref().map(|x| (i, gomme::kosinus(&q[0], x))))
-            .filter(|(_, p)| *p > taban)
-            .map(|(i, p)| (i, p as f64))
-            .collect();
-        v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-        v.truncate(genis);
-        v
+    // Saf kanalda öbür dizi BOŞ verilir — ağırlığı 0'a çekmek YETMEZ: `harmanla`
+    // birleşim döndürür, 0 puanlı yabancı belgeler kuyruğa girer ve limit
+    // dolmadığında sahte isabet üretir. Ölçüm tam da orada yalan söylerdi.
+    let bm = match kanal {
+        Kanal::Gomme => Vec::new(),
+        _ => g.indeks.ara(sorgu, genis),
     };
-
+    let kos = match kanal {
+        Kanal::Bm25 => Vec::new(),
+        _ => kosinusla(g, sorgu, kip, genis)?,
+    };
     // 0,5/0,5: pasli-beyin'de ölçülmüş ağırlık (kopru.rs Kanal::Karmasik).
-    let arama_sonuclari = arama::harmanla(&bm, &kos, 0.5, limit);
+    let agirlik = match kanal {
+        Kanal::Bm25 => 1.0,
+        Kanal::Gomme => 0.0,
+        Kanal::Karmasik => 0.5,
+    };
+    Ok(arama::harmanla(&bm, &kos, agirlik, limit))
+}
 
-    let mut sonuc = Vec::with_capacity(arama_sonuclari.len());
-    for (idx, _puan) in arama_sonuclari {
-        sonuc.push(Skill {
-            id: skill_map[idx].id.clone(),
-            ad: skill_map[idx].ad.clone(),
-            aciklama: skill_map[idx].aciklama.clone(),
-            basari_puani_ort: skill_map[idx].basari_puani_ort,
-            kategori: skill_map[idx].kategori.clone(),
-        });
-    }
-
-    let sure = baslangic.elapsed();
-    Ok((sonuc, toplam_kayit, sure))
+/// Saf Rust BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
+async fn search_skills(
+    conn: &Connection,
+    query: &str,
+    limit: usize,
+    kip: gomme::Cekirdek,
+) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
+    let baslangic = Instant::now();
+    let g = govde_yukle(conn, kip).await?;
+    let sonuc = sirala(&g, query, limit, kip, Kanal::Karmasik)?
+        .into_iter()
+        .map(|(idx, _puan)| Skill {
+            id: g.kayitlar[idx].id.clone(),
+            ad: g.kayitlar[idx].ad.clone(),
+            aciklama: g.kayitlar[idx].aciklama.clone(),
+            basari_puani_ort: g.kayitlar[idx].basari_puani_ort,
+            kategori: g.kayitlar[idx].kategori.clone(),
+        })
+        .collect();
+    Ok((sonuc, g.kayitlar.len(), baslangic.elapsed()))
 }
 
 async fn list_all_skills(conn: &Connection, kategori: Option<&str>) -> Result<Vec<Skill>> {
@@ -835,6 +898,78 @@ async fn main() -> Result<()> {
                     sure.as_secs_f64() * 1000.0
                 );
             }
+        }
+        Command::Olcum { set, limit, kip } => {
+            let metin = std::fs::read_to_string(&set).map_err(|h| {
+                CliError::Girdi(format!("altın set okunamadı ({}): {h}", set.display()))
+            })?;
+            let sorgular = olcum::ayristir(&metin);
+            if sorgular.is_empty() {
+                return Err(CliError::Girdi(format!(
+                    "sette sorgu yok: {}",
+                    set.display()
+                )));
+            }
+            // Gövde BİR KEZ yüklenir: ölçülen sorgu süresi olsun, disk değil.
+            let g = govde_yukle(&conn, kip).await?;
+            // Derleme kipi yazılmazsa ms sayıları yanıltır: debug ~12 kat yavaş.
+            #[cfg(debug_assertions)]
+            let dbg = " · DEBUG derlemesi, süreler release'te ~12 kat düşer";
+            #[cfg(not(debug_assertions))]
+            let dbg = " · release";
+            println!(
+                "\naltın set: {} sorgu · limit {limit} · {} kayıt · çekirdek {}{dbg}\n",
+                sorgular.len(),
+                g.kayitlar.len(),
+                kip.kip()
+            );
+            // Rapor sırası pasli-beyin ile aynı: gömme → bm25 → karmasik.
+            for (ad, kanal) in [
+                ("gomme", Kanal::Gomme),
+                ("bm25", Kanal::Bm25),
+                ("karmasik", Kanal::Karmasik),
+            ] {
+                let (mut isabet_toplam, mut ks_toplam, mut sure_toplam) = (0usize, 0f64, 0f64);
+                println!("== kanal: {ad}");
+                for s in &sorgular {
+                    let basla = Instant::now();
+                    let sirali = sirala(&g, &s.metin, limit, kip, kanal)?;
+                    sure_toplam += basla.elapsed().as_secs_f64() * 1000.0;
+                    let kimlikler: Vec<String> = sirali
+                        .iter()
+                        .map(|(i, _)| g.kayitlar[*i].id.clone())
+                        .collect();
+                    let (isabet, ks) = olcum::puanla(&kimlikler, &s.beklenen);
+                    isabet_toplam += isabet;
+                    ks_toplam += ks;
+                    println!(
+                        "  {} '{}' → {} · {} sonuç",
+                        if isabet == 1 { "✓" } else { "✗" },
+                        s.metin,
+                        if isabet == 1 {
+                            format!("{}. sırada", (1.0 / ks).round() as usize)
+                        } else {
+                            format!("ilk {limit} içinde YOK ({})", s.beklenen.join(" | "))
+                        },
+                        kimlikler.len()
+                    );
+                }
+                let n = sorgular.len() as f64;
+                println!(
+                    // ms iki hane: BM25 tek başına 0,05 ms'nin altında kalıyor,
+                    // tek hanede "0.0" görünüp ölçülmemiş sanılıyordu.
+                    "  → {ad}: geri çağrım@{limit} {isabet_toplam}/{} = {:.1}% · MRR {:.2} · ort. {:.2} ms/sorgu\n",
+                    sorgular.len(),
+                    isabet_toplam as f64 / n * 100.0,
+                    ks_toplam / n,
+                    sure_toplam / n
+                );
+            }
+            println!(
+                "(Kanallar AYNI sette karşılaştırılır ve aynı `sirala`dan geçer. `beklenen`\n\
+                 ALTERNATİFTİR — pasli-beyin her varyantı ayrı sayar, paydalar birebir\n\
+                 karşılaştırılamaz. Gömme karmasik'i geçmiyorsa varsayılan OLMAZ.)"
+            );
         }
         Command::Mcp => mcp::calistir(&conn).await?,
         Command::Tara {
