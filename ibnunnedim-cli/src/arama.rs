@@ -141,6 +141,50 @@ impl Indeks {
     }
 }
 
+/// İki kanalı birleştirir: her kanal KENDİ maksimumuna bölünüp ağırlıklı toplanır.
+///
+/// NEDEN RRF DEĞİL: RRF yalnız SIRAYA bakar, puan büyüklüğünü atar. pasli-beyin
+/// ölçümü gömme kanalının anlamadığı sorgularda 0,25-0,37 bandında düşük puanlı
+/// gürültü döndürdüğünü kaydetmiş; RRF'te o gürültü 1. sıraya çıkıp tam ağırlık
+/// toplar. Normalize füzyonda çekirdek başına mutlak taban (`gomme::Cekirdek::taban`)
+/// gürültüyü normalizasyondan ÖNCE eler. Bir de RRF ikinci bir keyfi sabit (k=60)
+/// ister; burada tek sabit var ve o da pasli-beyin'de ölçülmüş (0,5).
+///
+/// Saf fonksiyon: belge SIRA NUMARALARI üzerinde çalışır, DB de derlem de gerekmez.
+///
+/// `agirlik` BM25'in payı; kosinüs `1 - agirlik` alır.
+pub fn harmanla(
+    bm: &[(usize, f64)],
+    kos: &[(usize, f64)],
+    agirlik: f64,
+    limit: usize,
+) -> Vec<(usize, f64)> {
+    use std::collections::HashMap;
+    let en = |v: &[(usize, f64)]| v.iter().map(|(_, p)| *p).fold(0.0f64, f64::max);
+    let (bm_en, kos_en) = (en(bm), en(kos));
+
+    let mut birlesik: HashMap<usize, f64> = HashMap::new();
+    for (i, p) in bm {
+        let n = if bm_en > 0.0 { p / bm_en } else { 0.0 };
+        *birlesik.entry(*i).or_default() += agirlik * n;
+    }
+    for (i, p) in kos {
+        let n = if kos_en > 0.0 { p / kos_en } else { 0.0 };
+        *birlesik.entry(*i).or_default() += (1.0 - agirlik) * n;
+    }
+
+    let mut liste: Vec<(usize, f64)> = birlesik.into_iter().collect();
+    // Puan eşitliğinde sıra numarası küçük olan önce — sıralama KARARLI olmalı,
+    // yoksa aynı sorgu her koşuda farklı sıralanır ve ölçüm gürültülenir.
+    liste.sort_by(|a, b| {
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.0.cmp(&b.0))
+    });
+    liste.truncate(limit);
+    liste
+}
+
 #[cfg(test)]
 mod testler {
     use super::*;
@@ -215,5 +259,52 @@ mod testler {
             sonuclar.is_empty(),
             "Derlemde bulunmayan terim için sonuç boş dönmeli"
         );
+    }
+
+    /// Füzyonun VARLIK SEBEBİ: BM25'in 3. sıraya attığı doğru belgeyi kosinüs
+    /// 1.'ye taşıyorsa birleşim de 1. vermeli.
+    #[test]
+    fn harmanla_kosinusun_one_cikardigini_tasir() {
+        // BM25: 7 en iyi, hedef (belge 3) üçüncü.
+        let bm = [(7usize, 9.0f64), (5, 6.0), (3, 4.0)];
+        // Kosinüs: hedef açık ara birinci.
+        let kos = [(3usize, 0.90f64), (7, 0.30), (5, 0.10)];
+        let s = harmanla(&bm, &kos, 0.5, 3);
+        assert_eq!(s[0].0, 3, "kosinüsün öne çıkardığı belge 1. olmalı: {s:?}");
+    }
+
+    /// SESSİZCE BOZULAN SÖZLEŞME: gömme yoksa/bayatsa kosinüs listesi boş gelir
+    /// ve çıktı SIRASI tam olarak BM25'inki olmalı. Bu bozulursa arama, vektör
+    /// eksik olduğu anda hata vermeden yanlış sıralamaya düşer.
+    #[test]
+    fn harmanla_kosinus_bossa_bm25_sirasini_korur() {
+        let bm = [(7usize, 9.0f64), (5, 6.0), (3, 4.0)];
+        let s = harmanla(&bm, &[], 0.5, 10);
+        assert_eq!(
+            s.iter().map(|(i, _)| *i).collect::<Vec<_>>(),
+            vec![7, 5, 3],
+            "kosinüs boşken BM25 sırası korunmadı"
+        );
+    }
+
+    /// Tek kanalda bulunan belge kaybolmamalı — birleşim iki kanalın BİRLEŞİMİ.
+    #[test]
+    fn harmanla_tek_kanaldaki_belgeyi_kaybetmez() {
+        let s = harmanla(&[(1usize, 5.0f64)], &[(2usize, 0.8f64)], 0.5, 10);
+        let idler: Vec<usize> = s.iter().map(|(i, _)| *i).collect();
+        assert!(
+            idler.contains(&1) && idler.contains(&2),
+            "belge kayboldu: {s:?}"
+        );
+    }
+
+    /// Eşit puanda sıralama kararlı olmalı; yoksa ölçüm koşumu gürültülenir.
+    #[test]
+    fn harmanla_esit_puanda_kararli() {
+        let bm = [(9usize, 4.0f64), (2, 4.0), (5, 4.0)];
+        let a = harmanla(&bm, &[], 0.5, 10);
+        let b = harmanla(&bm, &[], 0.5, 10);
+        assert_eq!(a, b);
+        assert_eq!(a.iter().map(|(i, _)| *i).collect::<Vec<_>>(), vec![2, 5, 9]);
     }
 }

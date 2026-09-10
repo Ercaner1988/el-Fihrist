@@ -14,6 +14,7 @@
 //! ```
 
 mod arama;
+mod gomme;
 mod mcp;
 
 use arama::{Belge, Indeks};
@@ -42,6 +43,9 @@ enum Command {
         query: String,
         #[arg(short, long, default_value = "10")]
         limit: usize,
+        /// Gömme çekirdeği. DB'deki imzayla tutmayan satırlar kosinüse girmez.
+        #[arg(long, value_enum, default_value_t = gomme::Cekirdek::default())]
+        kip: gomme::Cekirdek,
     },
     /// Yetenekleri listeler
     List {
@@ -57,6 +61,15 @@ enum Command {
         /// Grafı baştan kur (graphify-rs build)
         #[arg(long)]
         kur: bool,
+    },
+    /// Gömme sütunlarını kurar ve vektörleri (yeniden) üretir.
+    Gomme {
+        /// Gömme çekirdeği. Derlenmiş çekirdekler cargo feature'ına bağlıdır.
+        #[arg(long, value_enum, default_value_t = gomme::Cekirdek::default())]
+        kip: gomme::Cekirdek,
+        /// İmzası tutan satırları da yeniden üret.
+        #[arg(long)]
+        zorla: bool,
     },
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
     Mcp,
@@ -172,20 +185,41 @@ async fn baglan() -> Result<Connection> {
 ///
 /// Veritabanındaki tüm yetenek kayıtlarını tek sorgu ile okur, `Indeks::kur` ile
 /// bellekte BM25 indeksini oluşturur ve `ara` ile en yüksek puanlı `limit` kaydı döndürür.
+/// BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
+///
+/// Gömme sütunu yoksa ya da imzası tutmuyorsa o satır KOSİNÜSE GİRMEZ ama
+/// BM25'te kalır — hiçbir kayıt vektörü eksik diye kaybolmaz. Kullanılabilir
+/// vektör hiç yoksa saf BM25'e düşer ve bunu stderr'e YAZAR: sessiz düşüş,
+/// "arama bozuldu" diye görünen ama sebebi görünmeyen hatanın ta kendisidir.
 async fn search_skills(
     conn: &Connection,
     query: &str,
     limit: usize,
+    kip: gomme::Cekirdek,
 ) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
     let baslangic = Instant::now();
 
-    let sql = r#"
+    // gomme/gomme_imza göç edilmemiş DB'de yoktur; o yüzden şema önce yoklanır.
+    let gomme_var = gomme_sutunu_var(conn).await?;
+    let sql = if gomme_var {
+        r#"
+        SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori,
+               gomme, gomme_imza, icerik_hash
+        FROM yetenekler
+    "#
+    } else {
+        r#"
         SELECT id, ad, aciklama, tam_metin_md, basari_puani_ort, kategori
         FROM yetenekler
-    "#;
+    "#
+    };
     let mut satirlar = conn.query(sql, ()).await?;
     let mut belgeler = Vec::new();
     let mut skill_map = Vec::new();
+    // Vektörler PARALEL taşınır. `arama::Belge`'ye alan EKLENMEZ: pasli-beyin
+    // (`cekirdek/src/kopru.rs`) onu struct literal ile kuruyor, yeni alan
+    // o deponun derlemesini kırar.
+    let mut vektorler: Vec<Option<Vec<f32>>> = Vec::new();
 
     while let Some(r) = satirlar.next().await? {
         let id = r.get::<String>(0)?;
@@ -202,6 +236,23 @@ async fn search_skills(
             tam_metin_md,
         });
 
+        // Vektör yalnız imzası TUTUYORSA kullanılır: `<kip>:<icerik_hash>`
+        // hem içerik bayatlığını hem çekirdek değişimini tek testte yakalar.
+        vektorler.push(if gomme_var {
+            let beklenen = gomme::imza(kip.kip(), &r.get::<String>(8).unwrap_or_default());
+            match (r.get::<Vec<u8>>(6).ok(), r.get::<String>(7).ok()) {
+                // İmza tutsa bile boyut YANLIŞSA kabul etme: ikinci, gereksiz
+                // görünen ama ucuz olan kontrol. Bozuk blob sessizce saçma
+                // kosinüs üretmektense hiç girmesin.
+                (Some(b), Some(im)) if im == beklenen => {
+                    gomme::blob_oku(&b).filter(|v| v.len() == kip.boyut())
+                }
+                _ => None,
+            }
+        } else {
+            None
+        });
+
         skill_map.push(Skill {
             id,
             ad,
@@ -213,7 +264,35 @@ async fn search_skills(
 
     let toplam_kayit = belgeler.len();
     let indeks = Indeks::kur(belgeler);
-    let arama_sonuclari = indeks.ara(query, limit);
+    // Füzyon iki kanalın BİRLEŞİMİNİ alır; iç tarama limitin 4 katı yapılır ki
+    // BM25 kesiminden düşen ama kosinüsün öne çıkardığı belge kaybolmasın.
+    let genis = limit.saturating_mul(4).max(8);
+    let bm = indeks.ara(query, genis);
+
+    let kullanilabilir = vektorler.iter().filter(|v| v.is_some()).count();
+    let kos: Vec<(usize, f64)> = if kullanilabilir == 0 {
+        if gomme_var {
+            eprintln!("! gömme bayat (0/{toplam_kayit} satır kullanılabilir) — yalnız BM25.");
+            eprintln!("  Onarım: ibnunnedim gomme --kip {}", kip.kip());
+        }
+        Vec::new()
+    } else {
+        let q = gomme::gomme(&[query.to_string()], gomme::Rol::Sorgu, kip)?;
+        let taban = kip.taban();
+        let mut v: Vec<(usize, f64)> = vektorler
+            .iter()
+            .enumerate()
+            .filter_map(|(i, ov)| ov.as_ref().map(|x| (i, gomme::kosinus(&q[0], x))))
+            .filter(|(_, p)| *p > taban)
+            .map(|(i, p)| (i, p as f64))
+            .collect();
+        v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        v.truncate(genis);
+        v
+    };
+
+    // 0,5/0,5: pasli-beyin'de ölçülmüş ağırlık (kopru.rs Kanal::Karmasik).
+    let arama_sonuclari = arama::harmanla(&bm, &kos, 0.5, limit);
 
     let mut sonuc = Vec::with_capacity(arama_sonuclari.len());
     for (idx, _puan) in arama_sonuclari {
@@ -365,6 +444,98 @@ fn graf_calistir(soru: Option<&str>, kur: bool) -> Result<()> {
     Ok(())
 }
 
+/// `gomme` sütunu var mı? Göç edilmemiş DB'de SELECT'i patlatmamak için.
+async fn gomme_sutunu_var(conn: &Connection) -> Result<bool> {
+    let mut satirlar = conn
+        .query(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='yetenekler'",
+            (),
+        )
+        .await?;
+    Ok(match satirlar.next().await? {
+        Some(r) => r.get::<String>(0).unwrap_or_default().contains("gomme"),
+        None => false,
+    })
+}
+
+/// Gömme sütunlarını ekler. Şemayı okuyup karar verir — iki kez koşmak zararsız.
+///
+/// DB'de `yetenekler_fts` / `kod_hazinesi_fts` fts5 SANAL tabloları var ve Turso
+/// fts5 uygulamıyor (kendi Tantivy FTS'i ayrı bir şey). Bu yüzden `ALTER TABLE`ın
+/// bu dosyada çalışması ÖNCEDEN SINANMALI; çalışmazsa B planı sütunları DB'nin
+/// sahibi olan Python tarafının eklemesi, Rust'ın yalnız değer yazmasıdır.
+///
+/// `search` bunu ASLA çağırmaz: yazma işleri açık komutlarda kalır.
+async fn gomme_gocu(conn: &Connection) -> Result<bool> {
+    let mut satirlar = conn
+        .query(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='yetenekler'",
+            (),
+        )
+        .await?;
+    let sema = match satirlar.next().await? {
+        Some(r) => r.get::<String>(0).unwrap_or_default(),
+        None => return Err(CliError::Girdi("yetenekler tablosu yok".into())),
+    };
+    if sema.contains("gomme") {
+        return Ok(false);
+    }
+    conn.execute("ALTER TABLE yetenekler ADD COLUMN gomme BLOB", ())
+        .await?;
+    conn.execute("ALTER TABLE yetenekler ADD COLUMN gomme_imza TEXT", ())
+        .await?;
+    Ok(true)
+}
+
+/// Vektörleri üretir. İmzası tutan satırlar atlanır (`--zorla` hepsini yeniler).
+async fn gomme_uret(
+    conn: &Connection,
+    k: gomme::Cekirdek,
+    zorla: bool,
+) -> Result<(usize, usize, std::time::Duration)> {
+    let baslangic = Instant::now();
+    let mut satirlar = conn
+        .query(
+            "SELECT id, ad, aciklama, tam_metin_md, icerik_hash, gomme_imza FROM yetenekler",
+            (),
+        )
+        .await?;
+
+    let mut isler: Vec<(String, String, String)> = Vec::new(); // (id, metin, imza)
+    let mut toplam = 0usize;
+    while let Some(r) = satirlar.next().await? {
+        toplam += 1;
+        let id = r.get::<String>(0)?;
+        let ad = r.get::<String>(1).unwrap_or_default();
+        let aciklama = r.get::<String>(2).unwrap_or_default();
+        let tam = r.get::<String>(3).unwrap_or_default();
+        let icerik_hash = r.get::<String>(4).unwrap_or_default();
+        let mevcut = r.get::<String>(5).ok();
+
+        let yeni_imza = gomme::imza(k.kip(), &icerik_hash);
+        if !zorla && mevcut.as_deref() == Some(yeni_imza.as_str()) {
+            continue;
+        }
+        isler.push((id, gomme::belge_metni(&ad, &aciklama, &tam), yeni_imza));
+    }
+
+    if isler.is_empty() {
+        return Ok((0, toplam, baslangic.elapsed()));
+    }
+    // Toplu gömme: ONNX çekirdeği modeli bir kez yükleyebilsin.
+    let metinler: Vec<String> = isler.iter().map(|(_, m, _)| m.clone()).collect();
+    let vektorler = gomme::gomme(&metinler, gomme::Rol::Belge, k)?;
+
+    for ((id, _, imza), v) in isler.iter().zip(vektorler.iter()) {
+        conn.execute(
+            "UPDATE yetenekler SET gomme = ?, gomme_imza = ? WHERE id = ?",
+            params![gomme::blob_yaz(v), imza.as_str(), id.as_str()],
+        )
+        .await?;
+    }
+    Ok((isler.len(), toplam, baslangic.elapsed()))
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
@@ -378,15 +549,16 @@ async fn main() -> Result<()> {
     let conn = baglan().await?;
 
     match args.command {
-        Command::Search { query, limit } => {
-            let (skills, toplam_kayit, sure) = search_skills(&conn, &query, limit).await?;
+        Command::Search { query, limit, kip } => {
+            let (skills, toplam_kayit, sure) = search_skills(&conn, &query, limit, kip).await?;
             println!("\nARAMA SONUÇLARI ('{query}') — {} kayıt", skills.len());
             #[cfg(debug_assertions)]
-            let kip = " · DEBUG derlemesi, release ~12 kat hızlı";
+            let dbg = " · DEBUG derlemesi, release ~12 kat hızlı";
             #[cfg(not(debug_assertions))]
-            let kip = "";
+            let dbg = "";
             println!(
-                "(saf Rust BM25 · {toplam_kayit} kayıt tarandı · {:.1} ms{kip})",
+                "(BM25 + gömme[{}] · {toplam_kayit} kayıt tarandı · {:.1} ms{dbg})",
+                kip.kip(),
                 sure.as_secs_f64() * 1000.0
             );
             println!("{}", "-".repeat(70));
@@ -453,6 +625,17 @@ async fn main() -> Result<()> {
         }
         // Yukarıda ele alındı; buraya düşmez.
         Command::Graph { .. } => unreachable!("graf komutu DB bağlantısından önce ele alınır"),
+        Command::Gomme { kip, zorla } => {
+            if gomme_gocu(&conn).await? {
+                println!("göç: gomme + gomme_imza sütunları eklendi.");
+            }
+            let (yenilenen, toplam, sure) = gomme_uret(&conn, kip, zorla).await?;
+            println!(
+                "GÖMME [{}] {yenilenen}/{toplam} satır yenilendi · {:.1} ms",
+                kip.kip(),
+                sure.as_secs_f64() * 1000.0
+            );
+        }
         Command::Mcp => mcp::calistir(&conn).await?,
         Command::Tekmil {
             ajan,

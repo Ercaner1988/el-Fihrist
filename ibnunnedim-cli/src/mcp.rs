@@ -128,9 +128,10 @@ async fn arac_calistir(
         "search_skills" => {
             let q = metin(p, "query")?;
             let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
-            let (skills, toplam, sure) = search_skills(conn, &q, limit)
-                .await
-                .map_err(|e| e.to_string())?;
+            let (skills, toplam, sure) =
+                search_skills(conn, &q, limit, crate::gomme::Cekirdek::default())
+                    .await
+                    .map_err(|e| e.to_string())?;
             Ok(format!(
                 "{} / {toplam} kayıt · {:.1} ms\n{}",
                 skills.len(),
