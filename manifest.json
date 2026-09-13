@@ -1,0 +1,71 @@
+{
+  "manifest_version": "0.3",
+  "name": "el-fihrist",
+  "display_name": "el-Fihrist",
+  "version": "0.1.0",
+  "description": "Search and rate the local skills library (BM25, Turkish-aware) from an AI agent.",
+  "author": {
+    "name": "Ercan ER",
+    "url": "https://github.com/Ercaner1988"
+  },
+  "server": {
+    "type": "binary",
+    "entry_point": "ibnunnedim.exe",
+    "mcp_config": {
+      "command": "${__dirname}/ibnunnedim.exe",
+      "args": ["mcp"],
+      "env": {
+        "TURSO_DB_PATH": "${user_config.turso_db_path}"
+      }
+    }
+  },
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ercaner1988/el-Fihrist"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Ercaner1988/el-Fihrist",
+  "keywords": [
+    "mcp",
+    "skills",
+    "search",
+    "bm25"
+  ],
+  "tools": [
+    {
+      "name": "search_skills",
+      "description": "Yetenek kütüphanesinde BM25 ile arama yapar (Türkçe katlamalı)."
+    },
+    {
+      "name": "list_skills",
+      "description": "Yetenekleri listeler; istenirse tek kategoriyle sınırlar."
+    },
+    {
+      "name": "info",
+      "description": "Kütüphane istatistiği: çözülen veritabanı yolu ve tablo sayıları."
+    },
+    {
+      "name": "tekmil_ver",
+      "description": "Bir yeteneğe 0-100 arası tekmil puanı yazar ve ortalamayı günceller. YAZMA işlemidir."
+    }
+  ],
+  "user_config": {
+    "turso_db_path": {
+      "type": "file",
+      "title": "Skills Database Path",
+      "description": "Kütüphane veritabanının yolu. Boş bırakılırsa çalışma dizininden ya da $HOME'dan otomatik aranır.",
+      "required": false
+    }
+  },
+  "long_description": "el-Fihrist (ibnunnedim), yerel yetenek/skill kütüphanesinde Türkçe-katlamalı BM25 araması yapar, kategoriye göre listeler ve bir yeteneğe kullanım sonrası tekmil (0-100 puan) yazar.",
+  "documentation": "https://github.com/Ercaner1988/el-Fihrist/blob/main/README.md",
+  "support": "https://github.com/Ercaner1988/el-Fihrist/issues",
+  "tools_generated": false,
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "win32"
+    ]
+  }
+}
