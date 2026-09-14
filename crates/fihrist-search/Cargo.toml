@@ -1,0 +1,16 @@
+[package]
+name = "fihrist-search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Hybrid lexical (BM25) and semantic vector search pipeline for el-Fihrist"
+
+[features]
+onnx = ["dep:fastembed"]
+
+[dependencies]
+fihrist-core.workspace = true
+fastembed = { version = "4.9", optional = true }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

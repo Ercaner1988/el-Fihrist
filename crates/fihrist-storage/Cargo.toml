@@ -1,0 +1,15 @@
+[package]
+name = "fihrist-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Turso database engine storage layer, B-tree count fast-path, and schema manager for el-Fihrist"
+
+[dependencies]
+fihrist-core.workspace = true
+turso.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
