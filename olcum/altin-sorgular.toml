@@ -1,0 +1,112 @@
+# el-Fihrist altın sorgu seti — bugünkü BM25 kanalının geri çağrımını ölçer.
+#
+# Kural (pasli-beyin PB-06 ile aynı): yeni bir arama kanalı (gömme, hibrit)
+# AYNI sette ölçülmeden varsayılan seçilmez. Buradaki sayılar taban çizgisidir.
+#
+# Biçim pasli-beyin/olcum/altin-sorgular.toml ile aynı tutulur ki iki set
+# değiş tokuş edilebilsin. `beklenen` = kimlik parçaları (alt dize), ilk
+# `limit` sonuçta aranır.
+#
+# ÖLÇÜLEN GERÇEK (2026-09-09, 145 yetenek): açıklamaların 127'si İNGİLİZCE,
+# 18'i Türkçe. Yani asıl problem "Türkçe katalog" değil, TÜRKÇE SORGU →
+# İNGİLİZCE BELGE. Öbek (c) bunu ölçer ve gömmenin tüm katma değeri oradadır.
+
+# ============================================================================
+# ÖBEK (a) — GERİLEME KALKANI
+# BM25'in bugün zaten bulduğu doğrudan ad isabetleri. Bu öbek düşerse yeni
+# kanal eskiyi bozmuş demektir; hibritin asla kaybetmemesi gereken yer burası.
+# ============================================================================
+
+[[sorgu]]
+metin = "docx"
+beklenen = ["productivity/docx", "rust-docx-openxml", "rust-openxml-docx"]
+
+[[sorgu]]
+metin = "xlsx excel"
+beklenen = ["productivity/xlsx"]
+
+[[sorgu]]
+metin = "obsidian"
+beklenen = ["note-taking/obsidian"]
+
+[[sorgu]]
+metin = "test driven development"
+beklenen = ["test-driven-development"]
+
+[[sorgu]]
+metin = "github pull request"
+beklenen = ["github/github-pr-workflow", "github/github-code-review"]
+
+# ============================================================================
+# ÖBEK (b) — TÜRKÇE KATLAMA
+# Türkçe açıklamalı 18 kaydın üzerinde şapka/ek varyasyonları. `arama.rs`
+# belirtecle() altı harfi ASCII'ye katlar (ı ş ğ ü ö ç → i s g u o c); bu
+# kural 2026-09-04'te pasli-beyin'in gomme::katla'sıyla bilerek eşitlendi.
+# Bu öbek o eşitlemenin gerileme testidir.
+# ============================================================================
+
+[[sorgu]]
+metin = "ayna güdümlü ayıklama"
+beklenen = ["ayna-gudumlu-ayiklama"]
+
+# Aynı sorgu şapkasız: katlama çalışıyorsa İKİSİ DE aynı sonucu vermeli.
+[[sorgu]]
+metin = "ayna gudumlu ayiklama"
+beklenen = ["ayna-gudumlu-ayiklama"]
+
+[[sorgu]]
+metin = "yapılandırma dosyası arşivleme"
+beklenen = ["config-nobetci"]
+
+[[sorgu]]
+metin = "atıf etiketi doğrulama"
+beklenen = ["rust-grounded-citations"]
+
+[[sorgu]]
+metin = "kod deposu satır sayısı"
+beklenen = ["rust-codebase-inspection", "codebase-inspection"]
+
+# ============================================================================
+# ÖBEK (c) — DİLLER ARASI: TÜRKÇE SORGU → İNGİLİZCE BELGE
+# Sorgu ile hedef belge arasında ORTAK BELİRTEÇ YOK. BM25'in yapısı gereği
+# bulamayacağı sorgular; bugün 0 isabet vermesi BEKLENİR.
+#
+# Bu öbek gömmenin tüm değer ölçümüdür ve iki çekirdeği birbirinden ayırır:
+#   - hash-256 (karakter n-gram): morfolojik benzerlik ölçer, çeviri bilmez
+#     → burada da 0 vermesi beklenir. Beklentiyi ölçüm çürütsün ya da doğrulasın.
+#   - multilingual-e5-small: diller arası hizalama tam olarak eğitildiği şey
+#     → katma değer varsa burada görünür.
+# ONNX çekirdeği bu öbekte hash'i belirgin geçmiyorsa varsayılan OLMAZ.
+# ============================================================================
+
+[[sorgu]]
+metin = "makale ara"
+beklenen = ["research/arxiv"]
+
+[[sorgu]]
+metin = "toplantı notlarından görev çıkar"
+beklenen = ["meeting-action-items", "document-to-action-items"]
+
+[[sorgu]]
+metin = "taranmış belgeden metin çıkar"
+beklenen = ["ocr-and-documents"]
+
+[[sorgu]]
+metin = "kök neden bulma yöntemi"
+beklenen = ["systematic-debugging"]
+
+[[sorgu]]
+metin = "kaynak göstererek cevapla"
+beklenen = ["grounded-citations"]
+
+[[sorgu]]
+metin = "haftalık gözden geçirme"
+beklenen = ["weekly-review-planning"]
+
+[[sorgu]]
+metin = "engellenmiş sayfayı aç"
+beklenen = ["blocked-page-recovery"]
+
+[[sorgu]]
+metin = "sunum için hareketli matematik animasyonu"
+beklenen = ["manim-video"]
