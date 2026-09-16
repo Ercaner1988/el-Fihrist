@@ -15,6 +15,7 @@
 //! ```
 
 mod arama;
+mod error;
 mod gomme;
 mod mcp;
 mod olcum;
@@ -22,10 +23,10 @@ mod tara;
 
 use arama::{Belge, Indeks};
 use clap::Parser;
+use error::{CliError, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::Instant;
-use thiserror::Error;
 use turso::{params, Builder, Connection};
 
 /// Kütüphane dosyasının adı. Aranacak yerler için `kutuphane_yolu`.
@@ -119,18 +120,6 @@ enum Command {
         hafta: i64,
     },
 }
-
-#[derive(Error, Debug)]
-enum CliError {
-    #[error("Veritabanı hatası: {0}")]
-    Database(#[from] turso::Error),
-    #[error("IO hatası: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Girdi hatası: {0}")]
-    Girdi(String),
-}
-
-type Result<T> = std::result::Result<T, CliError>;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct Skill {
