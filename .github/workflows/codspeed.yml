@@ -1,0 +1,47 @@
+name: CodSpeed
+
+# NEDEN ci.yml'de değil, ayrı dosyada: .githooks/pre-push ci.yml'deki
+# `run: cargo …` satırlarını yerelde AYNEN koşuyor. `cargo codspeed` Windows'ta
+# kurulu değil ve CodSpeed CLI yalnız Linux'u destekliyor; ci.yml'e girseydi
+# her push yerelde kırmızı düşerdi.
+#
+# Kaynak: CodSpeedHQ/action examples/rust-cargo-codspeed.yml (2026-09-17).
+
+on:
+  push:
+    branches: ["main"] # karşılaştırma tabanı buradan kaydedilir
+  pull_request: # PR'lara performans raporu
+  workflow_dispatch: # CodSpeed'in geriye dönük ilk veri üretmesi için
+
+# Herkese açık depo: CodSpeed tokensiz yüklemeye izin veriyor, OIDC yeterli.
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: codspeed-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codspeed:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup rust toolchain, cache and cargo-codspeed binary
+        uses: moonrepo/setup-rust@v0
+        with:
+          channel: stable
+          cache-target: release
+          bins: cargo-codspeed
+
+      - name: Build the benchmark target(s)
+        run: cargo codspeed build -p ibnunnedim-cli
+
+      - name: Run the benchmarks
+        uses: CodSpeedHQ/action@v5
+        with:
+          mode: simulation
+          run: cargo codspeed run -p ibnunnedim-cli

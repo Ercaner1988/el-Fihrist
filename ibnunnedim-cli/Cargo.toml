@@ -30,3 +30,12 @@ serde_json.workspace = true
 clap.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+# CodSpeed uyumluluk katmanı, `divan` adıyla. `cargo codspeed` dışında düz
+# divan gibi davranır; ikiliye girmez (yalnız dev).
+divan = { package = "codspeed-divan-compat", version = "5.0.1" }
+
+[[bench]]
+name = "arama"
+harness = false
