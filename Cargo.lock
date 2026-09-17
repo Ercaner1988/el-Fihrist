@@ -1606,16 +1606,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fihrist-search"
-version = "0.1.0"
-dependencies = [
- "fihrist-core",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
-]
-
-[[package]]
 name = "fihrist-storage"
 version = "0.1.0"
 dependencies = [
