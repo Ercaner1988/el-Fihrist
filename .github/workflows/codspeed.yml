@@ -37,11 +37,14 @@ jobs:
           cache-target: release
           bins: cargo-codspeed
 
+      # `--workspace`: benchmark'lar dört derlemeye dağıldı (ibnunnedim-cli,
+      # hermes-tools-core, turso-dsl, fihrist-storage). Tek tek `-p` yazmak
+      # yeni bir `[[bench]]` eklendiğinde sessizce ölçüm dışı bırakırdı.
       - name: Build the benchmark target(s)
-        run: cargo codspeed build -p ibnunnedim-cli
+        run: cargo codspeed build --workspace
 
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v5
         with:
           mode: simulation
-          run: cargo codspeed run -p ibnunnedim-cli
+          run: cargo codspeed run --workspace

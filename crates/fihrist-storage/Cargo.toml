@@ -13,3 +13,12 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+# CodSpeed uyumluluk katmanı, `divan` adıyla. `cargo codspeed` dışında düz
+# divan gibi davranır; ikiliye girmez (yalnız dev).
+divan = { package = "codspeed-divan-compat", version = "5.0.1" }
+
+[[bench]]
+name = "depo"
+harness = false

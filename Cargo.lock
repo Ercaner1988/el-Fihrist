@@ -1705,6 +1705,7 @@ dependencies = [
 name = "fihrist-storage"
 version = "0.1.0"
 dependencies = [
+ "codspeed-divan-compat",
  "fihrist-core",
  "serde",
  "serde_json",
@@ -2160,6 +2161,7 @@ dependencies = [
 name = "hermes-tools-core"
 version = "0.1.0"
 dependencies = [
+ "codspeed-divan-compat",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -5723,6 +5725,7 @@ dependencies = [
 name = "turso-dsl"
 version = "0.1.0"
 dependencies = [
+ "codspeed-divan-compat",
  "tokio",
  "tracing",
 ]
