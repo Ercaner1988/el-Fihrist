@@ -17,6 +17,7 @@
 mod arama;
 mod error;
 mod gomme;
+mod kayit;
 mod mcp;
 mod olcum;
 mod tara;
@@ -34,6 +35,10 @@ const DB_ADI: &str = "kutup_kutuphane.db";
 
 /// Depo kataloğu — ana kütüphanenin yanında ayrı dosya. Gerekçesi `depo_baglan`.
 const DEPO_DB_ADI: &str = "kutup_depolar.db";
+
+/// Araç çağrısı günlüğü — ayrı dosya: büyür, budanabilir, katalogla ömrü
+/// ortak değil. Ana kütüphaneye yazılmaz (fts5 tuzağı, bkz. `depo_baglan`).
+const KAYIT_DB_ADI: &str = "kutup_kayitlar.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
@@ -92,6 +97,13 @@ enum Command {
     },
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
     Mcp,
+    /// Claude Code dökümlerindeki araç çağrılarını günlüğe aktarır.
+    /// Kanca gerekmez: dökümler zaten append-only günlük (bkz. kayit.rs).
+    KayitAl {
+        /// Döküm kökü. Varsayılan: `CLAUDE_CONFIG_DIR` ya da `~/.claude`, altında `projects`.
+        #[arg(long)]
+        kok: Option<PathBuf>,
+    },
     /// Verilen kökler altındaki git depolarını kataloğa yazar (depo başına TEK satır).
     Tara {
         /// Taranacak kökler. Kişisel yol depoya gömülmesin diye varsayılan YOK.
@@ -694,9 +706,15 @@ const DEPO_TABLOSU: &str = "CREATE TABLE depolar (\
 /// `yarat` false ise dosya yoksa `None` döner — arama yanında çöp dosya
 /// bırakmasın (`kutuphane_yolu`nun aynı gerekçesi).
 async fn depo_baglan(yarat: bool) -> Result<Option<Connection>> {
+    yan_baglan(DEPO_DB_ADI, yarat).await
+}
+
+/// Ana kütüphanenin YANINDAKİ bir el-Fihrist dosyasını açar (depo kataloğu,
+/// araç çağrısı günlüğü). Hepsi aynı gerekçeyle ayrı: bkz. `depo_baglan`.
+async fn yan_baglan(ad: &str, yarat: bool) -> Result<Option<Connection>> {
     let yol = kutuphane_yolu()
         .map_err(CliError::Girdi)?
-        .with_file_name(DEPO_DB_ADI);
+        .with_file_name(ad);
     if !yol.is_file() && !yarat {
         return Ok(None);
     }
@@ -704,6 +722,79 @@ async fn depo_baglan(yarat: bool) -> Result<Option<Connection>> {
         .build()
         .await?;
     Ok(Some(db.connect()?))
+}
+
+/// Dökümlerdeki araç çağrılarını günlüğe aktarır; zaten alınmışı atlar.
+///
+/// Tekillik `tool_use.id` ile — çağrı kimliği oturumlar arası tekil. Var olan
+/// kimlikler bir kez okunup kümeye alınır: Turso'nun çakışma çözümüne
+/// (`INSERT OR IGNORE`) yaslanmak yerine sayım da buradan çıkıyor.
+/// ponytail: her koşumda bütün dökümler baştan okunur (bugün 612 MB, 163
+/// dosya). Yavaşlarsa yükseltme yolu, dosya başına alınan bayt ofsetini
+/// saklayıp yalnız sonrasını okumak — dökümler append-only.
+async fn kayitlari_al(kok: &std::path::Path) -> Result<(usize, usize, usize)> {
+    let conn = yan_baglan(KAYIT_DB_ADI, true)
+        .await?
+        .expect("yarat=true iken bağlantı hep döner");
+    if !tablo_var(&conn, "arac_cagrilari").await? {
+        conn.execute(
+            "CREATE TABLE arac_cagrilari (kimlik TEXT PRIMARY KEY, oturum TEXT NOT NULL, \
+             proje TEXT NOT NULL, arac TEXT NOT NULL, ozet TEXT NOT NULL, \
+             hata INTEGER NOT NULL, baslangic TEXT NOT NULL, sure_ms INTEGER)",
+            (),
+        )
+        .await?;
+    }
+    let mut alinmis = std::collections::HashSet::new();
+    let mut oku = conn.query("SELECT kimlik FROM arac_cagrilari", ()).await?;
+    while let Some(r) = oku.next().await? {
+        alinmis.insert(r.get::<String>(0)?);
+    }
+
+    let dosyalar = kayit::dokumleri_bul(kok);
+    let mut yeni = 0usize;
+    // Tek işlem: binlerce INSERT'i tek tek işlemek her birine ayrı fsync demek.
+    conn.execute("BEGIN", ()).await?;
+    for dosya in &dosyalar {
+        let Ok(icerik) = std::fs::read_to_string(dosya) else {
+            continue; // o an yazılan ya da kilitli döküm: bir sonraki koşumda
+        };
+        let oturum = dosya
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        // `projects/<proje>/...` — kökten sonraki ilk bileşen.
+        let proje = dosya
+            .strip_prefix(kok)
+            .ok()
+            .and_then(|g| g.components().next())
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .unwrap_or_default();
+        for c in kayit::dokumden_cagrilar(&icerik, &oturum, &proje) {
+            if !alinmis.insert(c.kimlik.clone()) {
+                continue;
+            }
+            conn.execute(
+                "INSERT INTO arac_cagrilari \
+                 (kimlik, oturum, proje, arac, ozet, hata, baslangic, sure_ms) \
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                params![
+                    c.kimlik.as_str(),
+                    c.oturum.as_str(),
+                    c.proje.as_str(),
+                    c.arac.as_str(),
+                    c.ozet.as_str(),
+                    c.hata as i64,
+                    c.baslangic.as_str(),
+                    c.sure_ms
+                ],
+            )
+            .await?;
+            yeni += 1;
+        }
+    }
+    conn.execute("COMMIT", ()).await?;
+    Ok((dosyalar.len(), yeni, alinmis.len()))
 }
 
 /// Depo satırlarını yazar: değişmeyeni atlar, değişeni günceller, yenisini ekler.
@@ -786,6 +877,25 @@ async fn main() -> Result<()> {
         return graf_calistir(soru.as_deref(), *kur);
     }
 
+    // kayit-al ana kütüphaneyi AÇMAZ, yalnız yanındaki dizini bulur. Açmaya
+    // kalksaydı düşerdi: Turso dosyayı süreç ömrünce tekel kilitliyor ve açık
+    // bir Claude oturumunun `ibnunnedim mcp` sunucusu kilidi hep tutuyor
+    // (ölçüldü 2026-09-18: "os error 33", kilit sahibi `ibnunnedim.exe mcp`).
+    if let Command::KayitAl { kok } = &args.command {
+        let kok = kok
+            .clone()
+            .or_else(kayit::varsayilan_kok)
+            .ok_or_else(|| CliError::Girdi("döküm kökü bulunamadı; --kok ile ver".into()))?;
+        let basla = Instant::now();
+        let (dosya, yeni, toplam) = kayitlari_al(&kok).await?;
+        println!(
+            "KAYIT {dosya} döküm tarandı · {yeni} yeni çağrı · günlükte {toplam} · {:.1} sn\n  kök: {}",
+            basla.elapsed().as_secs_f64(),
+            kok.display()
+        );
+        return Ok(());
+    }
+
     let conn = baglan().await?;
 
     match args.command {
@@ -856,6 +966,28 @@ async fn main() -> Result<()> {
                 None => "YOK (ibnunnedim tara <kök>)".to_string(),
             };
             println!("  Depo        : {depo}");
+            // Günlük tablosu yoksa (hiç `kayit-al` koşmadıysa) sayılamaz.
+            let cagri = match yan_baglan(KAYIT_DB_ADI, false).await? {
+                Some(k) if tablo_var(&k, "arac_cagrilari").await? => {
+                    let mut r = k
+                        .query(
+                            "SELECT COUNT(*), SUM(hata), MAX(baslangic) FROM arac_cagrilari",
+                            (),
+                        )
+                        .await?;
+                    match r.next().await? {
+                        Some(s) => format!(
+                            "{} ({} hata · son {})",
+                            s.get::<i64>(0).unwrap_or(0),
+                            s.get::<i64>(1).unwrap_or(0),
+                            s.get::<String>(2).unwrap_or_else(|_| "—".into())
+                        ),
+                        None => "0".into(),
+                    }
+                }
+                _ => "YOK (ibnunnedim kayit-al)".to_string(),
+            };
+            println!("  Araç çağrısı: {cagri}");
             println!("  Tekmil      : {tekmil}");
             println!("  Kod hazinesi: {kod}");
             println!(
@@ -983,6 +1115,9 @@ async fn main() -> Result<()> {
             );
         }
         Command::Mcp => mcp::calistir(&conn).await?,
+        Command::KayitAl { .. } => {
+            unreachable!("kayit-al DB bağlantısından önce ele alınır")
+        }
         Command::Tara {
             koklar,
             derinlik,
