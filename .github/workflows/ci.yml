@@ -57,5 +57,10 @@ jobs:
           cache-on-failure: true
       - name: Check formatting
         run: cargo fmt --all -- --check
+      # `--all-features` BİLEREK YOK: `onnx` feature'ı `fastembed` → `ort`
+      # ağacını çeker ve derleme sırasında ONNX Runtime ikilisini İNDİRİR.
+      # Her push'ta yüz megabaytlarca indirme, varsayılan derlemede hiç
+      # kullanılmayan bir çekirdek için. ONNX bacağı yerelde denetlenir:
+      #   cargo clippy --features onnx --all-targets -- -D warnings
       - name: Run clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings

@@ -28,23 +28,21 @@
 
 * **純粋なRust BM25検索エンジン:** トルコ語の文字折りたたみ（例: `İ→i`, `I→ı`, `Ş→ş`）を備えた、メモリ内高速関連性検索エンジン。
 * **Turso / SQLiteコア:** 140以上の外部スキルと組み込みのRustツールを含むポータブルSQLiteデータベース（`kutup_kutuphane.db`）。
-* **マルチクレートアーキテクチャ:** CLI、Core、Turso-DSL、React、およびTLS Serverモジュールで構成されるモジュール式Rust構造。
+* **マルチクレートアーキテクチャ:** CLI (`ibnunnedim-cli`) と Core (`hermes-tools-core`) の2クレートから成るモジュール式Rust構造。
 * **厳格な検証 (Maşa Döngüsü):** D1-D3およびR2のGolden衛生検査ゲートによる、安全なコードおよびレポート監査。
 
 ##### 🧰 利用可能なスキルとシステムモジュール
-コアライブラリ（`hermes-tools-core` およびワークスペース）には、現在、直接使用できる12の主要なスキルとモジュールが用意されている:
+`hermes-tools-core` ライブラリは10個のモジュールを提供する。これらはRust APIであり、`ibnunnedim` バイナリはこのクレートに依存していない — バイナリのコマンドについては後述の使用方法を参照。
 1. **citation:** Zopayインフラストラクチャを介した、論文や学術テキストの引用の検証と報告（`verify_citations`）。
 2. **codebase:** ソースコードの要約、ファイルコンテンツ分析、および品質検出（`analyze_file_content`）。
 3. **docx:** MS Word XMLレイヤーの解析と低フォームファクタ読み取り（`extract_paragraphs_from_xml`）。
 4. **extract:** ノイズのないクリーンなHTMLおよびコンテンツ抽出用のスマートエンジン（`html_ayikla`）。
-5. **masa_dongusu:** 6つのゲートによる検証と自律的なゲート移行ロックメカニズム（`validate_masa_dongusu`）。
+5. **masa_dongusu:** 4つのゲート（D1、D2、D3、R2）による検証とゲート移行レポート（`validate_masa_dongusu`）。
 6. **multilingual:** 標準化された並列多言語READMEエンジンと品質コントローラ。
-7. **router:** エージェントサブネットのルーティング、セマンティックグラフアーキテクチャ、およびEdge/Route管理（`RouteResult`）。
+7. **router:** エージェントサブネットのルーティング、グラフ上のダイクストラ最短経路、およびEdge/Route管理（`RouteResult`）。
 8. **rules_checker:** 高度なRustソースコードルールおよび品質基準の監査（`check_rust_code_rules`）。
-9. **session:** 通信セッションおよびメモリデータ向けの、過去の構造化BM25クエリモジュール（`search_session`）。
+9. **session:** 通信セッションおよびメモリデータ向けの部分文字列一致検索モジュール（`search_session`）。
 10. **skillopt:** エージェントスキルの自律的な進化。スコアリングマトリクスを利用したソフト/ハードゲートの検証コマンドインフラストラクチャ。
-11. **turso-dsl:** Edge SQLite構造向けの、カスタマイズされたスキーマ定義コマンドと抽象化レイヤーの依存関係。
-12. **hermes-react & hermes-tls:** 外部システムとのエージェントの安全な非同期通信を可能にするサーバーモジュール。
 
 ---
 
@@ -52,7 +50,7 @@
 
 ##### 依存関係とクレート
 * **Rust 1.63+** (Edition 2021)
-* ワークスペースクレート: `ibnunnedim-cli`, `crates/hermes-tools-core`, `crates/turso-dsl`, `crates/hermes-react`, `crates/hermes-tls-server`
+* ワークスペースクレート: `ibnunnedim-cli`, `crates/hermes-tools-core`
 * システムデータベース: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
 
 ##### ビルドと実行
@@ -68,6 +66,9 @@ cargo build --release --workspace
 
 # レポート（Tekmil）スコアの送信
 ./target/release/ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Passed outer gauntlet"
+
+# stdio MCP サーバーとして実行（エージェント/クライアントが接続）
+./target/release/ibnunnedim mcp
 ```
 
 ---
@@ -75,13 +76,14 @@ cargo build --release --workspace
 #### 🏗️ インフラストラクチャと動作原理
 * **BM25インデックス作成:** データベース内のすべてのスキルは単一のクエリで読み取られ、メモリ内のBM25インデックスに読み込まれる。UTF-8で安定した `kisalt` 関数を使用して、安全にテキストを切り捨てる。
 * **データベース統合:** `turso::Builder::new_local` ドライバを使用して、ゼロコピーのリモートおよびローカルの同期SQLite接続を確立する。
-* **レイヤーユーティリティ:** `tokio` (非同期ランタイム)、`clap` (CLI引数パーサー)、`axum` & `tower` (HTTP/RESTサーバー)、`serde_json` (マニフェスト操作)。
+* **レイヤーユーティリティ:** `tokio` (非同期ランタイム)、`clap` (CLI引数パーサー)、`serde_json` (MCPプロトコルおよびマニフェスト操作)。
 
 ---
 
 #### 🗺️ ロードマップ
 - [x] トルコ語の文字折りたたみが可能な純粋なRust BM25検索エンジン。
 - [x] Turso SQLite `kutup_kutuphane.db` 統合およびTekmilスコアリングメカニズム。
+- [x] エージェント向け stdio MCP (JSON-RPC 2.0) サーバー — `ibnunnedim mcp`、4ツール。
 - [ ] 自律的かつ的確なツール呼び出しアーキテクチャのための、セマンティック（ヒューリスティック、解釈学的、認識論的、道徳的など）な動的データベース/スキル分類構造への移行。
 - [ ] エージェント用のローカルMCP (Model Context Protocol) GraphQL/gRPCブリッジの構築。
 - [ ] 自律的なSkillOptスリープエンジンによるTursoの直接的な変更。

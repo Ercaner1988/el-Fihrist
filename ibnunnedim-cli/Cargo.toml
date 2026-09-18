@@ -22,8 +22,8 @@ onnx = ["dep:fastembed"]
 turso.workspace = true
 # ONNX gömme çekirdeği (multilingual-e5-small, 384 boyut). Yalnız `--features onnx`.
 fastembed = { version = "4.9", optional = true }
-# Ollama'nın yerel /api/embed uç noktası için: yalnız 127.0.0.1'e konuşur,
-# TLS gerekmez — varsayılan özellikler (bir TLS yığını dahil) kapalı.
+# bge-embed-rs / llama-server'ın yerel /v1/embeddings uç noktası için: yalnız
+# 127.0.0.1'e konuşur, TLS gerekmez — varsayılan özellikler kapalı.
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
 serde.workspace = true
 serde_json.workspace = true
