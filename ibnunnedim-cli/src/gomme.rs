@@ -28,7 +28,8 @@
 //! İngilizce belge), hash256'nın yapısı gereği çözemediği sorgularda
 //! ('makale ara' → research/arxiv, 'toplantı notlarından görev çıkar' →
 //! meeting-action-items, vb.) isabet sağlıyor. Bu yüzden `#[default]`
-//! `OllamaBgeM3`'e taşındı — tahminle değil, ölçümle.
+//! `BgeM3`'e taşındı — tahminle değil, ölçümle. (Ölçüm Ollama ile yapıldı;
+//! 2026-09-18'den beri aynı GGUF'u llama-server servis ediyor.)
 //!
 //! Bedel: sorgu başına ~71 ms (ağ + model), hash256'nın ~0,05 ms'sine karşı.
 //! Bir arama aracı için gözden kaybolacak kadar küçük; kabul edildi. Ollama
@@ -57,7 +58,7 @@ pub enum Rol {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, clap::ValueEnum)]
 pub enum Cekirdek {
     /// Yerel hash n-gram: sıfır bağımlılık, ağ yok, model indirmesi yok.
-    /// Ollama'ya erişilemezse (`gomme()` hata verirse) düşülecek elle seçim.
+    /// llama-server'a erişilemezse (`gomme()` hata verirse) düşülecek elle seçim.
     #[value(name = "hash256")]
     Hash256,
     /// `intfloat/multilingual-e5-small` (384 boyut, ONNX). Diller arası
@@ -66,15 +67,17 @@ pub enum Cekirdek {
     #[cfg(feature = "onnx")]
     #[value(name = "e5s384")]
     E5s384,
-    /// Yerel Ollama sunucusu üzerinden `bge-m3` (1024 boyut, çok dilli).
-    /// Ağa çıkmaz — yalnız 127.0.0.1:11434. VARSAYILAN: ölçüm hem izole
-    /// kanalda hem füzyonda hash256'yı geride bıraktığını gösterdi (bkz.
-    /// modül belgesindeki karar kapısı). Ollama çalışmıyorsa/model
-    /// çekilmemişse `gomme()` hata döner; çağıran bunu "vektör yok" sayıp
-    /// BM25'e düşer (sessiz düşüş yok, `govde_yukle` stderr'e yazar).
+    /// `bge-embed-rs` (saf Rust/candle) üzerinden `bge-m3` (1024 boyut, çok
+    /// dilli). Ağa çıkmaz — yalnız 127.0.0.1:11435 (kendi ayrık süreç/port,
+    /// Open Notebook'un kullandığı 11434'ten bağımsız — bkz. `bge_m3` modül
+    /// belgesi). VARSAYILAN: ölçüm hem izole kanalda hem füzyonda hash256'yı
+    /// geride bıraktığını gösterdi (bkz. modül belgesindeki karar kapısı).
+    /// Sunucu kapalıysa `gomme()` hata döner; karma arama bunu stderr'e
+    /// yazıp BM25'e düşer. `ollama-bge-m3` eski ad (2026-09-18'e dek
+    /// Ollama'ydı, sonra llama-server'a geçti), takma ad kaldı.
     #[default]
-    #[value(name = "ollama-bge-m3")]
-    OllamaBgeM3,
+    #[value(name = "bge-m3", alias = "ollama-bge-m3")]
+    BgeM3,
 }
 
 impl Cekirdek {
@@ -85,7 +88,7 @@ impl Cekirdek {
             Cekirdek::Hash256 => "hash256",
             #[cfg(feature = "onnx")]
             Cekirdek::E5s384 => "e5s384",
-            Cekirdek::OllamaBgeM3 => "ollama-bge-m3",
+            Cekirdek::BgeM3 => "bge-m3",
         }
     }
 
@@ -94,7 +97,7 @@ impl Cekirdek {
             Cekirdek::Hash256 => BOYUT_HASH,
             #[cfg(feature = "onnx")]
             Cekirdek::E5s384 => 384,
-            Cekirdek::OllamaBgeM3 => ollama::BOYUT,
+            Cekirdek::BgeM3 => bge_m3::BOYUT,
         }
     }
 
@@ -117,7 +120,7 @@ impl Cekirdek {
             Cekirdek::Hash256 => 0.05,
             #[cfg(feature = "onnx")]
             Cekirdek::E5s384 => E5_TABAN,
-            Cekirdek::OllamaBgeM3 => 0.0,
+            Cekirdek::BgeM3 => 0.0,
         }
     }
 }
@@ -277,33 +280,51 @@ mod e5 {
     }
 }
 
-/// Ollama bacağı: `bge-m3`, yerel `/api/embed` üzerinden (toplu).
-///
-/// Ollama'nın eski `/api/embeddings` uç noktası tek metin alır; `/api/embed`
-/// diziyi tek istekte gömer — `olcum` 145+ belgeyi tek seferde göndersin diye
-/// bu tercih edildi (145 ayrı HTTP round-trip yerine 1).
-mod ollama {
+/// bge-m3 bacağı: `bge-embed-rs`'in (saf Rust/candle, C++ ikiliye bağımsız)
+/// OpenAI uyumlu `/v1/embeddings` ucu (toplu). 2026-09-19'a dek 11434'teki
+/// llama-server kullanılıyordu — Open Notebook'un aynı sunucuyu 790 eserlik
+/// toplu gömme backlog'u için doldurmasıyla kısa sorgular aynı kuyrukta
+/// dakikalarca bekliyordu (ölçüldü: 95 sn). `bge-embed-rs` ayrı bir süreç/
+/// port (11435) olduğu için bu kuyruk çakışması kökten ortadan kalktı —
+/// darboğaz protokol değil kaynak paylaşımıydı, JSON/HTTP'nin kendisi hiç
+/// suçlu değildi. Dizi tek istekte gider — `olcum` 145+ belgeyi 145
+/// round-trip yerine 1'de.
+mod bge_m3 {
     use serde::Deserialize;
 
-    const UC_NOKTA: &str = "http://127.0.0.1:11434/api/embed";
+    const UC_NOKTA: &str = "http://127.0.0.1:11435/v1/embeddings";
     const MODEL: &str = "bge-m3";
 
     /// bge-m3'ün doğal çıktı boyutu. Sabit yazılır ama KÖRÜNE güvenilmez:
     /// `gomme_toplu` her vektörün gerçekten bu uzunlukta geldiğini denetler
-    /// — yanlış model çalışıyorsa (`ollama pull` unutulmuş, başka model
-    /// takma adı çakışmış) sessizce yanlış boyutlu vektör kabul edilmesin.
+    /// — sunucu başka bir GGUF ile açılmışsa (llama-server `model` alanını
+    /// yok sayar) sessizce yanlış boyutlu vektör kabul edilmesin.
     pub const BOYUT: usize = 1024;
 
     #[derive(Deserialize)]
     struct Cevap {
-        embeddings: Vec<Vec<f32>>,
+        data: Vec<Oge>,
     }
 
-    /// Toplu gömme çağrısı. Ollama ayakta değilse/model çekilmemişse hata
-    /// döner; çağıran (`Cekirdek::gomme` → `govde_yukle`) bunu "vektör yok"
-    /// sayıp BM25'e düşer ve stderr'e yazar — sessiz düşüş yok.
-    pub async fn gomme_toplu(metinler: &[String]) -> crate::Result<Vec<Vec<f32>>> {
-        let istemci = reqwest::Client::new();
+    #[derive(Deserialize)]
+    struct Oge {
+        index: usize,
+        embedding: Vec<f32>,
+    }
+
+    /// Toplu gömme çağrısı. Sunucu kapalıysa hata döner; karma arama bunu
+    /// stderr'e yazıp BM25'e düşer — sessiz düşüş yok.
+    pub async fn gomme_toplu(
+        metinler: &[String],
+        sure: Option<std::time::Duration>,
+    ) -> crate::Result<Vec<Vec<f32>>> {
+        let mut kurucu = reqwest::Client::builder();
+        if let Some(s) = sure {
+            kurucu = kurucu.timeout(s);
+        }
+        let istemci = kurucu
+            .build()
+            .map_err(|e| crate::CliError::Girdi(format!("bge-m3: istemci kurulamadı: {e}")))?;
         let govde = serde_json::json!({ "model": MODEL, "input": metinler });
         let yanit = istemci
             .post(UC_NOKTA)
@@ -311,34 +332,42 @@ mod ollama {
             .send()
             .await
             .map_err(|e| {
+                if e.is_timeout() {
+                    return crate::CliError::Girdi(
+                        "bge-m3: sunucu süresinde yanıt vermedi (kuyruk dolu olabilir)".into(),
+                    );
+                }
                 crate::CliError::Girdi(format!(
-                    "ollama-bge-m3: Ollama'ya bağlanılamadı ({e}). \
-                     `ollama serve` çalışıyor mu, `ollama pull bge-m3` yapıldı mı?"
+                    "bge-m3: bge-embed-rs'e bağlanılamadı ({e}). \
+                     127.0.0.1:11435'te çalışıyor mu?"
                 ))
             })?;
         let yanit = yanit
             .error_for_status()
-            .map_err(|e| crate::CliError::Girdi(format!("ollama-bge-m3: sunucu hatası: {e}")))?;
-        let govde: Cevap = yanit.json().await.map_err(|e| {
-            crate::CliError::Girdi(format!("ollama-bge-m3: yanıt ayrıştırılamadı: {e}"))
-        })?;
+            .map_err(|e| crate::CliError::Girdi(format!("bge-m3: sunucu hatası: {e}")))?;
+        let mut govde: Cevap = yanit
+            .json()
+            .await
+            .map_err(|e| crate::CliError::Girdi(format!("bge-m3: yanıt ayrıştırılamadı: {e}")))?;
 
-        if govde.embeddings.len() != metinler.len() {
+        if govde.data.len() != metinler.len() {
             return Err(crate::CliError::Girdi(format!(
-                "ollama-bge-m3: {} metin gönderildi, {} vektör döndü",
+                "bge-m3: {} metin gönderildi, {} vektör döndü",
                 metinler.len(),
-                govde.embeddings.len()
+                govde.data.len()
             )));
         }
-        for v in &govde.embeddings {
-            if v.len() != BOYUT {
+        // OpenAI sözleşmesi sırayı `index` ile verir, dizi sırasıyla değil.
+        govde.data.sort_by_key(|o| o.index);
+        for o in &govde.data {
+            if o.embedding.len() != BOYUT {
                 return Err(crate::CliError::Girdi(format!(
-                    "ollama-bge-m3: beklenen {BOYUT} boyut, {} geldi — 'bge-m3' modeli mi çalışıyor?",
-                    v.len()
+                    "bge-m3: beklenen {BOYUT} boyut, {} geldi — sunucu 'bge-m3' GGUF'uyla mı açık?",
+                    o.embedding.len()
                 )));
             }
         }
-        Ok(govde.embeddings)
+        Ok(govde.data.into_iter().map(|o| o.embedding).collect())
     }
 }
 
@@ -365,9 +394,20 @@ pub async fn gomme(metinler: &[String], rol: Rol, k: Cekirdek) -> crate::Result<
                 .embed(onekli, None)
                 .map_err(|h| crate::CliError::Girdi(format!("e5s384 gömme başarısız: {h}")))
         }
-        Cekirdek::OllamaBgeM3 => {
-            let _ = rol; // bge-m3 E5 ailesinin önek sözleşmesini paylaşmaz
-            let mut vs = ollama::gomme_toplu(metinler).await?;
+        Cekirdek::BgeM3 => {
+            // bge-m3 E5 ailesinin önek sözleşmesini paylaşmaz; rol yalnız
+            // bekleme süresini belirler. 2026-09-19'dan beri `bge-embed-rs`
+            // ayrı bir süreç/port (11435) — Open Notebook'un 11434'teki
+            // toplu backlog'uyla artık KUYRUK PAYLAŞMIYOR, o darboğaz kökten
+            // çözüldü. Yine de arama sorgusu (Rol::Sorgu) uzun sürmemeli:
+            // el-Fihrist'in KENDİ toplu indeksleme işi (Rol::Belge) aynı
+            // sunucuyu meşgul edebilir; sabit 3 sn üst sınırı bu durumda bile
+            // aramanın BM25'e düşmesini garanti eder, hiç beklemez.
+            let sure = match rol {
+                Rol::Sorgu => Some(std::time::Duration::from_secs(3)),
+                Rol::Belge => None,
+            };
+            let mut vs = bge_m3::gomme_toplu(metinler, sure).await?;
             // Ollama'nın L2 normalize garantisi belgelenmemiş — `kosinus`
             // nokta çarpımını kosinüs SAYAR, bu yüzden burada normalize
             // ETTİĞİMİZDEN emin oluyoruz (hash256 ile aynı disiplin).
@@ -494,8 +534,8 @@ mod testler {
     #[ignore = "yerel Ollama sunucusu ve bge-m3 modeli gerekir"]
     async fn ollama_boyut_ve_normalize() {
         let m = vec!["dosya arama motoru".to_string()];
-        let v = gomme(&m, Rol::Belge, Cekirdek::OllamaBgeM3).await.unwrap();
-        assert_eq!(v[0].len(), Cekirdek::OllamaBgeM3.boyut());
+        let v = gomme(&m, Rol::Belge, Cekirdek::BgeM3).await.unwrap();
+        assert_eq!(v[0].len(), Cekirdek::BgeM3.boyut());
         let norm: f32 = v[0].iter().map(|x| x * x).sum();
         assert!((norm - 1.0).abs() < 1e-3, "L2 normalize değil: {norm}");
     }

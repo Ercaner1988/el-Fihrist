@@ -358,6 +358,11 @@ async fn kosinusla(
     kip: gomme::Cekirdek,
     genis: usize,
 ) -> Result<Vec<(usize, f64)>> {
+    // Kullanılabilir vektör yoksa sorguyu gömmek boşa ağ çağrısıdır — ve
+    // sunucu kapalıysa bütün aramayı düşürürdü.
+    if g.vektorler.iter().all(|v| v.is_none()) {
+        return Ok(Vec::new());
+    }
     let q = gomme::gomme(&[sorgu.to_string()], gomme::Rol::Sorgu, kip).await?;
     let taban = kip.taban();
     let mut v: Vec<(usize, f64)> = g
@@ -391,9 +396,15 @@ async fn sirala(
         Kanal::Gomme => Vec::new(),
         _ => g.indeks.ara(sorgu, genis),
     };
+    // Karma aramada gömme sunucusu düşerse BM25 yine sonuç verir; saf gömme
+    // kanalında (ölçüm) hata yutulmaz, yoksa sıfır isabet diye ölçülürdü.
     let kos = match kanal {
         Kanal::Bm25 => Vec::new(),
-        _ => kosinusla(g, sorgu, kip, genis).await?,
+        Kanal::Gomme => kosinusla(g, sorgu, kip, genis).await?,
+        Kanal::Karmasik => kosinusla(g, sorgu, kip, genis).await.unwrap_or_else(|h| {
+            eprintln!("! gömme kanalı düştü, yalnız BM25: {h}");
+            Vec::new()
+        }),
     };
     // 0,5/0,5: pasli-beyin'de ölçülmüş ağırlık (kopru.rs Kanal::Karmasik).
     let agirlik = match kanal {
