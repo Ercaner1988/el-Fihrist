@@ -8,7 +8,9 @@
 //! KURAL: stdout YALNIZ protokole aittir. Tanı çıktısı stderr'e gider; tek bir
 //! kaçak `println!` el sıkışmayı bozar.
 
-use crate::{fts_indeksleri, kutuphane_yolu, list_all_skills, say, search_skills, tekmil_ver};
+use crate::{
+    baglan, fts_indeksleri, kutuphane_yolu, list_all_skills, say, search_skills, tekmil_ver,
+};
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use turso::Connection;
@@ -185,8 +187,24 @@ async fn arac_calistir(
     }
 }
 
+/// Kütüphaneyi yalnız bir araç çağrısı süresince açar. Turso dosyayı açık
+/// bağlantı boyunca tekel kilitler; bağlantıyı süreç ömrünce tutan sunucu,
+/// ikinci bir oturumun sunucusunu "os error 33" ile düşürüyordu (2026-09-23).
+/// ponytail: sabit yeniden deneme (~3 sn); yazar sayısı artarsa ADR 0001'in dal modeli.
+async fn baglan_bekle() -> crate::Result<Connection> {
+    let mut son = None;
+    for n in 1..=15u64 {
+        match baglan().await {
+            Ok(c) => return Ok(c),
+            Err(e) => son = Some(e),
+        }
+        tokio::time::sleep(std::time::Duration::from_millis((40 * n).min(300))).await;
+    }
+    Err(son.expect("en az bir deneme yapıldı"))
+}
+
 /// Bir isteği yanıta çevirir. `None` dönerse hiçbir şey yazılmaz.
-async fn ele_al(conn: &Connection, istek: Istek) -> Option<Value> {
+async fn ele_al(istek: Istek) -> Option<Value> {
     match istek {
         Istek::Bildirim => None,
         Istek::Bozuk(e) => Some(hata(&Value::Null, -32700, &format!("ayrıştırılamadı: {e}"))),
@@ -215,7 +233,11 @@ async fn ele_al(conn: &Connection, istek: Istek) -> Option<Value> {
                     .get("arguments")
                     .cloned()
                     .unwrap_or_else(|| json!({}));
-                match arac_calistir(conn, &ad, &arg).await {
+                let sonuc = match baglan_bekle().await {
+                    Ok(conn) => arac_calistir(&conn, &ad, &arg).await,
+                    Err(e) => Err(format!("kütüphane açılamadı: {e}")),
+                };
+                match sonuc {
                     Ok(t) => yanit(&id, json!({"content": [{"type": "text", "text": t}]})),
                     Err(e) => yanit(
                         &id,
@@ -229,7 +251,7 @@ async fn ele_al(conn: &Connection, istek: Istek) -> Option<Value> {
 }
 
 /// stdin'den satır okur, stdout'a yanıt yazar. EOF'ta biter.
-pub async fn calistir(conn: &Connection) -> crate::Result<()> {
+pub async fn calistir() -> crate::Result<()> {
     let mut girdi = BufReader::new(tokio::io::stdin()).lines();
     let mut cikti = tokio::io::stdout();
     eprintln!("el-fihrist MCP: hazır (protokol {PROTOKOL})");
@@ -238,7 +260,7 @@ pub async fn calistir(conn: &Connection) -> crate::Result<()> {
         if satir.trim().is_empty() {
             continue;
         }
-        if let Some(y) = ele_al(conn, ayristir(&satir)).await {
+        if let Some(y) = ele_al(ayristir(&satir)).await {
             cikti.write_all(y.to_string().as_bytes()).await?;
             cikti.write_all(b"\n").await?;
             cikti.flush().await?;

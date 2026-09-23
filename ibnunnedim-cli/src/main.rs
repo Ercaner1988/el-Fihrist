@@ -907,6 +907,11 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // MCP sunucusu kütüphaneyi süreç ömrünce tutamaz; her çağrıda açıp bırakır.
+    if let Command::Mcp = args.command {
+        return mcp::calistir().await;
+    }
+
     let conn = baglan().await?;
 
     match args.command {
@@ -1125,7 +1130,7 @@ async fn main() -> Result<()> {
                  karşılaştırılamaz. Gömme karmasik'i geçmiyorsa varsayılan OLMAZ.)"
             );
         }
-        Command::Mcp => mcp::calistir(&conn).await?,
+        Command::Mcp => unreachable!("mcp DB bağlantısından önce ele alınır"),
         Command::KayitAl { .. } => {
             unreachable!("kayit-al DB bağlantısından önce ele alınır")
         }
