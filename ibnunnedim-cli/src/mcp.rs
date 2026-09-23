@@ -9,7 +9,8 @@
 //! kaçak `println!` el sıkışmayı bozar.
 
 use crate::{
-    baglan, fts_indeksleri, kutuphane_yolu, list_all_skills, say, search_skills, tekmil_ver,
+    baglan, fts_indeksleri, kural_ara, kural_baglan, kural_ekle, kural_listele, kutuphane_yolu,
+    list_all_skills, say, search_skills, tekmil_ver,
 };
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -108,6 +109,41 @@ pub fn araclar() -> Value {
                 },
                 "required": ["ajan", "yetenek", "puan", "gerekce"]
             }
+        },
+        {
+            "name": "kural_ekle",
+            "description": "Paylaşılan kural kataloğuna (AGENTS.md/CLAUDE.md tarzı davranış kuralı) bir kayıt ekler. Ayrı dosyadadır, yetenek kütüphanesine dokunmaz. YAZMA işlemidir.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "metin": {"type": "string", "description": "Kural metni"},
+                    "kaynak": {"type": "string", "description": "Nereden geldiği (dosya/proje adı); boşsa 'mcp'"},
+                    "etiketler": {"type": "string", "description": "Virgülle ayrılmış etiketler; boşsa yok"}
+                },
+                "required": ["metin"]
+            }
+        },
+        {
+            "name": "kural_ara",
+            "description": "Kurallar kataloğunda alt-dize arar (yalnız aktif kurallar).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "sorgu": {"type": "string"},
+                    "limit": {"type": "integer", "description": "Azami sonuç sayısı (varsayılan 20)"}
+                },
+                "required": ["sorgu"]
+            }
+        },
+        {
+            "name": "kural_listele",
+            "description": "Aktif kuralları listeler; istenirse tek etiketle sınırlar.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "etiket": {"type": "string", "description": "Süzülecek etiket; boşsa tümü"}
+                }
+            }
         }
     ])
 }
@@ -183,6 +219,33 @@ async fn arac_calistir(
                 "tekmil kaydedildi: {ajan} → {yetenek} ({puan}, hafta {hafta})"
             ))
         }
+        "kural_ekle" => {
+            let metin_ = metin(p, "metin")?;
+            let kaynak = p.get("kaynak").and_then(Value::as_str).unwrap_or("mcp");
+            let etiketler = p.get("etiketler").and_then(Value::as_str).unwrap_or("");
+            let kconn = kural_baglan_bekle().await.map_err(|e| e.to_string())?;
+            let id = kural_ekle(&kconn, &metin_, kaynak, etiketler)
+                .await
+                .map_err(|e| e.to_string())?;
+            Ok(format!("kural eklendi: [{id}] {metin_}"))
+        }
+        "kural_ara" => {
+            let sorgu = metin(p, "sorgu")?;
+            let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(20) as usize;
+            let kconn = kural_baglan_bekle().await.map_err(|e| e.to_string())?;
+            let bulunan = kural_ara(&kconn, &sorgu, limit)
+                .await
+                .map_err(|e| e.to_string())?;
+            serde_json::to_string_pretty(&bulunan).map_err(|e| e.to_string())
+        }
+        "kural_listele" => {
+            let etiket = p.get("etiket").and_then(Value::as_str);
+            let kconn = kural_baglan_bekle().await.map_err(|e| e.to_string())?;
+            let liste = kural_listele(&kconn, etiket)
+                .await
+                .map_err(|e| e.to_string())?;
+            serde_json::to_string_pretty(&liste).map_err(|e| e.to_string())
+        }
         _ => Err(format!("bilinmeyen araç: {ad}")),
     }
 }
@@ -196,6 +259,20 @@ async fn baglan_bekle() -> crate::Result<Connection> {
     for n in 1..=15u64 {
         match baglan().await {
             Ok(c) => return Ok(c),
+            Err(e) => son = Some(e),
+        }
+        tokio::time::sleep(std::time::Duration::from_millis((40 * n).min(300))).await;
+    }
+    Err(son.expect("en az bir deneme yapıldı"))
+}
+
+/// `baglan_bekle` ile aynı gerekçe (2026-09-23, os error 33) — ayrı dosya
+/// olsa da aynı süreç iki eş-zamanlı çağrıda kendiyle çakışabilir.
+async fn kural_baglan_bekle() -> crate::Result<Connection> {
+    let mut son = None;
+    for n in 1..=15u64 {
+        match kural_baglan(true).await {
+            Ok(c) => return Ok(c.expect("yarat=true iken bağlantı hep döner")),
             Err(e) => son = Some(e),
         }
         tokio::time::sleep(std::time::Duration::from_millis((40 * n).min(300))).await;
@@ -310,7 +387,7 @@ mod testler {
     /// Açılan araç adları `plugin.json`'daki listeyle aynı kalmalı; kayarsa
     /// istemci var olmayan aracı çağırır.
     #[test]
-    fn arac_adlari_beklenen_dortlu() {
+    fn arac_adlari_beklenen_liste() {
         let a = araclar();
         let adlar: Vec<&str> = a
             .as_array()
@@ -320,7 +397,15 @@ mod testler {
             .collect();
         assert_eq!(
             adlar,
-            vec!["search_skills", "list_skills", "info", "tekmil_ver"]
+            vec![
+                "search_skills",
+                "list_skills",
+                "info",
+                "tekmil_ver",
+                "kural_ekle",
+                "kural_ara",
+                "kural_listele"
+            ]
         );
     }
 

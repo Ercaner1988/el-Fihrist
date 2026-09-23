@@ -59,6 +59,12 @@ _Kaçın_: merge, senkron
 **Yabancı veritabanı**:
 Başka bir uygulamanın yazdığı, bizim yalnız okuduğumuz veritabanı (ör. `zotero.sqlite`); araç veritabanı değildir.
 
+### Hafıza
+
+**Hafıza grafı**:
+Kod tabanı yönetimi için agit (oturum geçmişi), graft (kod grafı), graphify (kavram grafı) ve archify'ın (görünüm) çıktılarını birbirine bağlayan, el-Fihrist'in bir modülü olarak yaşayan graf; görünümü şimdilik Logseq'tir.
+_Kaçın_: ikinci beyin, bilgi tabanı, wiki
+
 ### Aktörler
 
 **Kaynak kütüphane**:

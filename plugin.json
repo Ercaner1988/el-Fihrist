@@ -27,7 +27,10 @@
       "search_skills",
       "list_skills",
       "tekmil_ver",
-      "info"
+      "info",
+      "kural_ekle",
+      "kural_ara",
+      "kural_listele"
     ],
     "supported_platforms": [
       "hermes-agent",

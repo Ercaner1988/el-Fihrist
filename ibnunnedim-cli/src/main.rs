@@ -12,6 +12,8 @@
 //! ibnunnedim mcp   # stdio MCP sunucusu (ajan/istemci bağlanır)
 //! ibnunnedim tara ~/Desktop/Github   # depoları kataloğa yaz
 //! ibnunnedim tekmil --ajan "Kassam" --yetenek "zopay-rust-porting" --puan 100 --gerekce "Dış koşu geçti"
+//! ibnunnedim kural-ekle "Bun kullan, Node'a kaçma" --kaynak "CLAUDE.md" --etiketler "araç,kural"
+//! ibnunnedim kural-ara "bun"
 //! ```
 
 mod arama;
@@ -39,6 +41,10 @@ const DEPO_DB_ADI: &str = "kutup_depolar.db";
 /// Araç çağrısı günlüğü — ayrı dosya: büyür, budanabilir, katalogla ömrü
 /// ortak değil. Ana kütüphaneye yazılmaz (fts5 tuzağı, bkz. `depo_baglan`).
 const KAYIT_DB_ADI: &str = "kutup_kayitlar.db";
+
+/// Paylaşılan kural kataloğu (AGENTS.md/CLAUDE.md tarzı davranış kuralları,
+/// araçlar-arası ortak) — ayrı dosya, aynı fts5 gerekçesiyle (bkz. `depo_baglan`).
+const KURAL_DB_ADI: &str = "kutup_kurallar.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
@@ -131,6 +137,30 @@ enum Command {
         #[arg(long, default_value = "202634")]
         hafta: i64,
     },
+    /// Paylaşılan kurallar kataloğuna bir kural ekler (ayrı dosya, ana kütüphaneye dokunmaz).
+    KuralEkle {
+        /// Kural metni (ör. "Bun kullan, Node'a kaçma")
+        metin: String,
+        /// Nereden geldiği (ör. dosya yolu, proje adı)
+        #[arg(long, default_value = "elle")]
+        kaynak: String,
+        /// Virgülle ayrılmış etiketler
+        #[arg(long, default_value = "")]
+        etiketler: String,
+    },
+    /// Kurallarda alt-dize arar (aktif olanlar).
+    KuralAra {
+        sorgu: String,
+        #[arg(short, long, default_value = "20")]
+        limit: usize,
+    },
+    /// Kuralları listeler; istenirse tek etiketle sınırlar.
+    KuralListele {
+        #[arg(long)]
+        etiket: Option<String>,
+    },
+    /// Bir kuralı pasifleştirir (silmez — geri alınabilir).
+    KuralKaldir { id: String },
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -140,6 +170,14 @@ struct Skill {
     aciklama: String,
     basari_puani_ort: Option<f64>,
     kategori: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct Kural {
+    id: String,
+    metin: String,
+    kaynak: String,
+    etiketler: Vec<String>,
 }
 
 /// Karakter sınırında kırpar ve **kırptığını söyler**.
@@ -735,6 +773,120 @@ async fn yan_baglan(ad: &str, yarat: bool) -> Result<Option<Connection>> {
     Ok(Some(db.connect()?))
 }
 
+/// Paylaşılan kurallar dosyasını açar. Aynı gerekçeyle ayrı: bkz. `depo_baglan`.
+async fn kural_baglan(yarat: bool) -> Result<Option<Connection>> {
+    yan_baglan(KURAL_DB_ADI, yarat).await
+}
+
+/// `IF NOT EXISTS` yok (Turso 0.7.2 güvenilmez, bkz. `tablo_var`) — varlık önce sorulur.
+const KURAL_TABLOSU: &str = "CREATE TABLE kurallar (\
+     id TEXT PRIMARY KEY, metin TEXT NOT NULL, kaynak TEXT NOT NULL, \
+     etiketler TEXT NOT NULL, aktif INTEGER NOT NULL DEFAULT 1, \
+     olusturma_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP)";
+
+async fn kural_tablosunu_garantile(conn: &Connection) -> Result<()> {
+    if !tablo_var(conn, "kurallar").await? {
+        conn.execute(KURAL_TABLOSU, ()).await?;
+    }
+    Ok(())
+}
+
+/// Aynı metin iki kez eklenirse bile ayrı id üretir (zaman damgası karışıma girer);
+/// çakışma riski bu ölçekte (onlarca-yüzlerce kural) göz ardı edilebilir.
+fn kural_id_uret(metin: &str) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut h = DefaultHasher::new();
+    metin.hash(&mut h);
+    std::time::SystemTime::now().hash(&mut h);
+    format!("{:016x}", h.finish())
+}
+
+fn kural_satirdan(row: &turso::Row) -> Result<Kural> {
+    let etiketler_raw: String = row.get(3)?;
+    Ok(Kural {
+        id: row.get(0)?,
+        metin: row.get(1)?,
+        kaynak: row.get(2)?,
+        etiketler: etiketler_raw
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+            .collect(),
+    })
+}
+
+async fn kural_ekle(conn: &Connection, metin: &str, kaynak: &str, etiketler: &str) -> Result<String> {
+    if metin.trim().is_empty() {
+        return Err(CliError::Girdi("kural metni boş olamaz".into()));
+    }
+    kural_tablosunu_garantile(conn).await?;
+    let id = kural_id_uret(metin);
+    conn.execute(
+        "INSERT INTO kurallar (id, metin, kaynak, etiketler) VALUES (?, ?, ?, ?)",
+        params![id.as_str(), metin, kaynak, etiketler],
+    )
+    .await?;
+    Ok(id)
+}
+
+async fn kural_listele(conn: &Connection, etiket: Option<&str>) -> Result<Vec<Kural>> {
+    kural_tablosunu_garantile(conn).await?;
+    let mut satirlar = match etiket {
+        Some(e) => {
+            conn.query(
+                "SELECT id, metin, kaynak, etiketler FROM kurallar \
+                 WHERE aktif = 1 AND etiketler LIKE ? ORDER BY olusturma_tarihi",
+                params![format!("%{e}%")],
+            )
+            .await?
+        }
+        None => {
+            conn.query(
+                "SELECT id, metin, kaynak, etiketler FROM kurallar \
+                 WHERE aktif = 1 ORDER BY olusturma_tarihi",
+                (),
+            )
+            .await?
+        }
+    };
+    let mut kurallar = Vec::new();
+    while let Some(row) = satirlar.next().await? {
+        kurallar.push(kural_satirdan(&row)?);
+    }
+    Ok(kurallar)
+}
+
+async fn kural_ara(conn: &Connection, sorgu: &str, limit: usize) -> Result<Vec<Kural>> {
+    if sorgu.trim().is_empty() {
+        return Err(CliError::Girdi("arama sorgusu boş olamaz".into()));
+    }
+    kural_tablosunu_garantile(conn).await?;
+    let desen = format!("%{sorgu}%");
+    let mut satirlar = conn
+        .query(
+            "SELECT id, metin, kaynak, etiketler FROM kurallar \
+             WHERE aktif = 1 AND (metin LIKE ? OR kaynak LIKE ? OR etiketler LIKE ?) \
+             ORDER BY olusturma_tarihi LIMIT ?",
+            params![desen.clone(), desen.clone(), desen, limit as i64],
+        )
+        .await?;
+    let mut kurallar = Vec::new();
+    while let Some(row) = satirlar.next().await? {
+        kurallar.push(kural_satirdan(&row)?);
+    }
+    Ok(kurallar)
+}
+
+/// Silmez, pasifleştirir — geri alınabilir (bkz. AÇIK EYLEM ilkesi).
+async fn kural_kaldir(conn: &Connection, id: &str) -> Result<()> {
+    kural_tablosunu_garantile(conn).await?;
+    conn.execute("UPDATE kurallar SET aktif = 0 WHERE id = ?", params![id])
+        .await?;
+    Ok(())
+}
+
 /// Dökümlerdeki araç çağrılarını günlüğe aktarır; zaten alınmışı atlar.
 ///
 /// Tekillik `tool_use.id` ile — çağrı kimliği oturumlar arası tekil. Var olan
@@ -910,6 +1062,74 @@ async fn main() -> Result<()> {
     // MCP sunucusu kütüphaneyi süreç ömrünce tutamaz; her çağrıda açıp bırakır.
     if let Command::Mcp = args.command {
         return mcp::calistir().await;
+    }
+
+    // Kural komutları ayrı dosyada çalışır, ana kütüphaneyi hiç açmaz — aynı
+    // kilit gerekçesiyle (bkz. KayitAl yukarısı, `depo_baglan` belgesi).
+    match &args.command {
+        Command::KuralEkle {
+            metin,
+            kaynak,
+            etiketler,
+        } => {
+            let kconn = kural_baglan(true)
+                .await?
+                .expect("yarat=true iken bağlantı hep döner");
+            let id = kural_ekle(&kconn, metin, kaynak, etiketler).await?;
+            println!("KURAL EKLENDİ: [{id}] {metin}");
+            return Ok(());
+        }
+        Command::KuralAra { sorgu, limit } => {
+            let kconn = match kural_baglan(false).await? {
+                Some(c) => c,
+                None => {
+                    println!("Kural kataloğu boş (henüz hiç kural eklenmemiş).");
+                    return Ok(());
+                }
+            };
+            let bulunan = kural_ara(&kconn, sorgu, *limit).await?;
+            println!("KURAL ARAMASI ('{sorgu}') — {} sonuç", bulunan.len());
+            for k in bulunan {
+                println!(
+                    "  [{}] {} (kaynak: {}, etiketler: {})",
+                    k.id,
+                    k.metin,
+                    k.kaynak,
+                    k.etiketler.join(", ")
+                );
+            }
+            return Ok(());
+        }
+        Command::KuralListele { etiket } => {
+            let kconn = match kural_baglan(false).await? {
+                Some(c) => c,
+                None => {
+                    println!("Kural kataloğu boş (henüz hiç kural eklenmemiş).");
+                    return Ok(());
+                }
+            };
+            let liste = kural_listele(&kconn, etiket.as_deref()).await?;
+            println!("KURAL DÖKÜMÜ — {} kayıt", liste.len());
+            for k in liste {
+                println!(
+                    "  [{}] {} (kaynak: {}, etiketler: {})",
+                    k.id,
+                    k.metin,
+                    k.kaynak,
+                    k.etiketler.join(", ")
+                );
+            }
+            return Ok(());
+        }
+        Command::KuralKaldir { id } => {
+            let kconn = kural_baglan(true)
+                .await?
+                .expect("yarat=true iken bağlantı hep döner");
+            kural_kaldir(&kconn, id).await?;
+            println!("KURAL PASİFLEŞTİRİLDİ: [{id}]");
+            return Ok(());
+        }
+        _ => {}
     }
 
     let conn = baglan().await?;
@@ -1198,6 +1418,13 @@ async fn main() -> Result<()> {
             tekmil_ver(&conn, hafta, &ajan, &yetenek, puan, &gerekce).await?;
             println!("TEKMİL KAYDEDİLDİ: {ajan} → yetenek {yetenek} (puan {puan}, hafta {hafta})");
         }
+        // Kural komutları ana kütüphaneyi hiç açmadan yukarıda ele alınıp döndü.
+        Command::KuralEkle { .. }
+        | Command::KuralAra { .. }
+        | Command::KuralListele { .. }
+        | Command::KuralKaldir { .. } => {
+            unreachable!("kural komutları `let conn = baglan()` öncesinde döner")
+        }
     }
     Ok(())
 }
@@ -1205,6 +1432,42 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod testler {
     use super::*;
+
+    /// Şema kurulumundan arama/pasifleştirmeye tam döngü — hedef DB dosyası
+    /// olmadan (kural_baglan'ın kutuphane_yolu bağımlılığını atlar).
+    #[tokio::test]
+    async fn kural_ekle_ara_kaldir_dongusu() {
+        let yol = std::env::temp_dir().join(format!(
+            "ibnunnedim-kural-test-{}.db",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_file(&yol);
+        let db = Builder::new_local(yol.to_string_lossy().as_ref())
+            .build()
+            .await
+            .unwrap();
+        let conn = db.connect().unwrap();
+
+        let id = kural_ekle(&conn, "Bun kullan, Node'a kaçma", "CLAUDE.md", "araç,kural")
+            .await
+            .unwrap();
+
+        let bulunan = kural_ara(&conn, "bun", 10).await.unwrap();
+        assert_eq!(bulunan.len(), 1, "LIKE araması büyük/küçük harf duyarsız olmalı");
+        assert_eq!(bulunan[0].id, id);
+        assert_eq!(bulunan[0].etiketler, vec!["araç", "kural"]);
+
+        let liste = kural_listele(&conn, Some("araç")).await.unwrap();
+        assert_eq!(liste.len(), 1);
+
+        kural_kaldir(&conn, &id).await.unwrap();
+        assert!(
+            kural_ara(&conn, "bun", 10).await.unwrap().is_empty(),
+            "pasifleştirilen kural aramada görünmemeli"
+        );
+
+        let _ = std::fs::remove_file(&yol);
+    }
 
     // Asil gerileme: eskiden olmayan yol sessizce YARATILIYORDU. Artik hata
     // vermeli ve geride dosya birakmamali.
