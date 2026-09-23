@@ -817,7 +817,12 @@ fn kural_satirdan(row: &turso::Row) -> Result<Kural> {
     })
 }
 
-async fn kural_ekle(conn: &Connection, metin: &str, kaynak: &str, etiketler: &str) -> Result<String> {
+async fn kural_ekle(
+    conn: &Connection,
+    metin: &str,
+    kaynak: &str,
+    etiketler: &str,
+) -> Result<String> {
     if metin.trim().is_empty() {
         return Err(CliError::Girdi("kural metni boş olamaz".into()));
     }
@@ -1437,10 +1442,8 @@ mod testler {
     /// olmadan (kural_baglan'ın kutuphane_yolu bağımlılığını atlar).
     #[tokio::test]
     async fn kural_ekle_ara_kaldir_dongusu() {
-        let yol = std::env::temp_dir().join(format!(
-            "ibnunnedim-kural-test-{}.db",
-            std::process::id()
-        ));
+        let yol =
+            std::env::temp_dir().join(format!("ibnunnedim-kural-test-{}.db", std::process::id()));
         let _ = std::fs::remove_file(&yol);
         let db = Builder::new_local(yol.to_string_lossy().as_ref())
             .build()
@@ -1453,7 +1456,11 @@ mod testler {
             .unwrap();
 
         let bulunan = kural_ara(&conn, "bun", 10).await.unwrap();
-        assert_eq!(bulunan.len(), 1, "LIKE araması büyük/küçük harf duyarsız olmalı");
+        assert_eq!(
+            bulunan.len(),
+            1,
+            "LIKE araması büyük/küçük harf duyarsız olmalı"
+        );
         assert_eq!(bulunan[0].id, id);
         assert_eq!(bulunan[0].etiketler, vec!["araç", "kural"]);
 
