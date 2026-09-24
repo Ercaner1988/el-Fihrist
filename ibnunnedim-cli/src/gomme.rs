@@ -68,9 +68,8 @@ pub enum Cekirdek {
     #[value(name = "e5s384")]
     E5s384,
     /// `bge-embed-rs` (saf Rust/candle) üzerinden `bge-m3` (1024 boyut, çok
-    /// dilli). Ağa çıkmaz — yalnız 127.0.0.1:11435 (kendi ayrık süreç/port,
-    /// Open Notebook'un kullandığı 11434'ten bağımsız — bkz. `bge_m3` modül
-    /// belgesi). VARSAYILAN: ölçüm hem izole kanalda hem füzyonda hash256'yı
+    /// dilli). Ağa çıkmaz — yalnız yerel uç (varsayılan 127.0.0.1:11434,
+    /// `FIHRIST_BGE_URL` ile değişir; bkz. `bge_m3` modül belgesi). VARSAYILAN: ölçüm hem izole kanalda hem füzyonda hash256'yı
     /// geride bıraktığını gösterdi (bkz. modül belgesindeki karar kapısı).
     /// Sunucu kapalıysa `gomme()` hata döner; karma arama bunu stderr'e
     /// yazıp BM25'e düşer. `ollama-bge-m3` eski ad (2026-09-18'e dek
@@ -284,16 +283,25 @@ mod e5 {
 /// OpenAI uyumlu `/v1/embeddings` ucu (toplu). 2026-09-19'a dek 11434'teki
 /// llama-server kullanılıyordu — Open Notebook'un aynı sunucuyu 790 eserlik
 /// toplu gömme backlog'u için doldurmasıyla kısa sorgular aynı kuyrukta
-/// dakikalarca bekliyordu (ölçüldü: 95 sn). `bge-embed-rs` ayrı bir süreç/
-/// port (11435) olduğu için bu kuyruk çakışması kökten ortadan kalktı —
-/// darboğaz protokol değil kaynak paylaşımıydı, JSON/HTTP'nin kendisi hiç
-/// suçlu değildi. Dizi tek istekte gider — `olcum` 145+ belgeyi 145
-/// round-trip yerine 1'de.
+/// dakikalarca bekliyordu (ölçüldü: 95 sn). O bekleme llama-server'ın istekleri
+/// SIRAYLA işleyen yuvasından geliyordu. 2026-09-19'da el-Fihrist ayrı bir
+/// `bge-embed-rs` örneğine (11435) geçti; 2026-09-23'te `start.ps1` llama-
+/// server'ın yerine `bge-embed-rs`'i 11434'te başlattı ve 11435 örneği bir
+/// daha açılmadı — el-Fihrist o günden beri sessizce saf BM25'teydi (2026-09-24
+/// ölçüldü: 11435'i dinleyen süreç 0). `bge-embed-rs` istekleri eşzamanlı
+/// işlediğinden kuyruk sorunu yok, yalnız CPU paylaşılıyor; ikinci bir örnek
+/// ~1,4 GB bellek ister. Bu yüzden varsayılan paylaşılan 11434; ayrı örnek
+/// gerekirse `FIHRIST_BGE_URL`. Dizi tek istekte gider — `olcum` 145+ belgeyi
+/// 145 round-trip yerine 1'de.
 mod bge_m3 {
     use serde::Deserialize;
 
-    const UC_NOKTA: &str = "http://127.0.0.1:11435/v1/embeddings";
+    const VARSAYILAN_UC: &str = "http://127.0.0.1:11434/v1/embeddings";
     const MODEL: &str = "bge-m3";
+
+    fn uc_nokta() -> String {
+        std::env::var("FIHRIST_BGE_URL").unwrap_or_else(|_| VARSAYILAN_UC.to_string())
+    }
 
     /// bge-m3'ün doğal çıktı boyutu. Sabit yazılır ama KÖRÜNE güvenilmez:
     /// `gomme_toplu` her vektörün gerçekten bu uzunlukta geldiğini denetler
@@ -326,22 +334,17 @@ mod bge_m3 {
             .build()
             .map_err(|e| crate::CliError::Girdi(format!("bge-m3: istemci kurulamadı: {e}")))?;
         let govde = serde_json::json!({ "model": MODEL, "input": metinler });
-        let yanit = istemci
-            .post(UC_NOKTA)
-            .json(&govde)
-            .send()
-            .await
-            .map_err(|e| {
-                if e.is_timeout() {
-                    return crate::CliError::Girdi(
-                        "bge-m3: sunucu süresinde yanıt vermedi (kuyruk dolu olabilir)".into(),
-                    );
-                }
-                crate::CliError::Girdi(format!(
-                    "bge-m3: bge-embed-rs'e bağlanılamadı ({e}). \
-                     127.0.0.1:11435'te çalışıyor mu?"
-                ))
-            })?;
+        let uc = uc_nokta();
+        let yanit = istemci.post(&uc).json(&govde).send().await.map_err(|e| {
+            if e.is_timeout() {
+                return crate::CliError::Girdi(
+                    "bge-m3: sunucu süresinde yanıt vermedi (kuyruk dolu olabilir)".into(),
+                );
+            }
+            crate::CliError::Girdi(format!(
+                "bge-m3: bge-embed-rs'e bağlanılamadı ({e}). {uc} çalışıyor mu?"
+            ))
+        })?;
         let yanit = yanit
             .error_for_status()
             .map_err(|e| crate::CliError::Girdi(format!("bge-m3: sunucu hatası: {e}")))?;
@@ -396,13 +399,10 @@ pub async fn gomme(metinler: &[String], rol: Rol, k: Cekirdek) -> crate::Result<
         }
         Cekirdek::BgeM3 => {
             // bge-m3 E5 ailesinin önek sözleşmesini paylaşmaz; rol yalnız
-            // bekleme süresini belirler. 2026-09-19'dan beri `bge-embed-rs`
-            // ayrı bir süreç/port (11435) — Open Notebook'un 11434'teki
-            // toplu backlog'uyla artık KUYRUK PAYLAŞMIYOR, o darboğaz kökten
-            // çözüldü. Yine de arama sorgusu (Rol::Sorgu) uzun sürmemeli:
-            // el-Fihrist'in KENDİ toplu indeksleme işi (Rol::Belge) aynı
-            // sunucuyu meşgul edebilir; sabit 3 sn üst sınırı bu durumda bile
-            // aramanın BM25'e düşmesini garanti eder, hiç beklemez.
+            // bekleme süresini belirler. Sunucu Open Notebook'la paylaşılıyor
+            // (bkz. `bge_m3` modül belgesi); toplu gömme CPU'yu doldurabilir.
+            // Arama sorgusu (Rol::Sorgu) uzun sürmemeli: sabit 3 sn üst sınırı
+            // bu durumda bile aramanın BM25'e düşmesini garanti eder.
             let sure = match rol {
                 Rol::Sorgu => Some(std::time::Duration::from_secs(3)),
                 Rol::Belge => None,

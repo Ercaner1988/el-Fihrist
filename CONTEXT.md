@@ -110,4 +110,4 @@ Hangi YZ'nin hangi uç ve yolla çalışacağının belirlenmesi; Kervan'ın iş
 - Merkez ödünç alma ile **Veritabanı ödünç alma** yön olarak zıttır: ilkinde araç el-Fihrist'in crate'ine derleme zamanında bağlanır, ikincisinde araç çalışma zamanında el-Fihrist'in verisini kullanır ve derleme zamanı bağımlılığı yoktur.
 - **Eşgüdüm** mekanizması: aynı veriye aynı anda erişim, **Dal** + **Birleştirme** ile çözülür (turso'nun çok süreçli WAL'ı deneysel; Windows'ta `experimental_win_iocp` gerekiyor). **Okur** ve **Atölye** ilişkileri dal gerektirmez.
 - "senkron" iki anlamda kullanılıyordu — graft'ın grafı kaynakla güncel tutması ve araç veritabanları arası uyum. Çözüm: ilki **tazelik**, ikincisi **Eşgüdüm**; archify-graft'ın el-Fihrist'e gömülmesi tazelik içindir.
-- pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu bge-embed-rs'dir (127.0.0.1:11435).
+- pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu bge-embed-rs'dir (127.0.0.1:11434, Open Notebook'la paylaşılır; `FIHRIST_BGE_URL` ile değişir).

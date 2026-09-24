@@ -70,12 +70,13 @@ pub fn araclar() -> Value {
     json!([
         {
             "name": "search_skills",
-            "description": "Yetenek kütüphanesinde BM25 ile arama yapar. Türkçe katlamalı (ı ş ğ ü ö ç). Sonuç: id, ad, kategori, başarı puanı, açıklama.",
+            "description": "Yetenek kütüphanesinde karma arama: BM25 (Türkçe katlamalı) + bge-m3 anlam benzerliği (Türkçe sorgu → İngilizce açıklama da bulunur). Gömme sunucusu yoksa BM25'e düşer. Sonuç: id, ad, kategori, başarı puanı, açıklama; tam_metin=true ise yeteneğin tam metni de.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "query": {"type": "string", "description": "Aranacak metin"},
-                    "limit": {"type": "integer", "description": "Azami sonuç sayısı (varsayılan 10)"}
+                    "limit": {"type": "integer", "description": "Azami sonuç sayısı (varsayılan 10)"},
+                    "tam_metin": {"type": "boolean", "description": "true ise her sonucun tam metnini (SKILL.md gövdesi) de döndür; varsayılan false"}
                 },
                 "required": ["query"]
             }
@@ -157,6 +158,20 @@ fn metin(p: &Value, ad: &str) -> std::result::Result<String, String> {
 
 /// Aracı koşturur. Hata metni çağırana `isError` ile döner — süreç düşmez;
 /// bir aracın patlaması oturumu bitirmemeli.
+/// Kaydın tam metni: önce yetenekler, yoksa depolar. Bulunamazsa `None`
+/// (JSON'da `null`) — boş dize "metin boş" ile "kayıt yok"u karıştırırdı.
+async fn tam_metin(conn: &Connection, id: &str) -> Option<String> {
+    for tablo in ["yetenekler", "depolar"] {
+        let sql = format!("SELECT tam_metin_md FROM {tablo} WHERE id = ?");
+        if let Ok(mut satirlar) = conn.query(&sql, [id]).await {
+            if let Ok(Some(r)) = satirlar.next().await {
+                return r.get::<String>(0).ok();
+            }
+        }
+    }
+    None
+}
+
 async fn arac_calistir(
     conn: &Connection,
     ad: &str,
@@ -166,15 +181,25 @@ async fn arac_calistir(
         "search_skills" => {
             let q = metin(p, "query")?;
             let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
+            let tam = p.get("tam_metin").and_then(Value::as_bool).unwrap_or(false);
             let (skills, toplam, sure) =
                 search_skills(conn, &q, limit, crate::gomme::Cekirdek::default())
                     .await
                     .map_err(|e| e.to_string())?;
+            let mut cikti = serde_json::to_value(&skills).map_err(|e| e.to_string())?;
+            if tam {
+                if let Some(dizi) = cikti.as_array_mut() {
+                    for oge in dizi {
+                        let id = oge["id"].as_str().unwrap_or_default().to_string();
+                        oge["tam_metin"] = json!(tam_metin(conn, &id).await);
+                    }
+                }
+            }
             Ok(format!(
                 "{} / {toplam} kayıt · {:.1} ms\n{}",
                 skills.len(),
                 sure.as_secs_f64() * 1000.0,
-                serde_json::to_string_pretty(&skills).map_err(|e| e.to_string())?
+                serde_json::to_string_pretty(&cikti).map_err(|e| e.to_string())?
             ))
         }
         "list_skills" => {
