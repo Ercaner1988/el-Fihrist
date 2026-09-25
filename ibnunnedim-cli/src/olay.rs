@@ -133,10 +133,13 @@ pub fn olay_satiri(
     })
 }
 
+/// Olay günlüklerinin dizini: kütüphanenin yanında `kutup_olaylar/`.
+pub fn dizin() -> Option<PathBuf> {
+    Some(crate::kutuphane_yolu().ok()?.with_file_name("kutup_olaylar"))
+}
+
 fn gunluk_yolu(oturum: &str) -> Option<PathBuf> {
-    let kok = crate::kutuphane_yolu()
-        .ok()?
-        .with_file_name("kutup_olaylar");
+    let kok = dizin()?;
     std::fs::create_dir_all(&kok).ok()?;
     Some(kok.join(format!("{oturum}.jsonl")))
 }

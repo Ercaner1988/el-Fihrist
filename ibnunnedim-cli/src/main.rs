@@ -19,6 +19,7 @@
 mod arama;
 mod arayuz;
 mod error;
+mod eslesme;
 mod gomme;
 mod hizmet;
 mod kayit;
@@ -119,6 +120,13 @@ enum Command {
     /// Kanca gerekmez: dökümler zaten append-only günlük (bkz. kayit.rs).
     KayitAl {
         /// Döküm kökü. Varsayılan: `CLAUDE_CONFIG_DIR` ya da `~/.claude`, altında `projects`.
+        #[arg(long)]
+        kok: Option<PathBuf>,
+    },
+    /// Olay günlüğündeki aramaları Claude Code dökümleriyle eşleştirir: hangi
+    /// oturum, dönen sonuçlardan hangisi kullanıldı (F2c). Önce `kayit-al` yapar.
+    /// Satır başına bir JSON (stdout), özet stderr.
+    Eslestir {
         #[arg(long)]
         kok: Option<PathBuf>,
     },
@@ -957,6 +965,69 @@ async fn kural_kaldir(conn: &Connection, id: &str) -> Result<()> {
 /// ponytail: her koşumda bütün dökümler baştan okunur (bugün 612 MB, 163
 /// dosya). Yavaşlarsa yükseltme yolu, dosya başına alınan bayt ofsetini
 /// saklayıp yalnız sonrasını okumak — dökümler append-only.
+/// F2c: olay günlüğü × `arac_cagrilari` (bkz. eslesme.rs).
+async fn eslestir(kok: &std::path::Path) -> Result<()> {
+    kayitlari_al(kok).await?;
+    let conn = yan_baglan(KAYIT_DB_ADI, false)
+        .await?
+        .ok_or_else(|| CliError::Girdi("kayıt günlüğü yok".into()))?;
+    // Yalnız el-Fihrist'e dokunmuş oturumlar; kullanım o oturumların içinde aranır.
+    let mut r = conn
+        .query(
+            "SELECT oturum, arac, ozet, baslangic FROM arac_cagrilari WHERE oturum IN \
+             (SELECT oturum FROM arac_cagrilari WHERE arac LIKE 'mcp__el-fihrist__%')",
+            (),
+        )
+        .await?;
+    let mut cagrilar = Vec::new();
+    while let Some(s) = r.next().await? {
+        if let Some(zaman_ms) = kayit::iso_ms(&s.get::<String>(3)?) {
+            cagrilar.push(eslesme::DokumCagri {
+                oturum: s.get(0)?,
+                arac: s.get(1)?,
+                ozet: s.get(2)?,
+                zaman_ms,
+            });
+        }
+    }
+    cagrilar.sort_by(|a, b| (&a.oturum, a.zaman_ms).cmp(&(&b.oturum, b.zaman_ms)));
+
+    let dizin = olay::dizin().ok_or_else(|| CliError::Girdi("olay dizini yok".into()))?;
+    let mut olaylar = Vec::new();
+    for g in std::fs::read_dir(&dizin)?.flatten() {
+        if g.path().extension().is_some_and(|u| u == "jsonl") {
+            let metin = std::fs::read_to_string(g.path()).unwrap_or_default();
+            olaylar.extend(
+                metin
+                    .lines()
+                    .filter_map(eslesme::Olay::satirdan)
+                    .filter(|o| o.arac == "search_skills"),
+            );
+        }
+    }
+    olaylar.sort_by_key(|o| o.zaman_ms);
+
+    let (mut eslesen_sayi, mut kullanilan_sayi) = (0, 0);
+    for o in &olaylar {
+        let eslesen = eslesme::eslestir(o, &cagrilar);
+        let kullanilan = eslesen
+            .map(|e| {
+                let oturum: Vec<_> = cagrilar.iter().filter(|c| c.oturum == e.oturum).cloned().collect();
+                eslesme::kullanilanlar(&o.sonuclar, e, &oturum)
+            })
+            .unwrap_or_default();
+        eslesen_sayi += eslesen.is_some() as usize;
+        kullanilan_sayi += !kullanilan.is_empty() as usize;
+        println!("{}", eslesme::satir(o, eslesen, &kullanilan));
+    }
+    eprintln!(
+        "EŞLEŞTİR {} arama · {eslesen_sayi} dökümle eşleşti · {} dökümsüz · sonucu kullanılan: {kullanilan_sayi}",
+        olaylar.len(),
+        olaylar.len() - eslesen_sayi
+    );
+    Ok(())
+}
+
 async fn kayitlari_al(kok: &std::path::Path) -> Result<(usize, usize, usize)> {
     let conn = yan_baglan(KAYIT_DB_ADI, true)
         .await?
@@ -1210,6 +1281,14 @@ async fn main() -> Result<()> {
             kok.display()
         );
         return Ok(());
+    }
+
+    if let Command::Eslestir { kok } = &args.command {
+        let kok = kok
+            .clone()
+            .or_else(kayit::varsayilan_kok)
+            .ok_or_else(|| CliError::Girdi("döküm kökü bulunamadı; --kok ile ver".into()))?;
+        return eslestir(&kok).await;
     }
 
     // MCP sunucusu kütüphaneyi süreç ömrünce tutamaz; her çağrıda açıp bırakır.
@@ -1510,6 +1589,7 @@ async fn main() -> Result<()> {
         }
         Command::Mcp => unreachable!("mcp DB bağlantısından önce ele alınır"),
         Command::Hizmet => unreachable!("hizmet DB bağlantısından önce ele alınır"),
+        Command::Eslestir { .. } => unreachable!("eşleştirme DB bağlantısından önce ele alınır"),
         Command::KayitAl { .. } => {
             unreachable!("kayit-al DB bağlantısından önce ele alınır")
         }
