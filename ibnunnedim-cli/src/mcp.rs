@@ -158,12 +158,18 @@ fn metin(p: &Value, ad: &str) -> std::result::Result<String, String> {
 
 /// Aracı koşturur. Hata metni çağırana `isError` ile döner — süreç düşmez;
 /// bir aracın patlaması oturumu bitirmemeli.
-/// Kaydın tam metni: önce yetenekler, yoksa depolar. Bulunamazsa `None`
-/// (JSON'da `null`) — boş dize "metin boş" ile "kayıt yok"u karıştırırdı.
+/// Kaydın tam metni: yetenekler (ana dosya), depolar ve ortak (yan dosyalar).
+/// Bulunamazsa `None` (JSON'da `null`) — boş dize "metin boş" ile "kayıt
+/// yok"u karıştırırdı.
 async fn tam_metin(conn: &Connection, id: &str) -> Option<String> {
-    for tablo in ["yetenekler", "depolar"] {
+    let depo = crate::depo_baglan(false).await.ok().flatten();
+    let ortak = crate::ortak_baglan(false).await.ok().flatten();
+    let hedefler = std::iter::once((conn, "yetenekler"))
+        .chain(depo.as_ref().map(|d| (d, "depolar")))
+        .chain(ortak.as_ref().map(|o| (o, "ortak")));
+    for (c, tablo) in hedefler {
         let sql = format!("SELECT tam_metin_md FROM {tablo} WHERE id = ?");
-        if let Ok(mut satirlar) = conn.query(&sql, [id]).await {
+        if let Ok(mut satirlar) = c.query(&sql, [id]).await {
             if let Ok(Some(r)) = satirlar.next().await {
                 return r.get::<String>(0).ok();
             }

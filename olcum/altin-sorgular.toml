@@ -19,7 +19,8 @@
 
 [[sorgu]]
 metin = "docx"
-beklenen = ["productivity/docx", "rust-docx-openxml", "rust-openxml-docx"]
+# 2026-09-25: F1 ile Claude Code ve Desktop'ın kendi docx yetenekleri de geldi; ikisi de doğru cevap.
+beklenen = ["productivity/docx", "rust-docx-openxml", "rust-openxml-docx", "claude-code/synced/docx", "claude-desktop/docx"]
 
 [[sorgu]]
 metin = "xlsx excel"
@@ -110,3 +111,43 @@ beklenen = ["blocked-page-recovery"]
 [[sorgu]]
 metin = "sunum için hareketli matematik animasyonu"
 beklenen = ["manim-video"]
+
+# ============================================================================
+# ÖBEK (d) — ORTAK KATALOG (F1, 2026-09-25)
+# Hermes kataloğunda OLMAYAN, `arayuz-tara` ile gelen kayıtlar: Claude Code
+# yetenekleri (kapatılmış 140'tan biri dahil: scanpy), Antigravity eklenti
+# yetenekleri ve MCP araçları. Sorgular kimlikler görüldükten SONRA yazıldı;
+# ad sorguya konmadı, yine de bir kolaylık payı olabilir.
+# ============================================================================
+
+[[sorgu]]
+metin = "tez başlığını ayrı dosyada yazıp ana metne yerleştir"
+beklenen = ["claude-code/mentese"]
+
+[[sorgu]]
+metin = "cümleye sayfa numarasıyla doğru atıf bul"
+beklenen = ["claude-code/atif-motoru"]
+
+[[sorgu]]
+metin = "tek hücreli RNA verisi analizi"
+beklenen = ["scanpy"]
+
+[[sorgu]]
+metin = "youtube videosunun içeriğini özetle"
+beklenen = ["claude-code/watch-youtube"]
+
+[[sorgu]]
+metin = "iki performans ölçüm koşusunu karşılaştır"
+beklenen = ["mcp/codspeed/compare_runs"]
+
+[[sorgu]]
+metin = "flutter arayüz bileşenine test ekle"
+beklenen = ["antigravity/flutter/flutter-add-widget-test"]
+
+[[sorgu]]
+metin = "uygulamaya kullanıcı girişi ekle"
+beklenen = ["antigravity/firebase/firebase_auth_basics"]
+
+[[sorgu]]
+metin = "araştırma defterimdeki kaynaklara soru sor"
+beklenen = ["mcp/open-notebook/ask_question", "mcp/open-notebook/ask_simple"]

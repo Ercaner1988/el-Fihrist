@@ -17,6 +17,7 @@
 //! ```
 
 mod arama;
+mod arayuz;
 mod error;
 mod gomme;
 mod kayit;
@@ -45,6 +46,10 @@ const KAYIT_DB_ADI: &str = "kutup_kayitlar.db";
 /// Paylaşılan kural kataloğu (AGENTS.md/CLAUDE.md tarzı davranış kuralları,
 /// araçlar-arası ortak) — ayrı dosya, aynı fts5 gerekçesiyle (bkz. `depo_baglan`).
 const KURAL_DB_ADI: &str = "kutup_kurallar.db";
+
+/// Ortak katalog (F1): Claude Code / Desktop / Antigravity yetenek ve araçları.
+/// Ayrı dosya, `depo_baglan` ile aynı gerekçe (ana dosyadaki fts5).
+const ORTAK_DB_ADI: &str = "kutup_ortak.db";
 
 #[derive(Parser, Debug)]
 #[command(name = "ibnunnedim")]
@@ -118,6 +123,13 @@ enum Command {
         /// Kökten itibaren kaç kat inilir.
         #[arg(long, default_value = "3")]
         derinlik: usize,
+        /// Yazma; yalnız ne olacağını göster.
+        #[arg(long)]
+        kuru: bool,
+    },
+    /// YZ arayüzlerinin (Claude Code, Claude Desktop, Antigravity) yetenek ve
+    /// araçlarını ortak kataloğa yazar. Kökler kullanıcı dizininden türetilir.
+    ArayuzTara {
         /// Yazma; yalnız ne olacağını göster.
         #[arg(long)]
         kuru: bool,
@@ -364,6 +376,25 @@ async fn govde_yukle(conn: &Connection, kip: gomme::Cekirdek) -> Result<Govde> {
         belgeler.extend(b);
         kayitlar.extend(s);
         vektorler.extend(v);
+    }
+    // Ortak katalog (F1): kategori sütunu "tür · arayüzler" — sonuçta hangi
+    // arayüzde kurulu olduğu görünsün.
+    if let Some(ortak) = ortak_baglan(false).await? {
+        if tablo_var(&ortak, "ortak").await? {
+            let (b, s, v) = satirlari_oku(
+                &ortak,
+                &format!(
+                    "SELECT id, ad, aciklama, tam_metin_md, NULL, tur || ' · ' || arayuzler{vektor_sutunlari} \
+                     FROM ortak"
+                ),
+                gomme_var,
+                kip,
+            )
+            .await?;
+            belgeler.extend(b);
+            kayitlar.extend(s);
+            vektorler.extend(v);
+        }
     }
 
     if gomme_var && !vektorler.iter().any(|v| v.is_some()) {
@@ -1054,6 +1085,97 @@ async fn depolari_yaz(
     Ok((eklenen, guncellenen, ayni))
 }
 
+const ORTAK_TABLOSU: &str = "CREATE TABLE ortak (\
+     id TEXT PRIMARY KEY, tur TEXT NOT NULL, ad TEXT NOT NULL, aciklama TEXT NOT NULL, \
+     tam_metin_md TEXT NOT NULL, icerik_hash TEXT NOT NULL, arayuzler TEXT NOT NULL, \
+     yol TEXT NOT NULL, gomme BLOB, gomme_imza TEXT, \
+     guncelleme_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP)";
+
+async fn ortak_baglan(yarat: bool) -> Result<Option<Connection>> {
+    yan_baglan(ORTAK_DB_ADI, yarat).await
+}
+
+/// Ortak katalogu diskle eşler: değişmeyeni atlar, değişeni günceller, yenisini
+/// ekler, diskte ARTIK OLMAYANI siler (kaldırılan eklentinin yeteneği aramada
+/// kalmasın). Yalnız `arayuzler` değişirse `icerik_hash` aynı kalır, vektör bayatlamaz.
+/// Dönüş: (eklenen, güncellenen, değişmeyen, silinen).
+async fn ortak_yaz(
+    conn: &Connection,
+    satirlar: &[arayuz::OrtakSatir],
+    kuru: bool,
+) -> Result<(usize, usize, usize, usize)> {
+    let mut mevcut: std::collections::HashMap<String, (String, String)> = Default::default();
+    if tablo_var(conn, "ortak").await? {
+        let mut oku = conn
+            .query("SELECT id, icerik_hash, arayuzler FROM ortak", ())
+            .await?;
+        while let Some(r) = oku.next().await? {
+            mevcut.insert(
+                r.get::<String>(0)?,
+                (r.get::<String>(1)?, r.get::<String>(2)?),
+            );
+        }
+    } else if !kuru {
+        conn.execute(ORTAK_TABLOSU, ()).await?;
+    }
+    let (mut eklenen, mut guncellenen, mut ayni) = (0, 0, 0);
+    for s in satirlar {
+        let arz = s.arayuzler.iter().cloned().collect::<Vec<_>>().join(",");
+        match mevcut.remove(&s.id) {
+            Some((h, a)) if h == s.icerik_hash && a == arz => ayni += 1,
+            Some(_) => {
+                guncellenen += 1;
+                if !kuru {
+                    conn.execute(
+                        "UPDATE ortak SET tur = ?, ad = ?, aciklama = ?, tam_metin_md = ?, \
+                         icerik_hash = ?, arayuzler = ?, yol = ?, \
+                         guncelleme_tarihi = CURRENT_TIMESTAMP WHERE id = ?",
+                        params![
+                            s.tur,
+                            s.ad.as_str(),
+                            s.aciklama.as_str(),
+                            s.tam_metin_md.as_str(),
+                            s.icerik_hash.as_str(),
+                            arz.as_str(),
+                            s.yol.as_str(),
+                            s.id.as_str()
+                        ],
+                    )
+                    .await?;
+                }
+            }
+            None => {
+                eklenen += 1;
+                if !kuru {
+                    conn.execute(
+                        "INSERT INTO ortak (id, tur, ad, aciklama, tam_metin_md, icerik_hash, \
+                         arayuzler, yol) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        params![
+                            s.id.as_str(),
+                            s.tur,
+                            s.ad.as_str(),
+                            s.aciklama.as_str(),
+                            s.tam_metin_md.as_str(),
+                            s.icerik_hash.as_str(),
+                            arz.as_str(),
+                            s.yol.as_str()
+                        ],
+                    )
+                    .await?;
+                }
+            }
+        }
+    }
+    let silinen = mevcut.len();
+    if !kuru {
+        for id in mevcut.keys() {
+            conn.execute("DELETE FROM ortak WHERE id = ?", params![id.as_str()])
+                .await?;
+        }
+    }
+    Ok((eklenen, guncellenen, ayni, silinen))
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
@@ -1269,8 +1391,10 @@ async fn main() -> Result<()> {
             // Gövde iki dosyaya yayılı; ikisi de vektörlenmeli, yoksa depo
             // satırları BM25'te kalıp kosinüse hiç girmez.
             let depo = depo_baglan(false).await?;
+            let ortak = ortak_baglan(false).await?;
             let hedefler: Vec<(&Connection, &str)> = std::iter::once((&conn, "yetenekler"))
                 .chain(depo.as_ref().map(|d| (d, "depolar")))
+                .chain(ortak.as_ref().map(|o| (o, "ortak")))
                 .collect();
             for (c, t) in hedefler {
                 let (yenilenen, toplam, sure) = gomme_uret(c, t, kip, zorla).await?;
@@ -1424,6 +1548,43 @@ async fn main() -> Result<()> {
             }
             println!(
                 "TARAMA{} {} depo · {eklenen} eklendi · {guncellenen} güncellendi · {ayni} değişmedi · {:.0} ms",
+                if kuru { " [KURU]" } else { "" },
+                satirlar.len(),
+                baslangic.elapsed().as_secs_f64() * 1000.0
+            );
+            if !kuru && eklenen + guncellenen > 0 {
+                println!("Vektörler bayat — çalıştır: ibnunnedim gomme");
+            }
+        }
+        Command::ArayuzTara { kuru } => {
+            let baslangic = Instant::now();
+            let ev = std::env::var_os("USERPROFILE")
+                .or_else(|| std::env::var_os("HOME"))
+                .map(PathBuf::from)
+                .ok_or_else(|| CliError::Girdi("kullanıcı dizini bulunamadı".into()))?;
+            let appdata = std::env::var_os("APPDATA").map(PathBuf::from);
+            let ham: Vec<arayuz::OrtakSatir> = arayuz::yetenekleri_oku(&ev, appdata.as_deref())
+                .into_iter()
+                .chain(arayuz::araclari_oku(&ev, appdata.as_deref()))
+                .collect();
+            let ham_sayi = ham.len();
+            let satirlar = arayuz::birlestir(ham);
+            let ortak = ortak_baglan(!kuru).await?;
+            let (eklenen, guncellenen, ayni, silinen) = match &ortak {
+                Some(o) => ortak_yaz(o, &satirlar, kuru).await?,
+                None => (satirlar.len(), 0, 0, 0),
+            };
+            let mut dagilim: std::collections::BTreeMap<String, usize> = Default::default();
+            for s in &satirlar {
+                for a in &s.arayuzler {
+                    *dagilim.entry(format!("{} {a}", s.tur)).or_default() += 1;
+                }
+            }
+            for (k, n) in &dagilim {
+                println!("  {k}: {n}");
+            }
+            println!(
+                "ARAYÜZ TARAMA{} {ham_sayi} dosya → {} satır · {eklenen} eklendi · {guncellenen} güncellendi · {ayni} değişmedi · {silinen} silindi · {:.0} ms",
                 if kuru { " [KURU]" } else { "" },
                 satirlar.len(),
                 baslangic.elapsed().as_secs_f64() * 1000.0
