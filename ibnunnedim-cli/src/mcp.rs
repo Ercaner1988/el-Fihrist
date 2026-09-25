@@ -9,6 +9,7 @@
 //! kaçak `println!` el sıkışmayı bozar.
 
 use crate::olay::Baglam;
+use crate::sicak::Sicak;
 use crate::{
     baglan, fts_indeksleri, kural_ara, kural_baglan, kural_ekle, kural_listele, kutuphane_yolu,
     list_all_skills, say, search_skills, tekmil_ver,
@@ -313,7 +314,7 @@ async fn kural_baglan_bekle() -> crate::Result<Connection> {
 }
 
 /// Bir isteği yanıta çevirir. `None` dönerse hiçbir şey yazılmaz.
-async fn ele_al(b: &mut Baglam, istek: Istek) -> Option<Value> {
+async fn ele_al(b: &mut Baglam, s: &mut Sicak, istek: Istek) -> Option<Value> {
     match istek {
         Istek::Bildirim => None,
         Istek::Bozuk(e) => Some(hata(&Value::Null, -32700, &format!("ayrıştırılamadı: {e}"))),
@@ -336,13 +337,19 @@ async fn ele_al(b: &mut Baglam, istek: Istek) -> Option<Value> {
                     &id,
                     json!({
                         "protocolVersion": PROTOKOL,
-                        "capabilities": {"tools": {}},
+                        "capabilities": {"tools": {"listChanged": true}},
                         "serverInfo": {"name": "el-fihrist", "version": env!("CARGO_PKG_VERSION")}
                     }),
                 )
             }
             "ping" => yanit(&id, json!({})),
-            "tools/list" => yanit(&id, json!({"tools": araclar()})),
+            "tools/list" => {
+                let mut t = araclar();
+                if let Some(d) = t.as_array_mut() {
+                    d.extend(s.araclar());
+                }
+                yanit(&id, json!({"tools": t}))
+            }
             "tools/call" => {
                 let ad = parametre
                     .get("name")
@@ -355,10 +362,18 @@ async fn ele_al(b: &mut Baglam, istek: Istek) -> Option<Value> {
                     .unwrap_or_else(|| json!({}));
                 let baslangic = crate::olay::simdi_ms();
                 let sonuc = match baglan_bekle().await {
-                    Ok(conn) => arac_calistir(&conn, &ad, &arg).await,
+                    Ok(conn) => match s.cagir(&ad, baslangic) {
+                        Some(kimlik) => tam_metin(&conn, &kimlik)
+                            .await
+                            .ok_or_else(|| format!("yetenek artık kütüphanede yok: {kimlik}")),
+                        None => arac_calistir(&conn, &ad, &arg).await,
+                    },
                     Err(e) => Err(format!("kütüphane açılamadı: {e}")),
                 };
                 crate::olay::yaz(b, &ad, &arg, &sonuc, baslangic);
+                if let (Ok(t), "search_skills") = (&sonuc, ad.as_str()) {
+                    s.ekle(crate::sicak::adaylar(t), crate::olay::simdi_ms());
+                }
                 match sonuc {
                     Ok(t) => yanit(&id, json!({"content": [{"type": "text", "text": t}]})),
                     Err(e) => yanit(
@@ -380,14 +395,37 @@ where
     W: AsyncWrite + Unpin,
 {
     let mut satirlar = okur.lines();
-    while let Some(satir) = satirlar.next_line().await? {
-        if satir.trim().is_empty() {
-            continue;
+    let mut s = Sicak::yeni(crate::sicak::omur_ms());
+    let mut bildirilen = s.surum;
+    loop {
+        // Sıcak kümeden en yakın düşüş anına kadar uyu; `next_line` iptale dayanıklı.
+        let uyku = s
+            .siradaki_dusus()
+            .map(|t| std::time::Duration::from_millis((t - crate::olay::simdi_ms()).max(0) as u64));
+        let satir = tokio::select! {
+            satir = satirlar.next_line() => match satir? {
+                Some(s) => s,
+                None => break,
+            },
+            _ = async { tokio::time::sleep(uyku.unwrap_or_default()).await }, if uyku.is_some() => {
+                s.dusur(crate::olay::simdi_ms());
+                String::new()
+            }
+        };
+        if !satir.trim().is_empty() {
+            if let Some(y) = ele_al(&mut b, &mut s, ayristir(&satir)).await {
+                yazar.write_all(format!("{y}\n").as_bytes()).await?;
+            }
         }
-        if let Some(y) = ele_al(&mut b, ayristir(&satir)).await {
-            yazar.write_all(format!("{y}\n").as_bytes()).await?;
-            yazar.flush().await?;
+        if s.surum != bildirilen {
+            bildirilen = s.surum;
+            yazar
+                .write_all(
+                    b"{\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\"}\n",
+                )
+                .await?;
         }
+        yazar.flush().await?;
     }
     Ok(())
 }
@@ -434,6 +472,8 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
     });
     let mut girdi = BufReader::new(tokio::io::stdin()).lines();
     let mut yerel = false;
+    // ponytail: süreç içine düşülünce küme tutulur ama düşüş bildirimi yok (zamanlayıcı konus'ta).
+    let mut yerel_sicak = Sicak::yeni(crate::sicak::omur_ms());
     while let Some(satir) = girdi.next_line().await? {
         if let Istek::Cagri {
             yontem, parametre, ..
@@ -457,7 +497,7 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
             yerel = true;
             geri.abort();
         }
-        if let Some(y) = ele_al(&mut b, ayristir(&satir)).await {
+        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, ayristir(&satir)).await {
             let mut cikti = tokio::io::stdout();
             cikti.write_all(format!("{y}\n").as_bytes()).await?;
             cikti.flush().await?;

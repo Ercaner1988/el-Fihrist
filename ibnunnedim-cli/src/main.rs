@@ -26,6 +26,7 @@ mod kayit;
 mod mcp;
 mod olay;
 mod olcum;
+mod sicak;
 mod tara;
 
 use arama::{Belge, Indeks};
