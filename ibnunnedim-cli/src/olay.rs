@@ -19,38 +19,60 @@
 use serde_json::{json, Value};
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::{LazyLock, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Sürecin başlangıcında sabitlenen oturum kimliği.
-static OTURUM: LazyLock<String> = LazyLock::new(|| {
-    std::env::var("AGIT_SESSION")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| format!("{}-{}", std::process::id(), simdi_ms()))
-});
+/// Bir MCP bağlantısının (= bir YZ oturumunun) bağlamı. stdio'da süreç
+/// başına bir tane; hizmette (F2b) TCP bağlantısı başına bir tane.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Baglam {
+    /// `initialize`'da öğrenilen `clientInfo` (ad, sürüm).
+    pub arayuz: Option<(String, String)>,
+    pub oturum: String,
+    pub proje: Option<String>,
+}
 
-/// `initialize`'da öğrenilen arayüz adı ve sürümü.
-static ARAYUZ: Mutex<Option<(String, String)>> = Mutex::new(None);
+impl Baglam {
+    /// Bu sürecin kendi bağlamı: `AGIT_SESSION` ya da `<pid>-<şimdi ms>`.
+    pub fn yerel() -> Self {
+        Self {
+            arayuz: None,
+            oturum: std::env::var("AGIT_SESSION")
+                .ok()
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| format!("{}-{}", std::process::id(), simdi_ms())),
+            proje: std::env::var("CLAUDE_PROJECT_DIR").ok(),
+        }
+    }
+
+    /// Aktarıcının gönderdiği `el-fihrist/baglam` parametresinden. Oturum
+    /// kimliği aktarıcının sürecine aittir (onun pid'i), hizmetinkine değil.
+    pub fn uzaktan(p: &Value) -> Self {
+        Self {
+            arayuz: None,
+            oturum: p["oturum"]
+                .as_str()
+                .filter(|s| !s.is_empty() && !s.contains(['/', '\\', '.']))
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("uzak-{}", simdi_ms())),
+            proje: p["proje"].as_str().map(str::to_string),
+        }
+    }
+
+    /// `initialize` parametresinden `clientInfo`'yu saklar.
+    pub fn arayuzu_kaydet(&mut self, parametre: &Value) {
+        let ad = parametre["clientInfo"]["name"]
+            .as_str()
+            .unwrap_or("bilinmiyor");
+        let surum = parametre["clientInfo"]["version"].as_str().unwrap_or("");
+        self.arayuz = Some((ad.to_string(), surum.to_string()));
+    }
+}
 
 pub fn simdi_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0)
-}
-
-/// `initialize` parametresinden `clientInfo`'yu saklar.
-pub fn arayuzu_kaydet(parametre: &Value) {
-    // Kimlik el sıkışma anında sabitlensin, ilk araç çağrısında değil.
-    LazyLock::force(&OTURUM);
-    let ad = parametre["clientInfo"]["name"]
-        .as_str()
-        .unwrap_or("bilinmiyor");
-    let surum = parametre["clientInfo"]["version"].as_str().unwrap_or("");
-    if let Ok(mut a) = ARAYUZ.lock() {
-        *a = Some((ad.to_string(), surum.to_string()));
-    }
 }
 
 /// Arama sonucundan (`"N / M kayıt · ms\n[...]"`) dönen kimlikler, sırasıyla.
@@ -111,30 +133,28 @@ pub fn olay_satiri(
     })
 }
 
-fn gunluk_yolu() -> Option<PathBuf> {
+fn gunluk_yolu(oturum: &str) -> Option<PathBuf> {
     let kok = crate::kutuphane_yolu()
         .ok()?
         .with_file_name("kutup_olaylar");
     std::fs::create_dir_all(&kok).ok()?;
-    Some(kok.join(format!("{}.jsonl", OTURUM.as_str())))
+    Some(kok.join(format!("{oturum}.jsonl")))
 }
 
-/// Olayı sürecin günlüğüne ekler. Hata YUTULUR (stderr'e yazılır): günlük
-/// yazılamadı diye araç çağrısı düşmemeli.
-pub fn yaz(arac: &str, arg: &Value, sonuc: &Result<String, String>, baslangic_ms: i64) {
-    let arayuz = ARAYUZ.lock().ok().and_then(|a| a.clone());
-    let proje = std::env::var("CLAUDE_PROJECT_DIR").ok();
+/// Olayı oturumun günlüğüne ekler (oturum başına bir dosya, tek yazar). Hata
+/// YUTULUR (stderr'e yazılır): günlük yazılamadı diye araç çağrısı düşmemeli.
+pub fn yaz(b: &Baglam, arac: &str, arg: &Value, sonuc: &Result<String, String>, baslangic_ms: i64) {
     let satir = olay_satiri(
         baslangic_ms,
-        arayuz.as_ref(),
-        &OTURUM,
-        proje.as_deref(),
+        b.arayuz.as_ref(),
+        &b.oturum,
+        b.proje.as_deref(),
         arac,
         arg,
         sonuc,
         simdi_ms() - baslangic_ms,
     );
-    let sonuc = gunluk_yolu()
+    let sonuc = gunluk_yolu(&b.oturum)
         .ok_or_else(|| "günlük dizini yok".to_string())
         .and_then(|y| {
             std::fs::OpenOptions::new()
@@ -186,6 +206,18 @@ mod testler {
             s["arguman"]["metin"].as_str().unwrap().chars().count(),
             501,
             "500 + …"
+        );
+    }
+
+    #[test]
+    fn uzak_oturum_kimligi_yol_karakteri_tasiyamaz() {
+        // Kimlik dosya adına dönüşüyor: aktarıcıdan gelen "../x" günlük dizininden kaçmasın.
+        let b = Baglam::uzaktan(&json!({"oturum": "../../x", "proje": "C:/p"}));
+        assert!(b.oturum.starts_with("uzak-"), "{}", b.oturum);
+        assert_eq!(b.proje.as_deref(), Some("C:/p"));
+        assert_eq!(
+            Baglam::uzaktan(&json!({"oturum": "123-456"})).oturum,
+            "123-456"
         );
     }
 

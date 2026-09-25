@@ -8,12 +8,13 @@
 //! KURAL: stdout YALNIZ protokole aittir. Tanı çıktısı stderr'e gider; tek bir
 //! kaçak `println!` el sıkışmayı bozar.
 
+use crate::olay::Baglam;
 use crate::{
     baglan, fts_indeksleri, kural_ara, kural_baglan, kural_ekle, kural_listele, kutuphane_yolu,
     list_all_skills, say, search_skills, tekmil_ver,
 };
 use serde_json::{json, Value};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
 use turso::Connection;
 
 /// Konuştuğumuz MCP sürümü. İstemci başkasını isterse kendi sürümümüzü
@@ -312,7 +313,7 @@ async fn kural_baglan_bekle() -> crate::Result<Connection> {
 }
 
 /// Bir isteği yanıta çevirir. `None` dönerse hiçbir şey yazılmaz.
-async fn ele_al(istek: Istek) -> Option<Value> {
+async fn ele_al(b: &mut Baglam, istek: Istek) -> Option<Value> {
     match istek {
         Istek::Bildirim => None,
         Istek::Bozuk(e) => Some(hata(&Value::Null, -32700, &format!("ayrıştırılamadı: {e}"))),
@@ -321,8 +322,16 @@ async fn ele_al(istek: Istek) -> Option<Value> {
             yontem,
             parametre,
         } => Some(match yontem.as_str() {
+            // Aktarıcının ilk satırı (F2b): oturum kimliği ve proje. MCP'nin
+            // parçası değil; aktarıcı yanıtını kendisi tüketir, istemciye gitmez.
+            "el-fihrist/baglam" => {
+                let arayuz = b.arayuz.take();
+                *b = Baglam::uzaktan(&parametre);
+                b.arayuz = arayuz;
+                yanit(&id, json!({}))
+            }
             "initialize" => {
-                crate::olay::arayuzu_kaydet(&parametre);
+                b.arayuzu_kaydet(&parametre);
                 yanit(
                     &id,
                     json!({
@@ -349,7 +358,7 @@ async fn ele_al(istek: Istek) -> Option<Value> {
                     Ok(conn) => arac_calistir(&conn, &ad, &arg).await,
                     Err(e) => Err(format!("kütüphane açılamadı: {e}")),
                 };
-                crate::olay::yaz(&ad, &arg, &sonuc, baslangic);
+                crate::olay::yaz(b, &ad, &arg, &sonuc, baslangic);
                 match sonuc {
                     Ok(t) => yanit(&id, json!({"content": [{"type": "text", "text": t}]})),
                     Err(e) => yanit(
@@ -363,22 +372,100 @@ async fn ele_al(istek: Istek) -> Option<Value> {
     }
 }
 
-/// stdin'den satır okur, stdout'a yanıt yazar. EOF'ta biter.
-pub async fn calistir() -> crate::Result<()> {
-    let mut girdi = BufReader::new(tokio::io::stdin()).lines();
-    let mut cikti = tokio::io::stdout();
-    eprintln!("el-fihrist MCP: hazır (protokol {PROTOKOL})");
-
-    while let Some(satir) = girdi.next_line().await? {
+/// Satır satır JSON-RPC konuşur — stdio'da da hizmetin TCP bağlantısında da
+/// AYNI döngü. Okuyucu bitince (EOF) döner.
+pub(crate) async fn konus<R, W>(okur: R, mut yazar: W, mut b: Baglam) -> crate::Result<()>
+where
+    R: AsyncBufRead + Unpin,
+    W: AsyncWrite + Unpin,
+{
+    let mut satirlar = okur.lines();
+    while let Some(satir) = satirlar.next_line().await? {
         if satir.trim().is_empty() {
             continue;
         }
-        if let Some(y) = ele_al(ayristir(&satir)).await {
-            cikti.write_all(y.to_string().as_bytes()).await?;
-            cikti.write_all(b"\n").await?;
+        if let Some(y) = ele_al(&mut b, ayristir(&satir)).await {
+            yazar.write_all(format!("{y}\n").as_bytes()).await?;
+            yazar.flush().await?;
+        }
+    }
+    Ok(())
+}
+
+/// `ibnunnedim mcp`: önce tek el-Fihrist hizmetine aktarır (yoksa başlatır);
+/// ulaşılamazsa bugünkü gibi süreç içinde çalışır. `FIHRIST_HIZMETSIZ` ile
+/// aktarım hiç denenmez.
+pub async fn calistir() -> crate::Result<()> {
+    let b = Baglam::yerel();
+    if std::env::var_os("FIHRIST_HIZMETSIZ").is_none() {
+        match crate::hizmet::baglan_ya_da_baslat(&b).await {
+            Some(akis) => {
+                eprintln!("el-fihrist MCP: hizmete aktarılıyor (oturum {})", b.oturum);
+                return aktar(akis, b).await;
+            }
+            None => eprintln!("el-fihrist MCP: hizmete ulaşılamadı — süreç içinde"),
+        }
+    }
+    eprintln!("el-fihrist MCP: hazır (protokol {PROTOKOL})");
+    konus(BufReader::new(tokio::io::stdin()), tokio::io::stdout(), b).await
+}
+
+/// stdin → hizmet, hizmet → stdout, satırı değiştirmeden. Hizmet koparsa kalan
+/// istekler süreç içinde yanıtlanır (Claude Code stdio sunucusunu kendiliğinden
+/// yeniden bağlamıyor; araçlar ölmesin). `initialize` geçerken `clientInfo`
+/// burada da not edilir ki süreç içine düşülünce arayüz bilinsin.
+async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> {
+    let (okur, mut yazar) = akis.into_split();
+    // Hizmet kapanınca TCP'ye İLK yazma çoğu zaman yine "başarılı" döner ve o
+    // istek sessizce kaybolur; okuyan görev EOF'u görünce bu bayrağı kaldırır,
+    // yazan taraf yazmadan önce ona bakar.
+    let koptu = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let koptu_geri = koptu.clone();
+    let geri = tokio::spawn(async move {
+        let mut satirlar = BufReader::new(okur).lines();
+        let mut cikti = tokio::io::stdout();
+        while let Ok(Some(s)) = satirlar.next_line().await {
+            if cikti.write_all(format!("{s}\n").as_bytes()).await.is_err() {
+                break;
+            }
+            let _ = cikti.flush().await;
+        }
+        koptu_geri.store(true, std::sync::atomic::Ordering::SeqCst);
+    });
+    let mut girdi = BufReader::new(tokio::io::stdin()).lines();
+    let mut yerel = false;
+    while let Some(satir) = girdi.next_line().await? {
+        if let Istek::Cagri {
+            yontem, parametre, ..
+        } = ayristir(&satir)
+        {
+            if yontem == "initialize" {
+                b.arayuzu_kaydet(&parametre);
+            }
+        }
+        if !yerel
+            && !koptu.load(std::sync::atomic::Ordering::SeqCst)
+            && yazar
+                .write_all(format!("{satir}\n").as_bytes())
+                .await
+                .is_ok()
+        {
+            continue;
+        }
+        if !yerel {
+            eprintln!("! el-fihrist hizmeti koptu — kalan istekler süreç içinde");
+            yerel = true;
+            geri.abort();
+        }
+        if let Some(y) = ele_al(&mut b, ayristir(&satir)).await {
+            let mut cikti = tokio::io::stdout();
+            cikti.write_all(format!("{y}\n").as_bytes()).await?;
             cikti.flush().await?;
         }
     }
+    // stdin kapandı: yazma yönünü kapat, hizmetin son yanıtları stdout'a aksın.
+    let _ = yazar.shutdown().await;
+    let _ = tokio::time::timeout(std::time::Duration::from_secs(5), geri).await;
     Ok(())
 }
 

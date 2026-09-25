@@ -20,6 +20,7 @@ mod arama;
 mod arayuz;
 mod error;
 mod gomme;
+mod hizmet;
 mod kayit;
 mod mcp;
 mod olay;
@@ -108,7 +109,12 @@ enum Command {
         kip: gomme::Cekirdek,
     },
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
+    /// Tek el-Fihrist hizmetine aktarır; ulaşamazsa süreç içinde çalışır.
     Mcp,
+    /// Tek el-Fihrist hizmeti: oturumların MCP süreçleri buna aktarır
+    /// (127.0.0.1, FIHRIST_HIZMET_PORT, varsayılan 11437). Elle başlatmak
+    /// gerekmez; ilk `mcp` süreci yoksa başlatır.
+    Hizmet,
     /// Claude Code dökümlerindeki araç çağrılarını günlüğe aktarır.
     /// Kanca gerekmez: dökümler zaten append-only günlük (bkz. kayit.rs).
     KayitAl {
@@ -1210,6 +1216,9 @@ async fn main() -> Result<()> {
     if let Command::Mcp = args.command {
         return mcp::calistir().await;
     }
+    if let Command::Hizmet = args.command {
+        return hizmet::calistir().await;
+    }
 
     // Kural komutları ayrı dosyada çalışır, ana kütüphaneyi hiç açmaz — aynı
     // kilit gerekçesiyle (bkz. KayitAl yukarısı, `depo_baglan` belgesi).
@@ -1500,6 +1509,7 @@ async fn main() -> Result<()> {
             );
         }
         Command::Mcp => unreachable!("mcp DB bağlantısından önce ele alınır"),
+        Command::Hizmet => unreachable!("hizmet DB bağlantısından önce ele alınır"),
         Command::KayitAl { .. } => {
             unreachable!("kayit-al DB bağlantısından önce ele alınır")
         }
