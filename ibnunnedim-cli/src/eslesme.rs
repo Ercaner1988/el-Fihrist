@@ -42,7 +42,11 @@ impl Olay {
             ozet: kayit::ozetle(&v["arguman"]),
             sonuclar: v["sonuclar"]
                 .as_array()
-                .map(|d| d.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+                .map(|d| {
+                    d.iter()
+                        .filter_map(|x| x.as_str().map(str::to_string))
+                        .collect()
+                })
                 .unwrap_or_default(),
         })
     }
@@ -99,7 +103,11 @@ pub fn kullanir_mi(kimlik: &str, c: &DokumCagri) -> bool {
 
 /// Eşleşen aramadan sonra aynı oturumda kullanılan sonuçlar, sonuç sırasıyla.
 /// `oturum_cagrilari` zamana göre sıralı olmalı.
-pub fn kullanilanlar(sonuclar: &[String], eslesen: &DokumCagri, oturum_cagrilari: &[DokumCagri]) -> Vec<String> {
+pub fn kullanilanlar(
+    sonuclar: &[String],
+    eslesen: &DokumCagri,
+    oturum_cagrilari: &[DokumCagri],
+) -> Vec<String> {
     let arama = dokum_adi("search_skills");
     let sonra: Vec<&DokumCagri> = oturum_cagrilari
         .iter()
@@ -132,7 +140,12 @@ mod testler {
     use super::*;
 
     fn c(oturum: &str, arac: &str, ozet: &str, zaman_ms: i64) -> DokumCagri {
-        DokumCagri { oturum: oturum.into(), arac: arac.into(), ozet: ozet.into(), zaman_ms }
+        DokumCagri {
+            oturum: oturum.into(),
+            arac: arac.into(),
+            ozet: ozet.into(),
+            zaman_ms,
+        }
     }
 
     fn olay(zaman_ms: i64) -> Olay {
@@ -145,13 +158,36 @@ mod testler {
     #[test]
     fn zamanca_en_yakin_ayni_sorgu_eslesir() {
         let d = [
-            c("uzak", "mcp__el-fihrist__search_skills", "tez başlığı", 100_000 - 50_000),
-            c("yakin", "mcp__el-fihrist__search_skills", "tez başlığı", 100_000 - 4_000),
-            c("baska", "mcp__el-fihrist__search_skills", "başka sorgu", 100_000),
-            c("gec", "mcp__el-fihrist__search_skills", "tez başlığı", 100_000 + 70_000),
+            c(
+                "uzak",
+                "mcp__el-fihrist__search_skills",
+                "tez başlığı",
+                100_000 - 50_000,
+            ),
+            c(
+                "yakin",
+                "mcp__el-fihrist__search_skills",
+                "tez başlığı",
+                100_000 - 4_000,
+            ),
+            c(
+                "baska",
+                "mcp__el-fihrist__search_skills",
+                "başka sorgu",
+                100_000,
+            ),
+            c(
+                "gec",
+                "mcp__el-fihrist__search_skills",
+                "tez başlığı",
+                100_000 + 70_000,
+            ),
         ];
         assert_eq!(eslestir(&olay(100_000), &d).unwrap().oturum, "yakin");
-        assert!(eslestir(&olay(1_000_000), &d).is_none(), "tolerans dışı eşleşmez");
+        assert!(
+            eslestir(&olay(1_000_000), &d).is_none(),
+            "tolerans dışı eşleşmez"
+        );
     }
 
     #[test]
@@ -165,19 +201,34 @@ mod testler {
             c("o", "Skill", "tez-bolum", 4), // sonraki aramadan sonra: sayılmaz
         ];
         let s = olay(0).sonuclar;
-        assert_eq!(kullanilanlar(&s, &e, &oturum), ["mcp/codspeed/compare_runs"]);
-        let oturum2 = [e.clone(), c("o", "Skill", "plugin:tez-bolum", PENCERE_MS + 1)];
+        assert_eq!(
+            kullanilanlar(&s, &e, &oturum),
+            ["mcp/codspeed/compare_runs"]
+        );
+        let oturum2 = [
+            e.clone(),
+            c("o", "Skill", "plugin:tez-bolum", PENCERE_MS + 1),
+        ];
         assert!(kullanilanlar(&s, &e, &oturum2).is_empty(), "pencere dışı");
     }
 
     #[test]
     fn yetenek_skill_ya_da_skill_md_okumasiyla_kullanilir() {
-        assert!(kullanir_mi("claude-code/tez-bolum", &c("o", "Skill", "plugin:tez-bolum", 0)));
+        assert!(kullanir_mi(
+            "claude-code/tez-bolum",
+            &c("o", "Skill", "plugin:tez-bolum", 0)
+        ));
         assert!(kullanir_mi(
             "claude-code/synced/docx",
             &c("o", "Read", r"C:\Users\x\.claude\skills\docx\SKILL.md", 0)
         ));
-        assert!(!kullanir_mi("claude-code/docx", &c("o", "Skill", "docx-eski", 0)));
-        assert!(!kullanir_mi("mcp/codspeed/get_run", &c("o", "mcp__CodSpeed__compare_runs", "", 0)));
+        assert!(!kullanir_mi(
+            "claude-code/docx",
+            &c("o", "Skill", "docx-eski", 0)
+        ));
+        assert!(!kullanir_mi(
+            "mcp/codspeed/get_run",
+            &c("o", "mcp__CodSpeed__compare_runs", "", 0)
+        ));
     }
 }

@@ -1012,7 +1012,11 @@ async fn eslestir(kok: &std::path::Path) -> Result<()> {
         let eslesen = eslesme::eslestir(o, &cagrilar);
         let kullanilan = eslesen
             .map(|e| {
-                let oturum: Vec<_> = cagrilar.iter().filter(|c| c.oturum == e.oturum).cloned().collect();
+                let oturum: Vec<_> = cagrilar
+                    .iter()
+                    .filter(|c| c.oturum == e.oturum)
+                    .cloned()
+                    .collect();
                 eslesme::kullanilanlar(&o.sonuclar, e, &oturum)
             })
             .unwrap_or_default();
