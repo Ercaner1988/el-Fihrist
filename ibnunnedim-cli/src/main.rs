@@ -453,7 +453,26 @@ async fn sirala(
     Ok(arama::harmanla(&bm, &kos, agirlik, limit))
 }
 
-/// Saf Rust BM25 + gömme kosinüsü, normalize füzyonla birleştirilir.
+/// Üretim araması: gömme ANA kanal, BM25 yalnız DÜŞME.
+///
+/// 2026-09-24 ölçümü (gerçek kütüphane, 18 altın sorgu, limit 5): gomme
+/// MRR 0.83, karmasik 0.71, bm25 0.47 — füzyon doğru sonucu aşağı itiyordu
+/// (9 Eylül'de de aynı yön: 0.89'a 0.73). `olcum` üç kanalı ayrı ölçmeyi
+/// sürdürür; bu sıra yalnız `search`/MCP içindir.
+async fn gomme_once(
+    g: &Govde,
+    sorgu: &str,
+    limit: usize,
+    kip: gomme::Cekirdek,
+) -> Result<Vec<(usize, f64)>> {
+    match sirala(g, sorgu, limit, kip, Kanal::Gomme).await {
+        Ok(v) if !v.is_empty() => return Ok(v),
+        Ok(_) => eprintln!("! gömme sonuç vermedi (vektör yok ya da eşik altı) — düşme: BM25"),
+        Err(h) => eprintln!("! gömme kanalı düştü — düşme: BM25: {h}"),
+    }
+    sirala(g, sorgu, limit, kip, Kanal::Bm25).await
+}
+
 async fn search_skills(
     conn: &Connection,
     query: &str,
@@ -462,7 +481,7 @@ async fn search_skills(
 ) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
     let baslangic = Instant::now();
     let g = govde_yukle(conn, kip).await?;
-    let sonuc = sirala(&g, query, limit, kip, Kanal::Karmasik)
+    let sonuc = gomme_once(&g, query, limit, kip)
         .await?
         .into_iter()
         .map(|(idx, _puan)| Skill {
@@ -1437,6 +1456,31 @@ async fn main() -> Result<()> {
 #[cfg(test)]
 mod testler {
     use super::*;
+
+    /// Vektör yokken (bayat gömme ya da sunucu kapalı) arama BM25'e düşmeli,
+    /// boş dönmemeli — 2026-09-23'teki sessiz bozulmanın tersi yönü.
+    #[tokio::test]
+    async fn gomme_yoksa_bm25e_duser() {
+        let belge = |id: &str, ad: &str| arama::Belge {
+            id: id.into(),
+            ad: ad.into(),
+            aciklama: format!("{ad} açıklaması"),
+            tam_metin_md: String::new(),
+        };
+        let g = Govde {
+            indeks: Indeks::kur(vec![belge("a", "zotero atıf"), belge("b", "excel tablo")]),
+            kayitlar: Vec::new(),
+            vektorler: vec![None, None],
+        };
+        let v = gomme_once(&g, "atıf", 5, gomme::Cekirdek::default())
+            .await
+            .unwrap();
+        assert_eq!(
+            v.first().map(|x| x.0),
+            Some(0),
+            "BM25 düşmesi 'atıf'ı bulmalı"
+        );
+    }
 
     /// Şema kurulumundan arama/pasifleştirmeye tam döngü — hedef DB dosyası
     /// olmadan (kural_baglan'ın kutuphane_yolu bağımlılığını atlar).

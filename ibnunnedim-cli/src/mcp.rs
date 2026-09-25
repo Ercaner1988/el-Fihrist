@@ -70,7 +70,7 @@ pub fn araclar() -> Value {
     json!([
         {
             "name": "search_skills",
-            "description": "Yetenek kütüphanesinde karma arama: BM25 (Türkçe katlamalı) + bge-m3 anlam benzerliği (Türkçe sorgu → İngilizce açıklama da bulunur). Gömme sunucusu yoksa BM25'e düşer. Sonuç: id, ad, kategori, başarı puanı, açıklama; tam_metin=true ise yeteneğin tam metni de.",
+            "description": "Yetenek kütüphanesinde anlam araması (bge-m3; Türkçe sorgu → İngilizce açıklama da bulunur). Gömme sunucusu yoksa ya da sonuç çıkmazsa Türkçe katlamalı BM25 sözcük aramasına düşer. Sonuç: id, ad, kategori, başarı puanı, açıklama; tam_metin=true ise yeteneğin tam metni de.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
