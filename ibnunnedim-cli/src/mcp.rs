@@ -321,14 +321,17 @@ async fn ele_al(istek: Istek) -> Option<Value> {
             yontem,
             parametre,
         } => Some(match yontem.as_str() {
-            "initialize" => yanit(
-                &id,
-                json!({
-                    "protocolVersion": PROTOKOL,
-                    "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "el-fihrist", "version": env!("CARGO_PKG_VERSION")}
-                }),
-            ),
+            "initialize" => {
+                crate::olay::arayuzu_kaydet(&parametre);
+                yanit(
+                    &id,
+                    json!({
+                        "protocolVersion": PROTOKOL,
+                        "capabilities": {"tools": {}},
+                        "serverInfo": {"name": "el-fihrist", "version": env!("CARGO_PKG_VERSION")}
+                    }),
+                )
+            }
             "ping" => yanit(&id, json!({})),
             "tools/list" => yanit(&id, json!({"tools": araclar()})),
             "tools/call" => {
@@ -341,10 +344,12 @@ async fn ele_al(istek: Istek) -> Option<Value> {
                     .get("arguments")
                     .cloned()
                     .unwrap_or_else(|| json!({}));
+                let baslangic = crate::olay::simdi_ms();
                 let sonuc = match baglan_bekle().await {
                     Ok(conn) => arac_calistir(&conn, &ad, &arg).await,
                     Err(e) => Err(format!("kütüphane açılamadı: {e}")),
                 };
+                crate::olay::yaz(&ad, &arg, &sonuc, baslangic);
                 match sonuc {
                     Ok(t) => yanit(&id, json!({"content": [{"type": "text", "text": t}]})),
                     Err(e) => yanit(

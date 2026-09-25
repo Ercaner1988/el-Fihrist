@@ -22,6 +22,7 @@ mod error;
 mod gomme;
 mod kayit;
 mod mcp;
+mod olay;
 mod olcum;
 mod tara;
 
