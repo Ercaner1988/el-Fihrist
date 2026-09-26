@@ -21,6 +21,7 @@ onnx = ["dep:fastembed"]
 [dependencies]
 turso.workspace = true
 katla.workspace = true
+terim.workspace = true
 # ONNX gömme çekirdeği (multilingual-e5-small, 384 boyut). Yalnız `--features onnx`.
 fastembed = { version = "4.9", optional = true }
 # bge-embed-rs / llama-server'ın yerel /v1/embeddings uç noktası için: yalnız

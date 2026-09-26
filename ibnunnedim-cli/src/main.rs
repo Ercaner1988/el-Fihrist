@@ -308,9 +308,9 @@ async fn satirlari_oku(
 
         belgeler.push(Belge {
             id: id.clone(),
-            ad: ad.clone(),
-            aciklama: aciklama.clone(),
-            tam_metin_md,
+            ad: terim::f5_metin(&ad),
+            aciklama: terim::f5_metin(&aciklama),
+            tam_metin_md: terim::f5_metin(&tam_metin_md),
         });
 
         // Vektör yalnız imzası TUTUYORSA kullanılır: `<kip>:<icerik_hash>`
@@ -490,7 +490,7 @@ async fn sirala(
     // dolmadığında sahte isabet üretir. Ölçüm tam da orada yalan söylerdi.
     let bm = match kanal {
         Kanal::Gomme => Vec::new(),
-        _ => g.indeks.ara(sorgu, genis),
+        _ => g.indeks.ara(&terim::f5_metin(sorgu), genis),
     };
     // Karma aramada gömme sunucusu düşerse BM25 yine sonuç verir; saf gömme
     // kanalında (ölçüm) hata yutulmaz, yoksa sıfır isabet diye ölçülürdü.

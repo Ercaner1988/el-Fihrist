@@ -1,0 +1,9 @@
+[package]
+name = "terim"
+description = "BM25 dizin terimleri: katla belirteçlerinin ilk 5 harfi (F5)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+katla.workspace = true

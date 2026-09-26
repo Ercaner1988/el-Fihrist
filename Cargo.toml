@@ -5,6 +5,7 @@ members = [
     "crates/fihrist-core",
     "crates/fihrist-storage",
     "crates/fihrist-gui",
+    "crates/terim",
 ]
 resolver = "2"
 
@@ -26,4 +27,5 @@ fihrist-core = { path = "crates/fihrist-core" }
 fihrist-storage = { path = "crates/fihrist-storage" }
 # Ortak Türkçe katlama (pasli-beyin de kullanır). Kardeş repo: ../katla
 katla = { path = "../katla" }
+terim = { path = "crates/terim" }
 
