@@ -93,6 +93,18 @@ pub fn sonuc_kimlikleri(metin: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Arama başlığındaki kanal (`… · kanal: gömme`); başlık yoksa `None`.
+/// F4'te BM25 yedeğinden gelen aramalar eğitim verisinden bununla ayrılır.
+pub fn kanal_oku(metin: &str) -> Option<&str> {
+    metin
+        .lines()
+        .next()?
+        .split("kanal: ")
+        .nth(1)?
+        .split_whitespace()
+        .next()
+}
+
 /// Uzun argümanları (kural metni gibi) kırpar; günlük küçük kalsın.
 fn kirp(arg: &Value) -> Value {
     match arg {
@@ -128,6 +140,7 @@ pub fn olay_satiri(
         "arac": arac,
         "arguman": kirp(arg),
         "sonuclar": sonuc.as_ref().map(|t| sonuc_kimlikleri(t)).unwrap_or_default(),
+        "kanal": sonuc.as_ref().ok().and_then(|t| kanal_oku(t)),
         "hata": sonuc.as_ref().err(),
         "sure_ms": sure_ms,
     })
@@ -226,6 +239,45 @@ mod testler {
             Baglam::uzaktan(&json!({"oturum": "123-456"})).oturum,
             "123-456"
         );
+    }
+
+    #[test]
+    fn kanal_basliktan_okunur() {
+        assert_eq!(
+            kanal_oku(
+                "5 / 675 kayıt · 1.2 ms · kanal: gömme
+[]"
+            ),
+            Some("gömme")
+        );
+        assert_eq!(
+            kanal_oku(
+                "5 / 675 kayıt · 3.7 ms · kanal: bm25 (yedek: …)
+[]"
+            ),
+            Some("bm25")
+        );
+        assert_eq!(
+            kanal_oku(
+                "2 / 9 kayıt · 1 ms
+[]"
+            ),
+            None,
+            "eski başlık"
+        );
+        let s = olay_satiri(
+            1,
+            None,
+            "o",
+            None,
+            "search_skills",
+            &json!({}),
+            &Ok("1 / 2 kayıt · 1 ms · kanal: bm25
+[]"
+            .into()),
+            0,
+        );
+        assert_eq!(s["kanal"], "bm25");
     }
 
     #[test]

@@ -436,6 +436,17 @@ enum Kanal {
     Karmasik,
 }
 
+impl Kanal {
+    /// Çıktıda görünen ad; MCP sonucunun başlığı ve olay günlüğü bunu taşır.
+    fn ad(self) -> &'static str {
+        match self {
+            Kanal::Bm25 => "bm25",
+            Kanal::Gomme => "gömme",
+            Kanal::Karmasik => "karma",
+        }
+    }
+}
+
 /// Gömme kanalı: sorgu vektörü ile gövdenin kosinüsü, taban altı elenmiş.
 async fn kosinusla(
     g: &Govde,
@@ -506,18 +517,23 @@ async fn sirala(
 /// MRR 0.83, karmasik 0.71, bm25 0.47 — füzyon doğru sonucu aşağı itiyordu
 /// (9 Eylül'de de aynı yön: 0.89'a 0.73). `olcum` üç kanalı ayrı ölçmeyi
 /// sürdürür; bu sıra yalnız `search`/MCP içindir.
+/// Sonucu hangi kanalın verdiği de döner: BM25'e düşülen sonuç zayıftır
+/// (2026-09-25, "Word belgesi oluştur" → video-harvest), çağıran bilsin.
 async fn gomme_once(
     g: &Govde,
     sorgu: &str,
     limit: usize,
     kip: gomme::Cekirdek,
-) -> Result<Vec<(usize, f64)>> {
+) -> Result<(Vec<(usize, f64)>, Kanal)> {
     match sirala(g, sorgu, limit, kip, Kanal::Gomme).await {
-        Ok(v) if !v.is_empty() => return Ok(v),
+        Ok(v) if !v.is_empty() => return Ok((v, Kanal::Gomme)),
         Ok(_) => eprintln!("! gömme sonuç vermedi (vektör yok ya da eşik altı) — düşme: BM25"),
         Err(h) => eprintln!("! gömme kanalı düştü — düşme: BM25: {h}"),
     }
-    sirala(g, sorgu, limit, kip, Kanal::Bm25).await
+    Ok((
+        sirala(g, sorgu, limit, kip, Kanal::Bm25).await?,
+        Kanal::Bm25,
+    ))
 }
 
 async fn search_skills(
@@ -525,11 +541,11 @@ async fn search_skills(
     query: &str,
     limit: usize,
     kip: gomme::Cekirdek,
-) -> Result<(Vec<Skill>, usize, std::time::Duration)> {
+) -> Result<(Vec<Skill>, usize, std::time::Duration, Kanal)> {
     let baslangic = Instant::now();
     let g = govde_yukle(conn, kip).await?;
-    let sonuc = gomme_once(&g, query, limit, kip)
-        .await?
+    let (sirali, kanal) = gomme_once(&g, query, limit, kip).await?;
+    let sonuc = sirali
         .into_iter()
         .map(|(idx, _puan)| Skill {
             id: g.kayitlar[idx].id.clone(),
@@ -539,7 +555,7 @@ async fn search_skills(
             kategori: g.kayitlar[idx].kategori.clone(),
         })
         .collect();
-    Ok((sonuc, g.kayitlar.len(), baslangic.elapsed()))
+    Ok((sonuc, g.kayitlar.len(), baslangic.elapsed(), kanal))
 }
 
 async fn list_all_skills(conn: &Connection, kategori: Option<&str>) -> Result<Vec<Skill>> {
@@ -1376,14 +1392,16 @@ async fn main() -> Result<()> {
 
     match args.command {
         Command::Search { query, limit, kip } => {
-            let (skills, toplam_kayit, sure) = search_skills(&conn, &query, limit, kip).await?;
+            let (skills, toplam_kayit, sure, kanal) =
+                search_skills(&conn, &query, limit, kip).await?;
             println!("\nARAMA SONUÇLARI ('{query}') — {} kayıt", skills.len());
             #[cfg(debug_assertions)]
             let dbg = " · DEBUG derlemesi, release ~12 kat hızlı";
             #[cfg(not(debug_assertions))]
             let dbg = "";
             println!(
-                "(BM25 + gömme[{}] · {toplam_kayit} kayıt tarandı · {:.1} ms{dbg})",
+                "(kanal: {} · gömme[{}] · {toplam_kayit} kayıt tarandı · {:.1} ms{dbg})",
+                kanal.ad(),
                 kip.kip(),
                 sure.as_secs_f64() * 1000.0
             );
@@ -1729,7 +1747,7 @@ mod testler {
             kayitlar: Vec::new(),
             vektorler: vec![None, None],
         };
-        let v = gomme_once(&g, "atıf", 5, gomme::Cekirdek::default())
+        let (v, kanal) = gomme_once(&g, "atıf", 5, gomme::Cekirdek::default())
             .await
             .unwrap();
         assert_eq!(
@@ -1737,6 +1755,7 @@ mod testler {
             Some(0),
             "BM25 düşmesi 'atıf'ı bulmalı"
         );
+        assert_eq!(kanal, Kanal::Bm25, "düşülen kanal çağırana bildirilmeli");
     }
 
     /// Şema kurulumundan arama/pasifleştirmeye tam döngü — hedef DB dosyası

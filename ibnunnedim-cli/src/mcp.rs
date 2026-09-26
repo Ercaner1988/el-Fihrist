@@ -190,7 +190,7 @@ async fn arac_calistir(
             let q = metin(p, "query")?;
             let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
             let tam = p.get("tam_metin").and_then(Value::as_bool).unwrap_or(false);
-            let (skills, toplam, sure) =
+            let (skills, toplam, sure, kanal) =
                 search_skills(conn, &q, limit, crate::gomme::Cekirdek::default())
                     .await
                     .map_err(|e| e.to_string())?;
@@ -204,9 +204,14 @@ async fn arac_calistir(
                 }
             }
             Ok(format!(
-                "{} / {toplam} kayıt · {:.1} ms\n{}",
+                "{} / {toplam} kayıt · {:.1} ms · kanal: {}\n{}",
                 skills.len(),
                 sure.as_secs_f64() * 1000.0,
+                if kanal == crate::Kanal::Bm25 {
+                    "bm25 (yedek: gömme yanıt vermedi, sonuçlar zayıf olabilir)"
+                } else {
+                    kanal.ad()
+                },
                 serde_json::to_string_pretty(&cikti).map_err(|e| e.to_string())?
             ))
         }
@@ -372,7 +377,10 @@ async fn ele_al(b: &mut Baglam, s: &mut Sicak, istek: Istek) -> Option<Value> {
                 };
                 crate::olay::yaz(b, &ad, &arg, &sonuc, baslangic);
                 if let (Ok(t), "search_skills") = (&sonuc, ad.as_str()) {
-                    s.ekle(crate::sicak::adaylar(t), crate::olay::simdi_ms());
+                    // BM25 yedeğinin sonucu sıcak kümeye girmez: zayıf aday araç listesini kirletir.
+                    if crate::olay::kanal_oku(t) != Some("bm25") {
+                        s.ekle(crate::sicak::adaylar(t), crate::olay::simdi_ms());
+                    }
                 }
                 match sonuc {
                     Ok(t) => yanit(&id, json!({"content": [{"type": "text", "text": t}]})),
