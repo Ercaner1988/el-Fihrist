@@ -24,4 +24,6 @@ thiserror = "2.0"
 eframe = { version = "0.29", default-features = false, features = ["default_fonts", "glow"] }
 fihrist-core = { path = "crates/fihrist-core" }
 fihrist-storage = { path = "crates/fihrist-storage" }
+# Ortak Türkçe katlama (pasli-beyin de kullanır). Kardeş repo: ../katla
+katla = { path = "../katla" }
 

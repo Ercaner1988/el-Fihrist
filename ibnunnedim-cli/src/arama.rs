@@ -17,45 +17,10 @@ pub struct Indeks {
     ort_belge_uzunlugu: f64,
 }
 
-/// Türkçe katlamalı belirteçleyici.
-///
-/// Standard Rust `.to_lowercase()` fonksiyonu `İ` karakterini `i` + `U+0307` (birleşen nokta)
-/// olarak ayrıştırır ve `I` karakterini `ı` yerine `i` yapar. Bu yüzden Türkçe katlama
-/// elle yapılır: `İ` -> `i`, `I` -> `ı`, ardından `.to_lowercase()`.
-///
-/// 2026-09-04 (pasli-beyin PB-06 ölçümü sonrası): altı Türkçe harf de ASCII
-/// karşılığına katlanır (`ı ş ğ ü ö ç` → `i s g u o c`) — pasli-beyin'in
-/// `gomme::katla` ile AYNI kural. Gerekçe: altın sette 'kaynakça' (ç'li)
-/// sorgusu ç/ş katlanmadığı için 0 sonuç veriyordu; belge tarafı ASCII adlı
-/// ('kaynakca') parçaları bulamıyordu. İki taraf da belirteçle bu işlevden
-/// geçtiği için katlama sorgu-belge tutarlılığını bozmaz.
-pub fn belirtecle(metin: &str) -> Vec<String> {
-    let mut katlanmis = String::with_capacity(metin.len());
-    for c in metin.chars() {
-        match c {
-            'İ' => katlanmis.push('i'),
-            'I' => katlanmis.push('i'),
-            other => {
-                for k in other.to_lowercase() {
-                    katlanmis.push(match k {
-                        'ı' => 'i',
-                        'ş' => 's',
-                        'ğ' => 'g',
-                        'ü' => 'u',
-                        'ö' => 'o',
-                        'ç' => 'c',
-                        _ => k,
-                    });
-                }
-            }
-        }
-    }
-    katlanmis
-        .split(|c: char| !c.is_alphanumeric())
-        .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
-        .collect()
-}
+/// Türkçe katlamalı belirteçleyici. Kural ortak `katla` crate'inde (pasli-beyin
+/// ile aynı kopya; 2026-09-25'e dek iki ayrı el yazımıydı ve ayrışmıştı).
+/// Sorgu ve belge ikisi de buradan geçer, katlama tutarlılığı bozmaz.
+pub use katla::belirtecle;
 
 impl Indeks {
     /// Belgelerden bellekte ters indeks ve uzunluk istatistiklerini kurar.

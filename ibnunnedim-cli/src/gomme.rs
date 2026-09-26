@@ -59,7 +59,8 @@ pub enum Rol {
 pub enum Cekirdek {
     /// Yerel hash n-gram: sıfır bağımlılık, ağ yok, model indirmesi yok.
     /// llama-server'a erişilemezse (`gomme()` hata verirse) düşülecek elle seçim.
-    #[value(name = "hash256")]
+    /// `hash256-k2`: imzadaki ad (bkz. `kip`); onarım ipucu onu yazdırır.
+    #[value(name = "hash256", alias = "hash256-k2")]
     Hash256,
     /// `intfloat/multilingual-e5-small` (384 boyut, ONNX). Diller arası
     /// hizalama tam olarak eğitildiği şey — ama füzyonda hash256'dan GERİYE
@@ -84,7 +85,10 @@ impl Cekirdek {
     /// (ki çekirdek gerçekten değiştiyse istenen de budur).
     pub fn kip(self) -> &'static str {
         match self {
-            Cekirdek::Hash256 => "hash256",
+            // k2 (2026-09-25): belirteçleme ortak `katla`'ya geçti (şapka,
+            // aksan, ayrışık yazım artık katlanıyor) → eski hash vektörleri
+            // farklı belirteçlerden üretilmişti, bayat sayılmalılar.
+            Cekirdek::Hash256 => "hash256-k2",
             #[cfg(feature = "onnx")]
             Cekirdek::E5s384 => "e5s384",
             Cekirdek::BgeM3 => "bge-m3",
