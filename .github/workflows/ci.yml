@@ -19,6 +19,11 @@ env:
 # Komutlar bilerek sade: .githooks/pre-push bu dosyadaki `run: cargo …`
 # satirlarini okuyup aynen calistirir. Buraya bir kontrol eklemek, yerel
 # kapiya da eklemek demektir — iki listeyi el ile esitlemek gerekmez.
+#
+# NEDEN IKI CHECKOUT: ortak Turkce katlama kardes depoda (`katla = { path =
+# "../katla" }`, 2026-09-26). actions/checkout workspace disina yazamaz; bu
+# yuzden depo bir alt dizine (el-Fihrist/) cikarilir, katla yanina konur —
+# pasli-beyin ci.yml ile ayni kalip. Yerel kapi etkilenmez, orada yol var.
 jobs:
   test:
     name: Test (${{ matrix.os }})
@@ -28,13 +33,24 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: el-Fihrist
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: el-Fihrist
+      - name: Checkout katla (path bagimliligi)
+        uses: actions/checkout@v4
+        with:
+          repository: Ercaner1988/katla
+          path: katla
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v1-rust"
+          workspaces: "el-Fihrist -> target"
           cache-on-failure: true
       - name: Build
         run: cargo build --workspace --all-targets
@@ -45,8 +61,18 @@ jobs:
     name: Lint & Format
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: el-Fihrist
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: el-Fihrist
+      - name: Checkout katla (path bagimliligi)
+        uses: actions/checkout@v4
+        with:
+          repository: Ercaner1988/katla
+          path: katla
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -54,6 +80,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v1-rust-lint"
+          workspaces: "el-Fihrist -> target"
           cache-on-failure: true
       - name: Check formatting
         run: cargo fmt --all -- --check

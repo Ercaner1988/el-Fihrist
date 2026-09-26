@@ -28,7 +28,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # path YOK: CodSpeed yükleme adımı git kökünü $GITHUB_WORKSPACE'te arıyor.
       - uses: actions/checkout@v4
+
+      # katla kardeş depo (`../katla`). actions/checkout workspace dışına
+      # yazamaz: önce içeri alınır, sonra üst dizine taşınır (pasli-beyin
+      # codspeed.yml ile aynı kalıp).
+      - name: Checkout katla (path bağımlılığı)
+        uses: actions/checkout@v4
+        with:
+          repository: Ercaner1988/katla
+          path: _kardesler/katla
+      - name: katla'yı ../ konumuna taşı
+        run: |
+          mv "$GITHUB_WORKSPACE/_kardesler/katla" "$(dirname "$GITHUB_WORKSPACE")/katla"
+          rmdir "$GITHUB_WORKSPACE/_kardesler"
 
       - name: Setup rust toolchain, cache and cargo-codspeed binary
         uses: moonrepo/setup-rust@v0
