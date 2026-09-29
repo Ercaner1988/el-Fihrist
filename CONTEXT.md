@@ -95,6 +95,10 @@ Hangi YZ'nin hangi uç ve yolla çalışacağının belirlenmesi; Kervan'ın iş
 Araçlar arasında ortak tutulan gerçek kişi kimliği; bir eserdeki ya da davadaki konumu ona bağlı roller belirtir. Aynı Kişi aynı anda birden çok rol taşıyabilir.
 _Kaçın_: yazar, taraf (bunlar Kişi'nin rolleridir, Kişi'nin kendisi değil)
 
+**Kişi eşlemesi**:
+İki aracın kendi Kişi kayıtlarının aynı gerçek kişiyi gösterdiğinin el-Fihrist'te açıkça yazılması. İsteğe bağlıdır; aynı ad tek başına eşleme sayılmaz.
+_Kaçın_: birleştirme (Dal'ın Birleştirme'siyle karışır), kimlik çözümleme
+
 **Yazar**:
 Bir eserin (kitap, makale, bölüm) yazarı ya da eşdeğer katkı sahibi (editör, çevirmen) olan Kişi rolü. **Özne ile karıştırılmaz**: Yazar bir eserle ilgilidir, Özne veriye yazan YZ oturumudur.
 
