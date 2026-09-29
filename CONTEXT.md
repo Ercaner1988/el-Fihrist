@@ -52,6 +52,10 @@ _Kaçın_: fork, sandbox, kopya
 Bir dalın adı; YZ oturumu AgentGit'le yönetiliyorsa `AGIT_SESSION`'dır, değilse oturumun kendi kimliğidir.
 _Kaçın_: dal no, oturum adı
 
+**Değişiklik günlüğü**:
+Bir Dal'daki her değişikliği, yalnız eklenerek ve durumdan önce yazılan kayıtlar olarak tutan, Dal başına tek dosya.
+_Kaçın_: log, geçmiş, olay tablosu
+
 **Birleştirme**:
 Bir dalda yapılan değişikliklerin el-Fihrist'teki ana veriye geri konması.
 _Kaçın_: merge, senkron
