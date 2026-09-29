@@ -45,7 +45,7 @@ Bir aracın kendi araç veritabanını kapatıp el-Fihrist'in veritabanını kul
 _Kaçın_: bağlanma, birleştirme
 
 **Dal**:
-Bir yazarın aynı veri sınıfı üzerinde, ana veriye dokunmadan çalıştığı geçici ya da kalıcı kopya; iş bitince birleştirilir, sonra silinir ya da eşgüdüme alınır.
+Bir öznenin aynı veri sınıfı üzerinde, ana veriye dokunmadan çalıştığı geçici ya da kalıcı kopya; iş bitince birleştirilir, sonra silinir ya da eşgüdüme alınır.
 _Kaçın_: fork, sandbox, kopya
 
 **Dal kimliği**:
@@ -76,8 +76,9 @@ Ercan'a ait, kaynak kütüphaneleri tüketen araç (zopay, zopay-word, agent-rea
 **YZ arayüzü**:
 Hedef araçları MCP ya da CLI üzerinden çağıran çıkarım ortamı (Claude Code, Claude Desktop, Antigravity).
 
-**Yazar**:
-Araç verisine yazan taraf; yazarlar YZ oturumlarıdır, araçlar değil.
+**Özne**:
+Araç verisine yazan taraf; özneler YZ oturumlarıdır, araçlar değil.
+_Kaçın_: yazar (bir eserin yazarıyla karışır), fail (test çıktısındaki FAILED ile karışır)
 
 **Okur**:
 Veriyi yalnız okuyan araç (agent-reach-rs araştırmada, pasli-beyin depo izlemede).
@@ -88,6 +89,18 @@ Başka bir aracın verisini onunla birlikte işleyen araç; zopay-word, zopay'ı
 **Çıkarım ayarı**:
 Hangi YZ'nin hangi uç ve yolla çalışacağının belirlenmesi; Kervan'ın işidir.
 
+### Kişi ve roller
+
+**Kişi**:
+Araçlar arasında ortak tutulan gerçek kişi kimliği; bir eserdeki ya da davadaki konumu ona bağlı roller belirtir. Aynı Kişi aynı anda birden çok rol taşıyabilir.
+_Kaçın_: yazar, taraf (bunlar Kişi'nin rolleridir, Kişi'nin kendisi değil)
+
+**Yazar**:
+Bir eserin (kitap, makale, bölüm) yazarı ya da eşdeğer katkı sahibi (editör, çevirmen) olan Kişi rolü. **Özne ile karıştırılmaz**: Yazar bir eserle ilgilidir, Özne veriye yazan YZ oturumudur.
+
+**Taraf**:
+Bir davada yer alan Kişi rolü.
+
 ## İlişkiler
 
 - Bir **Merkez ödünç alma** tam olarak bir **Kaynak kütüphane**yi el-Fihrist'in bir crate'i ardından bir **Hedef araç**a taşır.
@@ -96,6 +109,7 @@ Hangi YZ'nin hangi uç ve yolla çalışacağının belirlenmesi; Kervan'ın iş
 - Her **Hedef araç**ın en fazla bir **Araç veritabanı** vardır; **Veritabanı ödünç alma** yapan aracın sıfırdır.
 - Hiçbir **Hedef araç** el-Fihrist'e bağımlı değildir: ne kurulum, ne çalışma zamanı, ne kaynak kodu düzeyinde. Arama yetenekleri (BM25, gömme istemcisi) **Merkez ödünç alma** ile dağıtılmaz; her araç kendi yolunu taşır ya da el-Fihrist'ten bağımsız bir **Ortak crate**'e bağlanır. el-Fihrist bütün **Araç veritabanı**larına erişir; tersi gerekmez.
 - **Eşgüdüm** yalnız aynı **Veri sınıfı**ndaki kayıtlar arasında olur.
+- Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**); rol, Kişi'nin kimliğini değiştirmez.
 - **Yabancı veritabanı** turso kuralının dışındadır (turso, aynı dosyada SQLite ile karışık çok süreçli erişimi desteklemez).
 
 ## Örnek konuşma
@@ -111,3 +125,4 @@ Hangi YZ'nin hangi uç ve yolla çalışacağının belirlenmesi; Kervan'ın iş
 - **Eşgüdüm** mekanizması: aynı veriye aynı anda erişim, **Dal** + **Birleştirme** ile çözülür (turso'nun çok süreçli WAL'ı deneysel; Windows'ta `experimental_win_iocp` gerekiyor). **Okur** ve **Atölye** ilişkileri dal gerektirmez.
 - "senkron" iki anlamda kullanılıyordu — graft'ın grafı kaynakla güncel tutması ve araç veritabanları arası uyum. Çözüm: ilki **tazelik**, ikincisi **Eşgüdüm**; archify-graft'ın el-Fihrist'e gömülmesi tazelik içindir.
 - pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu bge-embed-rs'dir (127.0.0.1:11434, Open Notebook'la paylaşılır; `FIHRIST_BGE_URL` ile değişir).
+- "Yazar" iki anlamda kullanılıyordu — veriye yazan YZ oturumu ve bir eserin yazarı. Çözüm: ilki **Özne**, ikincisi **Yazar** (Kişi'nin rolü). "Kişi = yazar mı, taraf mı?" sorusu da böylece kapandı: ikisi de Kişi'nin rolüdür, biri ötekinin yerini almaz.
