@@ -99,7 +99,14 @@ _Kaçın_: yazar, taraf (bunlar Kişi'nin rolleridir, Kişi'nin kendisi değil)
 Bir eserin (kitap, makale, bölüm) yazarı ya da eşdeğer katkı sahibi (editör, çevirmen) olan Kişi rolü. **Özne ile karıştırılmaz**: Yazar bir eserle ilgilidir, Özne veriye yazan YZ oturumudur.
 
 **Taraf**:
-Bir davada yer alan Kişi rolü.
+Bir uyuşmazlık dosyasının iki yanından biri olan Kişi rolü: Başvurucu ya da Diğer Taraf.
+_Kaçın_: vekil, arabulucu (bunlar Taraf değil, ayrı rollerdir)
+
+**Vekil**:
+Bir Taraf'ı temsil eden Kişi rolü; hangi Taraf'ı temsil ettiğini bilir.
+
+**Arabulucu**:
+Uyuşmazlık dosyasını yürüten, iki yandan da bağımsız Kişi rolü.
 
 ## İlişkiler
 
@@ -109,7 +116,8 @@ Bir davada yer alan Kişi rolü.
 - Her **Hedef araç**ın en fazla bir **Araç veritabanı** vardır; **Veritabanı ödünç alma** yapan aracın sıfırdır.
 - Hiçbir **Hedef araç** el-Fihrist'e bağımlı değildir: ne kurulum, ne çalışma zamanı, ne kaynak kodu düzeyinde. Arama yetenekleri (BM25, gömme istemcisi) **Merkez ödünç alma** ile dağıtılmaz; her araç kendi yolunu taşır ya da el-Fihrist'ten bağımsız bir **Ortak crate**'e bağlanır. el-Fihrist bütün **Araç veritabanı**larına erişir; tersi gerekmez.
 - **Eşgüdüm** yalnız aynı **Veri sınıfı**ndaki kayıtlar arasında olur.
-- Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**); rol, Kişi'nin kimliğini değiştirmez.
+- Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**, **Vekil**, **Arabulucu**); rol, Kişi'nin kimliğini değiştirmez.
+- Bir **Vekil** tam bir **Taraf**'ı temsil eder; Vekil'in kendisi Taraf sayılmaz.
 - **Yabancı veritabanı** turso kuralının dışındadır (turso, aynı dosyada SQLite ile karışık çok süreçli erişimi desteklemez).
 
 ## Örnek konuşma
