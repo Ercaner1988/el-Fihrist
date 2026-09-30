@@ -2084,6 +2084,7 @@ name = "hermes-tools-core"
 version = "0.1.0"
 dependencies = [
  "codspeed-divan-compat",
+ "katla",
  "serde",
  "serde_json",
  "thiserror 2.0.20",

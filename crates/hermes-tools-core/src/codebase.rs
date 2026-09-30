@@ -43,8 +43,8 @@ pub fn analyze_file_content(filename: &str, content: &str) -> ToolResult<Languag
         )));
     }
 
-    let ext = filename.split('.').next_back().unwrap_or("").to_lowercase();
-    let lang = match ext.as_str() {
+    let ext = filename.rsplit('.').next().unwrap_or("");
+    let lang = match ext.to_ascii_lowercase().as_str() {
         "rs" => "Rust",
         "py" => "Python",
         "js" | "jsx" => "JavaScript",

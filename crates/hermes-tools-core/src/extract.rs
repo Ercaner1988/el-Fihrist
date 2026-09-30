@@ -81,7 +81,7 @@ pub fn html_ayikla(html: &str) -> ToolResult<ExtractResult> {
                 chars.next();
             }
 
-            let lower_tag = current_tag.trim().to_lowercase();
+            let lower_tag = current_tag.trim().to_ascii_lowercase();
             if lower_tag == "title" {
                 in_title = true;
             } else if lower_tag == "/title" {
@@ -142,7 +142,9 @@ pub fn html_ayikla(html: &str) -> ToolResult<ExtractResult> {
 }
 
 fn ayikla_href(tag: &str) -> String {
-    if let Some(pos) = tag.to_lowercase().find("href=") {
+    // ASCII küçültme bayt uzunluğunu korur; `pos` özgün `tag`'i dilimler.
+    // `to_lowercase` "İ" gibi harflerde uzunluğu değiştirip konumu kaydırırdı.
+    if let Some(pos) = tag.to_ascii_lowercase().find("href=") {
         let rest = tag[pos + 5..].trim();
         let quote = rest.chars().next().unwrap_or('"');
         if quote == '"' || quote == '\'' {

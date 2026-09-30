@@ -6,10 +6,10 @@
 # pre-push farklidir. Arka planda bir sey baslatmaz; kontrolleri calistirir,
 # biter, sonucunu cikis koduyla soyler. Bloklamasi isin ta kendisidir.
 #
-# Kontrol listesi burada TEKRARLANMAZ. .github/workflows/ci.yml icindeki
-# `run: cargo …` satirlari okunup aynen calistirilir; boylece "CI'da var,
-# yerelde yok" durumu olusamaz. agent-reach-rs'te ayni sorun once bir kayma
-# kapisiyla tespit ediliyordu — burada kaynak tek oldugu icin hic olusmuyor.
+# Kontroller ortak altin-kapi kitinde (`kapi`). Kit ci.yml'deki
+# `run: cargo …` satirlarini aynen kosar (bu kancanin eskiden yaptigi is),
+# sonra kapi.toml'da uygulanir denen boyutlari olcer: karakter yazimi, hata
+# disiplini, sandik siniri. Kurulum: cargo install --path ../altin-kapi
 #
 # Atlatma (ikisi de bilincli ve gorunur):
 #   git push --no-verify
@@ -34,12 +34,6 @@ done
 kok=$(git rev-parse --show-toplevel) || exit 0
 cd "$kok" || exit 0
 
-CI=".github/workflows/ci.yml"
-[ -f "$CI" ] || {
-  echo "pre-push: $CI yok — kontrol listesi okunamadi, kapi OLCMEDI." >&2
-  exit 0
-}
-
 # Cargo'yu PATH'te ara, sonra rustup'in standart yerinde. Ikinci adim GitHub
 # Desktop icin: kancalari dar bir ortamla calistirir ve ~/.cargo/bin cogu zaman
 # icinde olmaz. post-commit'in pasli.exe icin yaptiginin aynisi.
@@ -51,6 +45,9 @@ done
   echo "pre-push: cargo bulunamadi — kapi OLCULMEDI (yesil degil). CI son savunma." >&2
   exit 0
 }
+# kapi, cargo'yu PATH'ten cagirir; kapi.exe de ayni dizinde durur.
+PATH="$(dirname "$CARGO_BIN"):$PATH"
+export PATH
 
 # Ayni dar ortam sorunu, bu kez rc.exe icin. turso_sdk_kit'in build.rs'i once
 # PATH'e, sonra ProgramFiles(x86)'ya bakar; GitHub Desktop ikisini de vermez ve
@@ -66,26 +63,17 @@ command -v rc.exe >/dev/null 2>&1 || {
   [ -n "$RC_DIR" ] && { PATH="$RC_DIR:$PATH"; export PATH; }
 }
 
-echo "pre-push: CI'in kontrolleri kosuyor (ag yok)…" >&2
-basla=$(date +%s)
+# Kit yoksa kontroller hic kosmamistir: bu yesil degil, kirmizidir.
+command -v kapi >/dev/null 2>&1 || {
+  echo "pre-push: kapi bulunamadi. Kur: cargo install --path ../altin-kapi" >&2
+  echo "  Yine de it : FIHRIST_SKIP_GATE=1 git push" >&2
+  exit 1
+}
 
-# CI'daki cargo satirlari. Komutlar sade tutuldugu icin tirnak/degisken yok;
-# bolunmeyi kabuga birakmak eval'den guvenli (komut ikamesi calismaz).
-sed -n 's/^[[:space:]]*run:[[:space:]]*cargo[[:space:]]\{1,\}//p' "$CI" > /tmp/.fihrist-ci-cmds.$$
-sonuc=0
-while IFS= read -r argv; do
-  [ -n "$argv" ] || continue
-  echo "-- cargo $argv" >&2
-  # shellcheck disable=SC2086
-  if "$CARGO_BIN" $argv >&2; then
-    echo "   yesil" >&2
-  else
-    echo "   KIRMIZI: cargo $argv" >&2
-    sonuc=1
-    break
-  fi
-done < /tmp/.fihrist-ci-cmds.$$
-rm -f /tmp/.fihrist-ci-cmds.$$
+echo "pre-push: altin kapi kosuyor (ag yok)…" >&2
+basla=$(date +%s)
+kapi . >&2
+sonuc=$?
 
 echo "pre-push: kapi $(( $(date +%s) - basla )) sn surdu." >&2
 

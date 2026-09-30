@@ -1,0 +1,23 @@
+# el-Fihrist'in altin-kapi beyanı. Değer: "uygulanir" ya da "uygulanmaz".
+# Anahtarlar altin-kapi CONTEXT.md'deki on altı boyuttur.
+
+# Taban çizgilerindeki ad: klasör adı klonlayana göre değişir, bu değişmez.
+repo = "el-Fihrist"
+
+[boyut]
+arkayuz = "uygulanir"                  # ibnunnedim CLI + MCP sunucusu
+onyuz = "uygulanir"                    # fihrist-gui (egui)
+veritabani = "uygulanir"               # turso kütüphane DB'si
+makine_zararsizligi = "uygulanir"      # uzun ömürlü MCP süreci, kilit
+tedarik_guvenligi = "uygulanir"
+bellek_guvenligi = "uygulanir"
+kimlik_yolu = "uygulanmaz"             # kimlik bilgisi taşımıyor
+yayina_hazirlik = "uygulanir"          # .mcpb paketi dağıtılıyor
+kaynak_tuketimi = "uygulanir"
+birlikte_calisabilirlik = "uygulanir"  # elçi'nin ilk çifti (pasli↔el-Fihrist)
+karakter_yazimi = "uygulanir"          # Türkçe/Arapça metin, çok dilli README
+hata_disiplini = "uygulanir"
+test_gercekciligi = "uygulanir"
+veri_dayanikliligi = "uygulanir"       # değişiklik günlüğü, kütüphane yazımı
+surum_izi = "uygulanir"                # kurulu MCP kopyası kaynakla ayrışmasın
+belge_dogrulugu = "uygulanir"

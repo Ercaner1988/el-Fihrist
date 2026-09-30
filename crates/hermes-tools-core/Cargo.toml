@@ -8,6 +8,8 @@ license.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+# Oturum araması Türkçe metinde: ortak katlama.
+katla.workspace = true
 
 [dev-dependencies]
 # CodSpeed uyumluluk katmanı, `divan` adıyla. `cargo codspeed` dışında düz

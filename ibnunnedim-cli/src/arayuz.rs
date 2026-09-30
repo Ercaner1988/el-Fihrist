@@ -255,7 +255,7 @@ fn sunucu_adlari(yol: &Path) -> BTreeSet<String> {
         .and_then(|v| {
             v.get("mcpServers")
                 .and_then(|s| s.as_object())
-                .map(|o| o.keys().map(|k| k.to_lowercase()).collect())
+                .map(|o| o.keys().map(|k| k.to_ascii_lowercase()).collect())
         })
         .unwrap_or_default()
 }
@@ -289,7 +289,7 @@ pub fn araclari_oku(ev: &Path, appdata: Option<&Path>) -> Vec<OrtakSatir> {
             .map(|a| a.to_string_lossy().to_string())
             .unwrap_or_default();
         // Eklenti sunucuları `<eklenti>_<sunucu>` diye önbelleğe alınıyor.
-        let kanonik = sunucu.rsplit('_').next().unwrap_or(&sunucu).to_lowercase();
+        let kanonik = sunucu.rsplit('_').next().unwrap_or("").to_ascii_lowercase();
         let mut arayuzler = BTreeSet::from(["antigravity".to_string()]);
         for (ad, adlar) in &diger {
             if adlar.contains(&kanonik) {

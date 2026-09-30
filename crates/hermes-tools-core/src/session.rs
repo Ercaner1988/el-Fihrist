@@ -87,17 +87,18 @@ pub fn search_session(
     }
 
     let turns = parse_session_transcript(transcript)?;
-    let q_lower = query.to_lowercase();
+    // Türkçe arama: sorgu ve metin aynı katlamadan geçer (İ/ı, şapka, NFC).
+    let q_lower = katla::katla(query);
 
     let matches = turns
         .into_iter()
         .filter(|t| {
             if let Some(rf) = role_filter {
-                if t.role.to_lowercase() != rf.to_lowercase() {
+                if !t.role.eq_ignore_ascii_case(rf) {
                     return false;
                 }
             }
-            t.content.to_lowercase().contains(&q_lower)
+            katla::katla(&t.content).contains(&q_lower)
         })
         .collect::<Vec<_>>();
 
@@ -118,6 +119,14 @@ mod testler {
         assert_eq!(res.total_turns, 1);
         assert_eq!(res.matches[0].role, "user");
         assert!(res.matches[0].content.contains("FTS5"));
+    }
+
+    #[test]
+    fn turkce_buyuk_harfli_sorgu_bulur() {
+        // `to_lowercase` "İ"yi ayrışık "i̇" yapıyordu; "İSTANBUL" "istanbul"u bulamazdı.
+        let transcript = "[user] istanbul kütüphanesi\n[assistant] Tamam.";
+        let res = search_session(transcript, "İSTANBUL", None).expect("arama");
+        assert_eq!(res.total_turns, 1);
     }
 
     #[test]
