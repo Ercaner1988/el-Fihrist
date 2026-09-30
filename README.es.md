@@ -88,6 +88,8 @@ cargo build --release --workspace
 - [ ] Construcción de un puente MCP (Model Context Protocol) local de tipo GraphQL/gRPC para agentes.
 - [ ] Modificación directa de Turso a través de un motor de suspensión (sleep engine) autónomo del sistema SkillOpt.
 - [ ] Infraestructura de indexación de memoria para agentes multi-inquilino (multi-tenant).
+- [ ] Notificaciones de cambios y consultas en vivo sobre Turso CDC (equivalente a `LIVE SELECT` de SurrealDB). ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
+- [ ] Índice vectorial integrado para vectores densos (índice HNSW auxiliar si Turso no lo ofrece) y búsqueda híbrida de similitud con BM25. ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
 
 ---
 

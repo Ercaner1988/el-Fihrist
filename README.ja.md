@@ -88,6 +88,8 @@ cargo build --release --workspace
 - [ ] エージェント用のローカルMCP (Model Context Protocol) GraphQL/gRPCブリッジの構築。
 - [ ] 自律的なSkillOptスリープエンジンによるTursoの直接的な変更。
 - [ ] マルチテナントのエージェントメモリインデックスインフラストラクチャ。
+- [ ] Turso CDC によるライブ変更通知とライブクエリ（SurrealDB の `LIVE SELECT` に相当）。 ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
+- [ ] 密ベクトル向けの組み込みベクトルインデックス（Turso に無ければ HNSW 補助インデックス）と BM25 とのハイブリッド類似検索。 ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
 
 ---
 

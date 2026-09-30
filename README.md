@@ -90,6 +90,8 @@ cargo build --release --workspace
 - [ ] Ajanlar için yerel MCP (Model Context Protocol) GraphQL/gRPC köprüsü inşası.
 - [ ] Otonom SkillOpt gece evrim döngüsü (sleep engine) ile Turso'nun doğrudan modifikasyonu.
 - [ ] Multi-tenant ajan hafıza indeksleme altyapısı.
+- [ ] Turso CDC üzerinden canlı değişiklik bildirimi ve canlı sorgu (SurrealDB `LIVE SELECT` karşılığı). ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
+- [ ] Yoğun vektörler için yerleşik vektör dizini (Turso'da yoksa HNSW yan dizini) ve BM25 ile karma benzerlik araması. ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
 
 ---
 

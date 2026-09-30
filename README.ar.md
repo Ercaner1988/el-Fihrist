@@ -88,6 +88,8 @@ cargo build --release --workspace
 - [ ] بناء جسر MCP (بروتوكول سياق النموذج) GraphQL/gRPC محلي للوكلاء.
 - [ ] التعديل المباشر لـ Turso عبر محرك النوم المستقل SkillOpt.
 - [ ] بنية تحتية لفهرسة ذاكرة الوكلاء متعددة المستأجرين (Multi-tenant).
+- [ ] إشعارات التغييرات الحية والاستعلامات الحية عبر Turso CDC (ما يقابل `LIVE SELECT` في SurrealDB). ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
+- [ ] فهرس متجهات مدمج للمتجهات الكثيفة (فهرس HNSW جانبي إن لم يتوفر في Turso) وبحث تشابه هجين مع BM25. ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
 
 ---
 

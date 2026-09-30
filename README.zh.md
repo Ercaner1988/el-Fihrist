@@ -88,6 +88,8 @@ cargo build --release --workspace
 - [ ] 为智能体构建本地 MCP (Model Context Protocol) GraphQL/gRPC 桥接。
 - [ ] 通过自治式 SkillOpt 睡眠引擎直接修改 Turso。
 - [ ] 多租户智能体内存索引基础设施。
+- [ ] 基于 Turso CDC 的实时变更通知与实时查询（相当于 SurrealDB 的 `LIVE SELECT`）。 ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
+- [ ] 面向稠密向量的内置向量索引（若 Turso 未提供则使用 HNSW 旁路索引），以及与 BM25 结合的混合相似度搜索。 ([gorev-canli-sorgu-ve-vektor-dizini.md](docs/gorev-canli-sorgu-ve-vektor-dizini.md))
 
 ---
 
