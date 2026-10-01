@@ -3,7 +3,7 @@ name = "fihrist-gui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Pardus/Linux and cross-platform desktop UI for el-Fihrist using egui and explicit glow backend"
+description = "Pardus/Linux and cross-platform desktop UI for el-Fihrist using egui (wgpu; glow on Linux)"
 
 [dependencies]
 fihrist-core.workspace = true

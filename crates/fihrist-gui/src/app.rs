@@ -91,7 +91,7 @@ impl FihristApp {
 }
 
 impl eframe::App for FihristApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         // Arka plan iş parçacığından gelen verileri kontrol et
         if let Ok(loaded) = self.rx.try_recv() {
             self.status_message = format!("{} yetenek listelendi (Turso DB)", loaded.len());
@@ -99,7 +99,7 @@ impl eframe::App for FihristApp {
         }
 
         // Üst arama paneli
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        egui::Panel::top("top_panel").show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.heading("📖 el-Fihrist Yetenek Kütüphanesi");
                 ui.separator();
@@ -119,20 +119,20 @@ impl eframe::App for FihristApp {
         });
 
         // Alt durum çubuğu
-        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+        egui::Panel::bottom("bottom_panel").show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(&self.status_message);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label("Backend: Glow (Pardus / Linux Uyumlu)");
+                    ui.label(format!("Render: {}", crate::RENDER));
                 });
             });
         });
 
         // Sol panel: Yetenek Listesi
-        egui::SidePanel::left("left_panel")
+        egui::Panel::left("left_panel")
             .resizable(true)
-            .default_width(280.0)
-            .show(ctx, |ui| {
+            .default_size(280.0)
+            .show(ui, |ui| {
                 ui.heading("Yetenek Listesi");
                 ui.separator();
 
@@ -156,7 +156,7 @@ impl eframe::App for FihristApp {
             });
 
         // Ana panel: Seçili Yetenek Detayları
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::CentralPanel::default().show(ui, |ui| {
             if let Some(skill) = &self.selected_skill {
                 ui.heading(&skill.ad);
                 ui.add_space(8.0);

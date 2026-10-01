@@ -2,38 +2,36 @@
 //!
 //! el-Fihrist için masaüstü grafik arayüz dirmesi (`egui` / `eframe`).
 //!
-//! ## Pardus / Linux ve Donanım Uyumluluk İlkesi:
-//! Linux ve Pardus sistemlerinde `wgpu` + Wayland kombinasyonunda gözlemlenen
-//! girdi (fare/klavye) kilitlenme sorunlarını önlemek ve eski donanımlardaki
-//! (Mesa `llvmpipe`) yazılımsal render uyumluluğunu garantilemek amacıyla
-//! Linux derlemelerinde açıkça `eframe::Renderer::Glow` (`Renderer::Glow`) seçilir.
+//! ## Render seçimi
+//! - Windows ve diğerleri: WGPU (DirectX 12). Glow/OpenGL Windows'ta AMD/Intel'de
+//!   pencereyi düz kara açar (Wgl sRGB swap chain).
+//! - Linux/Pardus: Glow, açıkça. `wgpu` + Wayland'da gözlemlenen girdi kilitlenmesini
+//!   önler ve Mesa `llvmpipe` yazılımsal render'ını destekler.
 
 pub mod app;
 
 pub use app::FihristApp;
 
+#[cfg(target_os = "linux")]
+pub const RENDER: eframe::Renderer = eframe::Renderer::Glow;
+#[cfg(not(target_os = "linux"))]
+pub const RENDER: eframe::Renderer = eframe::Renderer::Wgpu;
+
 /// Masaüstü uygulamasını başlatır
 pub fn run_fihrist_gui() -> eframe::Result {
-    let mut native_options = eframe::NativeOptions {
+    let native_options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
             .with_inner_size([900.0, 600.0])
             .with_min_inner_size([400.0, 300.0])
+            .with_transparent(false)
             .with_title("el-Fihrist"),
+        renderer: RENDER,
+        // vsync: eframe 0.36'da alan yok; wgpu varsayılanı PresentMode::AutoVsync.
+        multisampling: 0,
+        depth_buffer: 0,
+        stencil_buffer: 0,
         ..Default::default()
     };
-
-    // Linux ve Pardus sistemlerinde wgpu Wayland girdi kilitlenmelerini önlemek
-    // ve Mesa llvmpipe yazılımsal render'ı desteklemek için Glow açıkça atanır.
-    #[cfg(target_os = "linux")]
-    {
-        native_options.renderer = eframe::Renderer::Glow;
-    }
-
-    // Windows ve diğer platformlarda da güvenli ve hafif render için Glow tercih edilebilir.
-    #[cfg(not(target_os = "linux"))]
-    {
-        native_options.renderer = eframe::Renderer::Glow;
-    }
 
     eframe::run_native(
         "el-Fihrist",
