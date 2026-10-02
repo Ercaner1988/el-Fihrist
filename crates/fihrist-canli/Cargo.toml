@@ -1,0 +1,16 @@
+[package]
+name = "fihrist-canli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Canlı değişiklik bildirimi: şemadaki tetikleyiciler + fihrist_degisiklik günlüğü (her yazan motoru yakalar)"
+
+[[bin]]
+name = "fihrist-izle"
+path = "src/main.rs"
+
+[dependencies]
+turso.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+clap.workspace = true

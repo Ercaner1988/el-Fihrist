@@ -8,6 +8,13 @@ Turso durumu `turso` / `turso_core` **0.7.2** kaynağından okundu (Cargo.lock't
 
 ## Görev 1: Canlı değişiklik bildirimi ve canlı sorgu
 
+> **Durum (2026-10-02):** değişiklik bildirimi yapıldı, ama aşağıdaki CDC tasarımıyla
+> değil, şemadaki tetikleyicilerle. CDC, Python `sqlite3` yazışlarını kaçırıyor.
+> Gerekçe ve ölçümler: ADR 0003. Kod: `crates/fihrist-canli`, ikili `fihrist-izle`.
+> Ana katalog (`kutup_kutuphane.db`, fts5) izlenmiyor.
+> **Kalan:** canlı sorgu (sorguyu yeniden koşup fark gönderme) ve MCP
+> `notifications/resources/updated`.
+
 **Neden:** el-Fihrist MCP sunucusu, Paslı Beyin, graphify nöbetçisi ve Open Notebook
 aktarımı veritabanını yoklamadan değişiklik haberi alsın. SurrealDB'deki
 `LIVE SELECT`in karşılığı.

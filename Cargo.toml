@@ -6,6 +6,7 @@ members = [
     "crates/fihrist-storage",
     "crates/fihrist-gui",
     "crates/terim",
+    "crates/fihrist-canli",
 ]
 resolver = "2"
 
