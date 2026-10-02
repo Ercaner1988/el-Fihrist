@@ -29,7 +29,8 @@ fihrist-storage = { path = "crates/fihrist-storage" }
 # Ortak Türkçe katlama (pasli-beyin de kullanır). Kardeş repo: ../katla
 katla = { path = "../katla" }
 terim = { path = "crates/terim" }
-# Tema paketi sema ve TemaKaynagi sozlesmesi (ortak crate, kardes repo).
-kilim-tema = { path = "../kilim-tema" }
+# Tema paketi sema ve TemaKaynagi sozlesmesi (ortak crate). git + rev: fihrist-tema
+# baska depolardan git ile cekilince kardes yol (../kilim-tema) orada yok.
+kilim-tema = { git = "https://github.com/Ercaner1988/kilim-tema", rev = "a62bfc71227202fe1173b8f9d36aaa723fd5a12c" }
 fihrist-tema = { path = "crates/fihrist-tema" }
 
