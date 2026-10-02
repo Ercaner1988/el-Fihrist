@@ -22,7 +22,9 @@ pub struct FihristTemalari {
 impl FihristTemalari {
     /// Tohum + varsayılan kullanıcı dizini.
     pub fn bul() -> Self {
-        Self { dizin: kullanici_dizini() }
+        Self {
+            dizin: kullanici_dizini(),
+        }
     }
 
     /// Tohum + verilen dizin (sınama ve özel kurulumlar için).
@@ -31,11 +33,17 @@ impl FihristTemalari {
     }
 
     fn paketler(&self) -> Vec<TemaPaketi> {
-        let mut hepsi: Vec<TemaPaketi> = TOHUM.iter().filter_map(|m| TemaPaketi::coz(m).ok()).collect();
+        let mut hepsi: Vec<TemaPaketi> = TOHUM
+            .iter()
+            .filter_map(|m| TemaPaketi::coz(m).ok())
+            .collect();
         let dosyalar = self.dizin.as_ref().and_then(|d| std::fs::read_dir(d).ok());
         for e in dosyalar.into_iter().flatten().flatten() {
             if e.path().extension().is_some_and(|x| x == "tema") {
-                if let Some(p) = std::fs::read_to_string(e.path()).ok().and_then(|m| TemaPaketi::coz(&m).ok()) {
+                if let Some(p) = std::fs::read_to_string(e.path())
+                    .ok()
+                    .and_then(|m| TemaPaketi::coz(&m).ok())
+                {
                     hepsi.retain(|q| q.id != p.id);
                     hepsi.push(p);
                 }
@@ -89,9 +97,16 @@ mod sinama {
         let k = FihristTemalari::dizinde(bos_dizin("tohum"));
         assert_eq!(
             k.getir("kilim-cam-gobegi").unwrap(),
-            TemaPaketi::yerlesik("kilim-cam-gobegi", "Kilim: cam göbeği + altın", Varyant::CamGobegiAltin)
+            TemaPaketi::yerlesik(
+                "kilim-cam-gobegi",
+                "Kilim: cam göbeği + altın",
+                Varyant::CamGobegiAltin
+            )
         );
-        assert_eq!(k.getir("kilim-kirmizi-yesil").unwrap().kenarlik, Varyant::KirmiziYesil);
+        assert_eq!(
+            k.getir("kilim-kirmizi-yesil").unwrap().kenarlik,
+            Varyant::KirmiziYesil
+        );
         assert_eq!(k.liste().len(), 2);
     }
 
@@ -101,7 +116,11 @@ mod sinama {
         let mut yeni = TemaPaketi::yerlesik("gece", "Gece", Varyant::CamGobegiAltin);
         yeni.koyu.zem = egui_renk(1, 1, 1);
         std::fs::write(d.join("gece.tema"), yeni.kod()).unwrap();
-        let mut ezen = TemaPaketi::yerlesik("kilim-cam-gobegi", "Benim cam göbeğim", Varyant::CamGobegiAltin);
+        let mut ezen = TemaPaketi::yerlesik(
+            "kilim-cam-gobegi",
+            "Benim cam göbeğim",
+            Varyant::CamGobegiAltin,
+        );
         ezen.acik.zem = egui_renk(9, 9, 9);
         std::fs::write(d.join("ezen.tema"), ezen.kod()).unwrap();
         std::fs::write(d.join("bozuk.tema"), "sema=1\nid=Büyük\n").unwrap();
