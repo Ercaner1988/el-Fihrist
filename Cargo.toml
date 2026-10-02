@@ -6,6 +6,7 @@ members = [
     "crates/fihrist-storage",
     "crates/fihrist-gui",
     "crates/terim",
+    "crates/fihrist-tema",
 ]
 resolver = "2"
 
@@ -28,4 +29,7 @@ fihrist-storage = { path = "crates/fihrist-storage" }
 # Ortak Türkçe katlama (pasli-beyin de kullanır). Kardeş repo: ../katla
 katla = { path = "../katla" }
 terim = { path = "crates/terim" }
+# Tema paketi sema ve TemaKaynagi sozlesmesi (ortak crate, kardes repo).
+kilim-tema = { path = "../kilim-tema" }
+fihrist-tema = { path = "crates/fihrist-tema" }
 

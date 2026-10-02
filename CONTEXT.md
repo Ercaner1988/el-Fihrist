@@ -63,6 +63,16 @@ _Kaçın_: merge, senkron
 **Yabancı veritabanı**:
 Başka bir uygulamanın yazdığı, bizim yalnız okuduğumuz veritabanı (ör. `zotero.sqlite`); araç veritabanı değildir.
 
+### Tema
+
+**Tema paketi**:
+Paleti, vurguyu ve kenarlık dokusu seçimini taşıyan küçük metin dosyası (`.tema`, şema `kilim-tema` ortak crate'inde); araç yalnız etkin paketi tutar.
+_Kaçın_: skin, stil dosyası
+
+**Tema kataloğu**:
+Bütün tema paketlerinin el-Fihrist'te durduğu yer (`temalar/` tohumu + kullanıcı dizini, `fihrist-tema`); araçlar ona yalnız kullanıcı tema değiştirirken uzanır, açılışta ve çizim döngüsünde asla; kapalıyken aracın yerleşik teması çalışır.
+_Kaçın_: tema deposu, tema sunucusu
+
 ### Hafıza
 
 **Hafıza grafı**:

@@ -1,0 +1,12 @@
+[package]
+name = "fihrist-tema"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "el-Fihrist tema kataloğu: araçlar yalnız tema değiştirirken buradan paket çeker"
+
+[dependencies]
+kilim-tema.workspace = true
+
+[dev-dependencies]
+egui = "0.36"
