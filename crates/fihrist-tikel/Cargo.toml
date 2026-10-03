@@ -1,0 +1,10 @@
+[package]
+name = "fihrist-tikel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "el-Fihrist ek arama kanalı: yerel dosya İÇERİĞİ (Tikel Gözlemci, tikeld). Kendi kayıt/yetenek aramasının yerine geçmez"
+
+[dependencies]
+tikel-istemci.workspace = true
+tokio.workspace = true

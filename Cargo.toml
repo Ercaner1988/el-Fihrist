@@ -7,6 +7,7 @@ members = [
     "crates/fihrist-gui",
     "crates/terim",
     "crates/fihrist-canli",
+    "crates/fihrist-tikel",
 ]
 resolver = "2"
 
@@ -29,4 +30,7 @@ fihrist-storage = { path = "crates/fihrist-storage" }
 # Ortak Türkçe katlama (pasli-beyin de kullanır). Kardeş repo: ../katla
 katla = { path = "../katla" }
 terim = { path = "crates/terim" }
+# Tikel Gözlemci (yerel dosya içeriği araması). Kardeş repo: ../tikel-gozlemci
+tikel-istemci = { path = "../tikel-gozlemci/crates/tikel-istemci" }
+fihrist-tikel = { path = "crates/fihrist-tikel" }
 

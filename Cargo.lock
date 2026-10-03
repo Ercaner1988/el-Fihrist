@@ -2095,6 +2095,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fihrist-tikel"
+version = "0.1.0"
+dependencies = [
+ "tikel-istemci",
+ "tokio",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2796,6 +2804,7 @@ dependencies = [
  "clap",
  "codspeed-divan-compat",
  "fastembed",
+ "fihrist-tikel",
  "katla",
  "reqwest",
  "serde",
@@ -6111,6 +6120,29 @@ dependencies = [
  "quick-error",
  "weezl",
  "zune-jpeg",
+]
+
+[[package]]
+name = "tikel-istemci"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tikel-proto",
+ "tokio",
+]
+
+[[package]]
+name = "tikel-proto"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
