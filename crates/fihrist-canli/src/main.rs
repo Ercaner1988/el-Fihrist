@@ -71,13 +71,14 @@ async fn calis(a: Arg) -> fihrist_canli::Sonuc<()> {
                 Ok(v) if !v.is_empty() => {
                     let mut o = std::io::stdout().lock();
                     for d in &v {
-                        let _ = writeln!(
+                        writeln!(
                             o,
                             "{}\t{}\t{}\t{}\t{}",
                             d.no, d.zaman_ms, d.tablo, d.islem, d.anahtar
-                        );
+                        )
+                        .ok();
                     }
-                    let _ = o.flush();
+                    o.flush().ok();
                     imlec = v[v.len() - 1].no;
                     fihrist_canli::imlec_yaz(&a.db, &a.tuketici, imlec)?;
                     budamadan_beri += v.len();
