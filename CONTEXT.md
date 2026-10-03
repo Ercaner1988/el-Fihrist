@@ -126,8 +126,27 @@ Bir Taraf'ı temsil eden Kişi rolü; hangi Taraf'ı temsil ettiğini bilir.
 **Arabulucu**:
 Uyuşmazlık dosyasını yürüten, iki yandan da bağımsız Kişi rolü.
 
+### Kürasyon
+
+**Çakışma**:
+İki yeteneğin (ya da MCP aracının) aynı işi görmesi, öyle ki biri ötekinin yerine geçebilir. Konu yakınlığı çakışma değildir: aynı alanda duran iki yetenek farklı iş görebilir.
+_Kaçın_: benzerlik, örtüşme (ikisi de ölçülen yakınlığı anlatır, hükmü değil)
+
+**Hüküm**:
+Bir yetenek çiftinin ilişkisi üzerine, bir ajanın gerekçeli taslağı yazıp Ercan'ın onayladığı karar: **kopya**, **kardeş**, **çakışma** ya da **bağımsız**. Hükmü yalnız Ercan verir; el-Fihrist öneri yapar, hiçbir yeteneği kendisi kaldırmaz.
+_Kaçın_: karar, skor (skor yalnız adayı çıkarır)
+
+**Kopya**:
+Aynı yeteneğin birden çok YZ arayüzünde ya da yolda durması; kataloğa ayrı kayıt olarak girer ama tek yetenektir.
+_Kaçın_: çakışma (kopyalar çakışmadan önce ayıklanır)
+
+**Kardeş**:
+Aynı ailenin (ör. aynı MCP sunucusunun araçları) birbirini tamamlayan parçaları; birbiriyle çakışmaz.
+_Kaçın_: çakışma
+
 ## İlişkiler
 
+- Bir **Hüküm** bir çifte verilir; **Kopya** ve **Kardeş** çakışma sayımına girmez.
 - Bir **Merkez ödünç alma** tam olarak bir **Kaynak kütüphane**yi el-Fihrist'in bir crate'i ardından bir **Hedef araç**a taşır.
 - Bir **Hedef araç**, **YZ arayüzü**ne kendi MCP sunucusuyla görünür; ödünç aldığı kütüphaneyi ayrıca göstermez.
 
