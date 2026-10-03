@@ -95,7 +95,8 @@ jobs:
           workspaces: "el-Fihrist -> target"
           cache-on-failure: true
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        # --all gezerdi kardeş depoyu (tikel-gozlemci) ve onun yerel yollarını da; CI'da yok.
+        run: cargo fmt -- --check
       # `--all-features` BİLEREK YOK: `onnx` feature'ı `fastembed` → `ort`
       # ağacını çeker ve derleme sırasında ONNX Runtime ikilisini İNDİRİR.
       # Her push'ta yüz megabaytlarca indirme, varsayılan derlemede hiç
