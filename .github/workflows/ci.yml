@@ -45,6 +45,12 @@ jobs:
         with:
           repository: Ercaner1988/katla
           path: katla
+      - name: Checkout tikel-gozlemci (path bagimliligi, gizli depo)
+        uses: actions/checkout@v4
+        with:
+          repository: Ercaner1988/tikel-gozlemci
+          path: tikel-gozlemci
+          ssh-key: ${{ secrets.TIKEL_GOZLEMCI_DEPLOY_KEY }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -73,6 +79,12 @@ jobs:
         with:
           repository: Ercaner1988/katla
           path: katla
+      - name: Checkout tikel-gozlemci (path bagimliligi, gizli depo)
+        uses: actions/checkout@v4
+        with:
+          repository: Ercaner1988/tikel-gozlemci
+          path: tikel-gozlemci
+          ssh-key: ${{ secrets.TIKEL_GOZLEMCI_DEPLOY_KEY }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
