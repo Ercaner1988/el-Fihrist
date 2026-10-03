@@ -130,7 +130,9 @@ pub async fn kur(c: &Connection) -> Sonuc<Vec<String>> {
     c.execute("BEGIN", ()).await?;
     for s in &ddl {
         if let Err(e) = c.execute(s, ()).await {
-            c.execute("ROLLBACK", ()).await.ok();
+            if let Err(r) = c.execute("ROLLBACK", ()).await {
+                eprintln!("geri alma başarısız: {r}");
+            }
             return Err(e.into());
         }
     }

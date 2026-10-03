@@ -75,10 +75,9 @@ async fn calis(a: Arg) -> fihrist_canli::Sonuc<()> {
                             o,
                             "{}\t{}\t{}\t{}\t{}",
                             d.no, d.zaman_ms, d.tablo, d.islem, d.anahtar
-                        )
-                        .ok();
+                        )?;
                     }
-                    o.flush().ok();
+                    o.flush()?;
                     imlec = v[v.len() - 1].no;
                     fihrist_canli::imlec_yaz(&a.db, &a.tuketici, imlec)?;
                     budamadan_beri += v.len();
