@@ -2050,6 +2050,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b97b65636e5b9ef369943878ac74335ba1c55c1cb6adbf1e2c293c624248d693"
 
 [[package]]
+name = "fihrist-canli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "thiserror 2.0.20",
+ "tokio",
+ "turso",
+]
+
+[[package]]
 name = "fihrist-core"
 version = "0.1.0"
 dependencies = [
@@ -2090,6 +2100,14 @@ version = "0.1.0"
 dependencies = [
  "egui",
  "kilim-tema",
+]
+
+[[package]]
+name = "fihrist-tikel"
+version = "0.1.0"
+dependencies = [
+ "tikel-istemci",
+ "tokio",
 ]
 
 [[package]]
@@ -2794,6 +2812,7 @@ dependencies = [
  "clap",
  "codspeed-divan-compat",
  "fastembed",
+ "fihrist-tikel",
  "katla",
  "reqwest",
  "serde",
@@ -6118,6 +6137,29 @@ dependencies = [
  "quick-error",
  "weezl",
  "zune-jpeg",
+]
+
+[[package]]
+name = "tikel-istemci"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tikel-proto",
+ "tokio",
+]
+
+[[package]]
+name = "tikel-proto"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
