@@ -2081,6 +2081,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "fihrist-kaynak"
+version = "0.1.0"
+dependencies = [
+ "fihrist-canli",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "turso",
+]
+
+[[package]]
+name = "fihrist-olcum"
+version = "0.1.0"
+
+[[package]]
 name = "fihrist-storage"
 version = "0.1.0"
 dependencies = [
@@ -2812,6 +2827,8 @@ dependencies = [
  "clap",
  "codspeed-divan-compat",
  "fastembed",
+ "fihrist-kaynak",
+ "fihrist-olcum",
  "fihrist-tikel",
  "katla",
  "reqwest",

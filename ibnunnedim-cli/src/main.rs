@@ -25,7 +25,6 @@ mod hizmet;
 mod kayit;
 mod mcp;
 mod olay;
-mod olcum;
 mod sicak;
 mod tara;
 
@@ -1514,7 +1513,7 @@ async fn main() -> Result<()> {
             let metin = std::fs::read_to_string(&set).map_err(|h| {
                 CliError::Girdi(format!("altın set okunamadı ({}): {h}", set.display()))
             })?;
-            let sorgular = olcum::ayristir(&metin);
+            let sorgular = fihrist_olcum::ayristir(&metin);
             if sorgular.is_empty() {
                 return Err(CliError::Girdi(format!(
                     "sette sorgu yok: {}",
@@ -1571,7 +1570,7 @@ async fn main() -> Result<()> {
                         .iter()
                         .map(|(i, _)| g.kayitlar[*i].id.clone())
                         .collect();
-                    let (isabet, ks) = olcum::puanla(&kimlikler, &s.beklenen);
+                    let (isabet, ks) = fihrist_olcum::puanla(&kimlikler, &s.beklenen);
                     isabet_toplam += isabet;
                     ks_toplam += ks;
                     println!(

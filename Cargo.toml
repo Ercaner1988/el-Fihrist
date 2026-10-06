@@ -9,6 +9,8 @@ members = [
     "crates/fihrist-tema",
     "crates/fihrist-canli",
     "crates/fihrist-tikel",
+    "crates/fihrist-kaynak",
+    "crates/fihrist-olcum",
 ]
 resolver = "2"
 
@@ -38,4 +40,7 @@ fihrist-tema = { path = "crates/fihrist-tema" }
 # Tikel Gözlemci (yerel dosya içeriği araması). Kardeş repo: ../tikel-gozlemci
 tikel-istemci = { path = "../tikel-gozlemci/crates/tikel-istemci" }
 fihrist-tikel = { path = "crates/fihrist-tikel" }
+fihrist-canli = { path = "crates/fihrist-canli" }
+fihrist-kaynak = { path = "crates/fihrist-kaynak" }
+fihrist-olcum = { path = "crates/fihrist-olcum" }
 

@@ -14,6 +14,7 @@ use crate::{
     baglan, fts_indeksleri, kural_ara, kural_baglan, kural_ekle, kural_listele, kutuphane_yolu,
     list_all_skills, say, search_skills, tekmil_ver,
 };
+use fihrist_kaynak::Kaynaklar;
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
 use turso::Connection;
@@ -322,7 +323,7 @@ async fn kural_baglan_bekle() -> crate::Result<Connection> {
 }
 
 /// Bir isteği yanıta çevirir. `None` dönerse hiçbir şey yazılmaz.
-async fn ele_al(b: &mut Baglam, s: &mut Sicak, istek: Istek) -> Option<Value> {
+async fn ele_al(b: &mut Baglam, s: &mut Sicak, k: &mut Kaynaklar, istek: Istek) -> Option<Value> {
     match istek {
         Istek::Bildirim => None,
         Istek::Bozuk(e) => Some(hata(&Value::Null, -32700, &format!("ayrıştırılamadı: {e}"))),
@@ -345,7 +346,8 @@ async fn ele_al(b: &mut Baglam, s: &mut Sicak, istek: Istek) -> Option<Value> {
                     &id,
                     json!({
                         "protocolVersion": PROTOKOL,
-                        "capabilities": {"tools": {"listChanged": true}},
+                        "capabilities": {"tools": {"listChanged": true},
+                                         "resources": {"subscribe": true, "listChanged": false}},
                         "serverInfo": {"name": "el-fihrist", "version": env!("CARGO_PKG_VERSION")}
                     }),
                 )
@@ -393,6 +395,13 @@ async fn ele_al(b: &mut Baglam, s: &mut Sicak, istek: Istek) -> Option<Value> {
                     ),
                 }
             }
+            // Kaynak aboneliği (ADR 0004): mantık fihrist-kaynak'ta.
+            y if y.starts_with("resources/") => {
+                match k.ele_al(kutuphane_yolu(), y, &parametre).await {
+                    Ok(v) => yanit(&id, v),
+                    Err(e) => hata(&id, e.kod(), &e.to_string()),
+                }
+            }
             _ => hata(&id, -32601, &format!("bilinmeyen yöntem: {yontem}")),
         }),
     }
@@ -408,6 +417,7 @@ where
     let mut satirlar = okur.lines();
     let mut s = Sicak::yeni(crate::sicak::omur_ms());
     let mut bildirilen = s.surum;
+    let mut k = Kaynaklar::yeni();
     loop {
         // Sıcak kümeden en yakın düşüş anına kadar uyu; `next_line` iptale dayanıklı.
         let uyku = s
@@ -422,9 +432,16 @@ where
                 s.dusur(crate::olay::simdi_ms());
                 String::new()
             }
+            // Abone varsa 250 ms'de bir yokla; değişen her URI için bildirim.
+            _ = k.bekle(), if k.abone_var() => {
+                for bildirim in k.yokla().await {
+                    yazar.write_all(format!("{bildirim}\n").as_bytes()).await?;
+                }
+                String::new()
+            }
         };
         if !satir.trim().is_empty() {
-            if let Some(y) = ele_al(&mut b, &mut s, ayristir(&satir)).await {
+            if let Some(y) = ele_al(&mut b, &mut s, &mut k, ayristir(&satir)).await {
                 yazar.write_all(format!("{y}\n").as_bytes()).await?;
             }
         }
@@ -485,6 +502,7 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
     let mut yerel = false;
     // ponytail: süreç içine düşülünce küme tutulur ama düşüş bildirimi yok (zamanlayıcı konus'ta).
     let mut yerel_sicak = Sicak::yeni(crate::sicak::omur_ms());
+    let mut kaynaklar = Kaynaklar::yoklamasiz();
     while let Some(satir) = girdi.next_line().await? {
         if let Istek::Cagri {
             yontem, parametre, ..
@@ -508,7 +526,7 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
             yerel = true;
             geri.abort();
         }
-        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, ayristir(&satir)).await {
+        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, &mut kaynaklar, ayristir(&satir)).await {
             let mut cikti = tokio::io::stdout();
             cikti.write_all(format!("{y}\n").as_bytes()).await?;
             cikti.flush().await?;
