@@ -12,8 +12,12 @@ Turso durumu `turso` / `turso_core` **0.7.2** kaynağından okundu (Cargo.lock't
 > değil, şemadaki tetikleyicilerle. CDC, Python `sqlite3` yazışlarını kaçırıyor.
 > Gerekçe ve ölçümler: ADR 0003. Kod: `crates/fihrist-canli`, ikili `fihrist-izle`.
 > Ana katalog (`kutup_kutuphane.db`, fts5) izlenmiyor.
-> **Kalan:** canlı sorgu (sorguyu yeniden koşup fark gönderme) ve MCP
-> `notifications/resources/updated`.
+> **Durum (2026-10-06):** canlı sorgu yapıldı (`fihrist_canli::abone_ol`,
+> `fihrist-izle --sorgu`; abone geçici, fark durum tabanlı, CONTEXT.md "Canlı
+> bildirim"). MCP `resources/subscribe` + `notifications/resources/updated`
+> yapıldı (`crates/fihrist-kaynak`, ADR 0004; ana katalog yine dışarıda).
+> **Kalan:** gerçek dosyalara tetikleyici kurulumu (Ercan'ın onayı);
+> `ibnunnedim izle` adının `fihrist-izle --sorgu`ya ek olarak gerekip gerekmediği.
 
 **Neden:** el-Fihrist MCP sunucusu, Paslı Beyin, graphify nöbetçisi ve Open Notebook
 aktarımı veritabanını yoklamadan değişiklik haberi alsın. SurrealDB'deki

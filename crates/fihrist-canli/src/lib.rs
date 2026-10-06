@@ -30,7 +30,7 @@ pub use sorgu::{abone_ol, Abone, Abonelik, CanliSorgu, Fark, Satir};
 use std::path::{Path, PathBuf};
 use turso::{params, Builder, Connection, Value};
 
-/// Değişiklik günlüğü tablosu.
+/// Bildirim günlüğü tablosu (CONTEXT.md; Dal'ın değişiklik günlüğüyle karıştırılmaz).
 pub const GUNLUK: &str = "fihrist_degisiklik";
 
 #[derive(Debug, thiserror::Error)]
