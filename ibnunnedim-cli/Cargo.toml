@@ -23,6 +23,10 @@ turso.workspace = true
 katla.workspace = true
 terim.workspace = true
 fihrist-tikel.workspace = true
+# MCP kaynak aboneliği (resources, ADR 0004).
+fihrist-kaynak.workspace = true
+# Altın set ayrıştırma/puanlama (`olcum` komutu); sandık sınırı için ayrı crate.
+fihrist-olcum.workspace = true
 # ONNX gömme çekirdeği (multilingual-e5-small, 384 boyut). Yalnız `--features onnx`.
 fastembed = { version = "4.9", optional = true }
 # bge-embed-rs / llama-server'ın yerel /v1/embeddings uç noktası için: yalnız
