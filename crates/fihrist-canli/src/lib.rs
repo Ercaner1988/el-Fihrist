@@ -20,7 +20,13 @@
 //!
 //! Teslim en az bir kez: imleç olaylar işlendikten sonra yazılır; arada çökme
 //! olursa son öbek yeniden gelir, kaybolmaz.
+//!
+//! Canlı sorgu ([`Abone`], [`abone_ol`]) bu günlüğü yalnız işaret olarak okur:
+//! izlenen tablo değişince sorgu yeniden koşulur, aboneye fark gider.
 
+mod sorgu;
+
+pub use sorgu::{abone_ol, Abone, Abonelik, CanliSorgu, Fark, Satir};
 use std::path::{Path, PathBuf};
 use turso::{params, Builder, Connection, Value};
 
@@ -35,6 +41,8 @@ pub enum Hata {
     Io(#[from] std::io::Error),
     #[error("{0}")]
     Kurulamaz(String),
+    #[error("canlı sorgu: {0}")]
+    Sorgu(String),
 }
 
 pub type Sonuc<T> = Result<T, Hata>;
@@ -257,7 +265,7 @@ fn imlecler(db: &Path) -> Sonuc<Vec<i64>> {
 
 /// Birincil anahtar sütunları, tablodaki sırasıyla. Turso'nun `pk` değeri
 /// bileşik anahtarda hep 1 (SQLite 1,2,3 verir); sıra bu yüzden `cid`'den.
-async fn anahtar_sutunlari(c: &Connection, tablo: &str) -> Sonuc<Vec<String>> {
+pub(crate) async fn anahtar_sutunlari(c: &Connection, tablo: &str) -> Sonuc<Vec<String>> {
     let mut r = c
         .query(&format!("PRAGMA table_info({})", kimlik(tablo)), ())
         .await?;
@@ -287,7 +295,7 @@ fn metin(s: &str) -> String {
     format!("'{}'", s.replace('\'', "''"))
 }
 
-fn tamsayi(v: Value) -> i64 {
+pub(crate) fn tamsayi(v: Value) -> i64 {
     match v {
         Value::Integer(n) => n,
         _ => 0,
@@ -303,10 +311,10 @@ fn yazi(v: Value) -> String {
 }
 
 #[cfg(test)]
-mod testler {
+pub(crate) mod testler {
     use super::*;
 
-    async fn gecici_db(ad: &str, kurulum: &[&str]) -> PathBuf {
+    pub(crate) async fn gecici_db(ad: &str, kurulum: &[&str]) -> PathBuf {
         let yol =
             std::env::temp_dir().join(format!("fihrist-canli-{ad}-{}.db", std::process::id()));
         for ek in ["", "-wal", "-shm"] {
@@ -324,7 +332,7 @@ mod testler {
         yol
     }
 
-    async fn yaz(yol: &Path, sqller: &[&str]) {
+    pub(crate) async fn yaz(yol: &Path, sqller: &[&str]) {
         // Her yazış taze bağlantıdan: tetikleyicilerin dosyaya işlendiğini sınar.
         let c = ac(yol).await.unwrap();
         for s in sqller {
