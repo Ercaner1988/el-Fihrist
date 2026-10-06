@@ -63,6 +63,26 @@ _Kaçın_: merge, senkron
 **Yabancı veritabanı**:
 Başka bir uygulamanın yazdığı, bizim yalnız okuduğumuz veritabanı (ör. `zotero.sqlite`); araç veritabanı değildir.
 
+### Canlı bildirim
+
+**Bildirim günlüğü**:
+Bir veritabanı dosyasında izlenen tabloların her ekleme, güncelleme ve silmesinin, tetikleyicilerle aynı işlem içinde yazıldığı tablo (`fihrist_degisiklik`, ADR 0003). Dosya başına birdir ve budanır. Değişikliğin içeriğini değil, hangi satırın değiştiğini (tablo, işlem, anahtar) söyler.
+_Kaçın_: değişiklik günlüğü (Dal'ın günlüğüdür), CDC
+
+**Tüketici**:
+Bildirim günlüğünü kalıcı bir imleçle (`<db>.imlec/<ad>`) okuyan süreç. Teslimi en az bir kez alır; budama onun imlecini geçemez.
+_Kaçın_: abone
+
+**Canlı sorgu**:
+İzlenen tablolarından biri değişince yeniden koşulan ve sonucu bir öncekiyle karşılaştırılan sorgu; tablolar sorgudan çıkarılmaz, açıkça verilir.
+
+**Abone**:
+Bir canlı sorguyu bellekte tutan geçici dinleyici. İmleç yazmaz, budamayı etkilemez; başlarken sorgunun ilk görüntüsünü alır, düşünce iz bırakmaz.
+_Kaçın_: tüketici (kalıcı imleç tutar)
+
+**Fark**:
+Bir canlı sorgunun iki sonucu arasındaki eklenen, değişen ve silinen satırlar. Satırın kimliği abonenin verdiği anahtar sütunlarıdır; verilmezse tek tablonun birincil anahtarı. Kimlik kurulamıyorsa abonelik reddedilir. Boş fark bildirilmez.
+
 ### Tema
 
 **Tema paketi**:
@@ -155,6 +175,8 @@ _Kaçın_: çakışma
 - **Eşgüdüm** yalnız aynı **Veri sınıfı**ndaki kayıtlar arasında olur.
 - Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**, **Vekil**, **Arabulucu**); rol, Kişi'nin kimliğini değiştirmez.
 - Bir **Vekil** tam bir **Taraf**'ı temsil eder; Vekil'in kendisi Taraf sayılmaz.
+- Bir **Abone** bildirim günlüğünü yalnız "değişti" işareti olarak okur; doğruluğu yeniden koşulan sorgudan gelir, günlüğün eksiksizliğinden değil. Günlükte budanmış bir aralık görürse sorguyu koşulsuz yeniden koşar.
+- fts5 sanal tablosu olan dosyanın **Bildirim günlüğü** olmaz (ADR 0003); ana katalog bu yüzden izlenmez.
 - **Yabancı veritabanı** turso kuralının dışındadır (turso, aynı dosyada SQLite ile karışık çok süreçli erişimi desteklemez).
 
 ## Örnek konuşma
@@ -170,4 +192,5 @@ _Kaçın_: çakışma
 - **Eşgüdüm** mekanizması: aynı veriye aynı anda erişim, **Dal** + **Birleştirme** ile çözülür (turso'nun çok süreçli WAL'ı deneysel; Windows'ta `experimental_win_iocp` gerekiyor). **Okur** ve **Atölye** ilişkileri dal gerektirmez.
 - "senkron" iki anlamda kullanılıyordu — graft'ın grafı kaynakla güncel tutması ve araç veritabanları arası uyum. Çözüm: ilki **tazelik**, ikincisi **Eşgüdüm**; archify-graft'ın el-Fihrist'e gömülmesi tazelik içindir.
 - pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu bge-embed-rs'dir (127.0.0.1:11434, Open Notebook'la paylaşılır; `FIHRIST_BGE_URL` ile değişir).
+- "Değişiklik günlüğü" iki anlamda kullanılıyordu: Dal'ın JSONL günlüğü (ADR 0002) ve tetikleyicilerin yazdığı `fihrist_degisiklik` tablosu (ADR 0003). Çözüm: ilki **Değişiklik günlüğü**, ikincisi **Bildirim günlüğü**. Tablo adı değişmedi.
 - "Yazar" iki anlamda kullanılıyordu — veriye yazan YZ oturumu ve bir eserin yazarı. Çözüm: ilki **Özne**, ikincisi **Yazar** (Kişi'nin rolü). "Kişi = yazar mı, taraf mı?" sorusu da böylece kapandı: ikisi de Kişi'nin rolüdür, biri ötekinin yerini almaz.
