@@ -51,7 +51,7 @@
 ##### 依存関係とクレート
 * **Rust 1.63+** (Edition 2021)
 * ワークスペースクレート: `ibnunnedim-cli`, `crates/hermes-tools-core`
-* システムデータベース: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* システムデータベース: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### ビルドと実行
 ```bash

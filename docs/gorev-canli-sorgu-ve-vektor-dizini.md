@@ -54,6 +54,11 @@ Değişiklikler `turso_cdc` tablosuna yazılır (`turso_core-0.7.2/connection.rs
 
 ## Görev 2: Yerleşik vektör dizini ve benzerlik fonksiyonları
 
+> **Durum (2026-10-06):** Turso 0.8.2'de de yoğun vektör dizini yok (ADR 0005), karar
+> sırasının 3. adımı geçerli. Karar (Ercan): HNSW yan dizini **bge-embed-rs deposunda
+> ayrı crate** olarak yazılır; el-Fihrist onu git rev ile alır. Gömmeleri bge-embed-rs
+> üretir; doğruluk kaynağı Turso tabloları. Kabul ölçümü gerçek veriyle Ercan'ın makinesinde.
+
 **Neden:**
 - Open Notebook'tan Turso'ya aktarılacak yaklaşık 91 bin bge-m3 vektöründe
   (1024 boyut, yoğun) hızlı anlam araması.

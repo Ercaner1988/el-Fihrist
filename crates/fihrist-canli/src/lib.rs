@@ -18,6 +18,10 @@
 //!   otomatik-commit yazışları hatasız kaybettirir. Burada yalnız
 //!   `PRAGMA table_info` kullanılır.
 //!
+//! 0.8.2'de yeniden ölçüldü (2026-10-06, ADR 0005): fts5 kesilmesi sürüyor;
+//! `pragma_table_info` kaybı ve bileşik anahtarda `pk = 1` düzelmiş. Korumalar
+//! (taze açış, `PRAGMA table_info`, `cid` sırası) zararsız olduğu için kalır.
+//!
 //! Teslim en az bir kez: imleç olaylar işlendikten sonra yazılır; arada çökme
 //! olursa son öbek yeniden gelir, kaybolmaz.
 //!
@@ -82,7 +86,7 @@ pub async fn kur(c: &Connection) -> Sonuc<Vec<String>> {
     .await?;
     if !sanal.is_empty() {
         return Err(Hata::Kurulamaz(format!(
-            "sanal tablo var ({}). Turso 0.7.2 şemayı bunlarda keser: günlük ve \
+            "sanal tablo var ({}). Turso (0.7.2 ve 0.8.2) şemayı bunlarda keser: günlük ve \
              tetikleyiciler Turso'ya görünmez kalır. Bu dosya izlenemez.",
             sanal.join(", ")
         )));

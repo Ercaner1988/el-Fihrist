@@ -53,7 +53,7 @@
 ##### Bağımlılıklar & Crate'ler
 * **Rust 1.63+** (Edition 2021)
 * Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`
-* Sistem Veritabanı: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* Sistem Veritabanı: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### Derleme ve Çalıştırma
 ```bash

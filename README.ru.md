@@ -51,7 +51,7 @@
 ##### Зависимости и пакеты (Crates)
 * **Rust 1.63+** (Редакция 2021)
 * Пакеты рабочего пространства (Workspace Crates): `ibnunnedim-cli`, `crates/hermes-tools-core`
-* Системная база данных: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* Системная база данных: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### Сборка и запуск
 ```bash
