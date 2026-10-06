@@ -6,6 +6,13 @@
 //! `--sorgu` kipi canlı sorgudur: imleç dosyası yazılmaz. Çıktı satırı bir
 //! önek ve sekmeyle ayrılmış değerlerdir: `=` ilk görüntü, `+` eklenen,
 //! `~` değişen (yeni hali), `-` silinen.
+//!
+//! Belirlenimlilik sözleşmesi: çıktıda zaman ve rastgelelik yok; aynı ilk
+//! durum ve aynı görülen anlık görüntüler aynı baytları verir. Satır sırası
+//! sorgununkidir (tam belirlenimli sıra için tekil anahtar üzerinde
+//! `ORDER BY`). Fark durum tabanlıdır: bir yoklama aralığına düşen yazışlar
+//! tek farkta birleşir; ilk görüntüye bütün farklar uygulanınca her zaman
+//! güncel sonuç çıkar. Her değişikliği sırasıyla görmek için tüketici kipi.
 
 use clap::Parser;
 use std::io::Write;
@@ -164,7 +171,8 @@ fn bas<'a>(
     o.flush()
 }
 
-/// Sekme ve satır sonu kaçışlanır: bir değer bir hücre, bir satır bir satır kalır.
+/// Sekme ve satır sonları (`\n`, `\r`) kaçışlanır: bir değer bir hücre, bir
+/// satır bir satır kalır; `\r\n` ile bölen okuyucu değerin sonunu kırpmaz.
 fn hucre(v: &Value) -> String {
     match v {
         Value::Null => "NULL".into(),
@@ -173,7 +181,8 @@ fn hucre(v: &Value) -> String {
         Value::Text(s) => s
             .replace('\\', "\\\\")
             .replace('\t', "\\t")
-            .replace('\n', "\\n"),
+            .replace('\n', "\\n")
+            .replace('\r', "\\r"),
         Value::Blob(b) => format!(
             "x'{}'",
             b.iter().map(|x| format!("{x:02x}")).collect::<String>()
