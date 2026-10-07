@@ -63,6 +63,10 @@ _Kaçın_: merge, senkron
 **Yabancı veritabanı**:
 Başka bir uygulamanın yazdığı, bizim yalnız okuduğumuz veritabanı (ör. `zotero.sqlite`); araç veritabanı değildir.
 
+**Arama dosyası**:
+Ana kataloğun yanında, fts5 tablolarını taşıyan türetilmiş dosya (`kutup_arama.db`, ADR 0006). Yalnız SQLite istemcileri `ATTACH` ile açar, Turso açmaz. Dış içerikli tabloları ana katalogdan her an yeniden kurulabilir (`--tazele`).
+_Kaçın_: fts dosyası, indeks veritabanı
+
 ### Canlı bildirim
 
 **Bildirim günlüğü**:
@@ -176,7 +180,7 @@ _Kaçın_: çakışma
 - Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**, **Vekil**, **Arabulucu**); rol, Kişi'nin kimliğini değiştirmez.
 - Bir **Vekil** tam bir **Taraf**'ı temsil eder; Vekil'in kendisi Taraf sayılmaz.
 - Bir **Abone** bildirim günlüğünü yalnız "değişti" işareti olarak okur; doğruluğu yeniden koşulan sorgudan gelir, günlüğün eksiksizliğinden değil. Günlükte budanmış bir aralık görürse sorguyu koşulsuz yeniden koşar.
-- fts5 sanal tablosu olan dosyanın **Bildirim günlüğü** olmaz (ADR 0003); ana katalog bu yüzden izlenmez.
+- fts5 sanal tablosu olan dosyanın **Bildirim günlüğü** olmaz (ADR 0003). Ana katalogdaki fts5 tabloları bu yüzden **Arama dosyası**na taşınır (ADR 0006); göçten sonra ana katalog da izlenir.
 - **Yabancı veritabanı** turso kuralının dışındadır (turso, aynı dosyada SQLite ile karışık çok süreçli erişimi desteklemez).
 
 ## Örnek konuşma
