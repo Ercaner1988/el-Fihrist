@@ -68,7 +68,7 @@ pub enum Cekirdek {
     #[cfg(feature = "onnx")]
     #[value(name = "e5s384")]
     E5s384,
-    /// `bge-embed-rs` (saf Rust/candle) üzerinden `bge-m3` (1024 boyut, çok
+    /// `ibnun-nedim` (saf Rust/candle) üzerinden `bge-m3` (1024 boyut, çok
     /// dilli). Ağa çıkmaz — yalnız yerel uç (varsayılan 127.0.0.1:11434,
     /// `FIHRIST_BGE_URL` ile değişir; bkz. `bge_m3` modül belgesi). VARSAYILAN: ölçüm hem izole kanalda hem füzyonda hash256'yı
     /// geride bıraktığını gösterdi (bkz. modül belgesindeki karar kapısı).
@@ -283,16 +283,16 @@ mod e5 {
     }
 }
 
-/// bge-m3 bacağı: `bge-embed-rs`'in (saf Rust/candle, C++ ikiliye bağımsız)
+/// bge-m3 bacağı: `ibnun-nedim`'in (saf Rust/candle, C++ ikiliye bağımsız)
 /// OpenAI uyumlu `/v1/embeddings` ucu (toplu). 2026-09-19'a dek 11434'teki
 /// llama-server kullanılıyordu — Open Notebook'un aynı sunucuyu 790 eserlik
 /// toplu gömme backlog'u için doldurmasıyla kısa sorgular aynı kuyrukta
 /// dakikalarca bekliyordu (ölçüldü: 95 sn). O bekleme llama-server'ın istekleri
 /// SIRAYLA işleyen yuvasından geliyordu. 2026-09-19'da el-Fihrist ayrı bir
-/// `bge-embed-rs` örneğine (11435) geçti; 2026-09-23'te `start.ps1` llama-
-/// server'ın yerine `bge-embed-rs`'i 11434'te başlattı ve 11435 örneği bir
+/// `ibnun-nedim` örneğine (11435) geçti; 2026-09-23'te `start.ps1` llama-
+/// server'ın yerine `ibnun-nedim`'i 11434'te başlattı ve 11435 örneği bir
 /// daha açılmadı — el-Fihrist o günden beri sessizce saf BM25'teydi (2026-09-24
-/// ölçüldü: 11435'i dinleyen süreç 0). `bge-embed-rs` istekleri eşzamanlı
+/// ölçüldü: 11435'i dinleyen süreç 0). `ibnun-nedim` istekleri eşzamanlı
 /// işlediğinden kuyruk sorunu yok, yalnız CPU paylaşılıyor; ikinci bir örnek
 /// ~1,4 GB bellek ister. Bu yüzden varsayılan paylaşılan 11434; ayrı örnek
 /// gerekirse `FIHRIST_BGE_URL`. Dizi tek istekte gider — `olcum` 145+ belgeyi
@@ -346,7 +346,7 @@ mod bge_m3 {
                 );
             }
             crate::CliError::Girdi(format!(
-                "bge-m3: bge-embed-rs'e bağlanılamadı ({e}). {uc} çalışıyor mu?"
+                "bge-m3: ibnun-nedim'e bağlanılamadı ({e}). {uc} çalışıyor mu?"
             ))
         })?;
         let yanit = yanit
