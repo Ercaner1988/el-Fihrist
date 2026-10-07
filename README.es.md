@@ -51,7 +51,7 @@ La BIBLIOTECA `hermes-tools-core` proporciona 10 módulos. Son API de Rust; el b
 ##### Dependencias y Crates
 * **Rust 1.63+** (Edición 2021)
 * Crates del Espacio de Trabajo (Workspace): `ibnunnedim-cli`, `crates/hermes-tools-core`
-* Base de Datos del Sistema: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* Base de Datos del Sistema: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### Compilación y Ejecución
 ```bash

@@ -1,0 +1,6 @@
+[package]
+name = "fihrist-olcum"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Altın sorgu seti: ayrıştırma ve puanlama (isabet, karşılıklı sıra). Ölçer, karar vermez"

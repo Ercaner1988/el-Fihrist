@@ -51,7 +51,7 @@
 ##### 依赖与 Crates
 * **Rust 1.63+** (Edition 2021)
 * 工作区 Crates: `ibnunnedim-cli`, `crates/hermes-tools-core`
-* 系统数据库: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* 系统数据库: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### 构建与执行
 ```bash

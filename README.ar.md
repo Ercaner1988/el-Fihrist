@@ -51,7 +51,7 @@
 ##### التبعيات والوحدات (Crates)
 * **Rust 1.63+** (الإصدار 2021)
 * وحدات مساحة العمل: `ibnunnedim-cli`, `crates/hermes-tools-core`
-* قاعدة بيانات النظام: `Turso SQLite 0.7.2` (`kutup_kutuphane.db`)
+* قاعدة بيانات النظام: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### البناء والتشغيل
 ```bash

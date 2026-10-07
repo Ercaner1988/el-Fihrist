@@ -2,7 +2,11 @@
 //!
 //! Kural (pasli-beyin PB-06 ile aynı): yeni bir arama kanalı ya da gömme
 //! çekirdeği AYNI sette ölçülmeden varsayılan seçilmez. Üç kanal da aramanın
-//! kendi `sirala`sından geçer; ölçüm kopya bir sıralayıcı tutmaz.
+//! kendi `sirala`sından geçer (`ibnunnedim-cli`, `olcum` komutu); ölçüm kopya
+//! bir sıralayıcı tutmaz.
+//!
+//! Ayrı crate: `ibnunnedim-cli` sandık sınırının üstünde (altin-kapi tabanı
+//! 3363); G-3'ün MCP kaynak bağlaması karşılığında oradan taşındı, kod aynı.
 
 /// Altın kümedeki tek sorgu.
 #[derive(Debug, PartialEq)]
@@ -15,8 +19,8 @@ pub struct Sorgu {
 /// `[[sorgu]]` bloklarını okur.
 ///
 /// Elle ayrıştırma: `toml` bağımlılığı yalnız bu dosya için gelirdi ve biçim
-/// bizim — üç anahtar, kaçış yok, tek satırlık diziler. `tara::adlar_cargo`
-/// ile aynı gerekçe.
+/// bizim — üç anahtar, kaçış yok, tek satırlık diziler. `ibnunnedim-cli`'deki
+/// `tara::adlar_cargo` ile aynı gerekçe.
 /// ponytail: `beklenen` çok satıra yayılırsa bu ayrıştırıcı onu görmez;
 /// yükseltme yolu `toml` crate'i. Bugün sette öyle bir satır yok.
 pub fn ayristir(metin: &str) -> Vec<Sorgu> {
