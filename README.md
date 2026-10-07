@@ -1,8 +1,16 @@
 # el-Fihrist (الفهرست)
 
+<p align="center"><img src="icon.png" alt="el-Fihrist simgesi" width="256"></p>
+
+<p align="center"><sub>Simge: Ercan Er, Google Gemini ile üretti (2026-10); kitap ve parşömenlerdeki yazı <i>el-Fihrist</i>'in Süleymaniye nüshasındandır (Şehid Ali Paşa, nr. 1934).</sub></p>
+
 [![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/Ercaner1988/el-Fihrist?utm_source=badge)
 
 > Bismillahirrahmanirrahim. Rahmân ve Rahîm olan Allah'ın adıyla. Hamd âlemlerin Rabbine, salât ve selâm O'nun Resûlü'ne olsun. Bu proje adını ve ruhunu, 10. yüzyılda Bağdat'ta yaşamış büyük bibliyograf Ebü’l-Ferec Muhammed b. İshâk en-Nedîm ve onun ölümsüz eseri *el-Fihrist*'ten almaktadır. Medeniyetimizin ilk kütüphanecisinin mirasıyla; yapay zekâ ajanları için saf Rust ve Turso SQLite tabanlı yetenek, kod ve hafıza kütüphanesini inşa ettik.
+
+<p align="center"><img src="docs/gorseller/el-fihrist-5-makale.png" alt="el-Fihrist, beşinci makalenin ilk sayfası" width="260"></p>
+
+<p align="center"><sub>İbnü'n-Nedîm'in <i>el-Fihrist</i> adlı eserinin beşinci makalesinin ilk sayfası (Süleymaniye Ktp., Şehid Ali Paşa, nr. 1934). Görsel: <a href="https://islamansiklopedisi.org.tr/ibnun-nedim">TDV İslâm Ansiklopedisi, "İbnü'n-Nedîm"</a> (Nasuhi Ünal Karaarslan, c. 21, İstanbul 2000, s. 171-173).</sub></p>
 
 ---
 
@@ -54,6 +62,12 @@
 * **Rust 1.63+** (Edition 2021)
 * Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`
 * Sistem Veritabanı: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
+
+##### Kurulum (Windows, mcp-tools)
+`kur.ps1`, `ibnunnedim.exe` ile `fihrist-izle.exe`'yi derleyip `%USERPROFILE%\Desktop\mcp-tools\el-fihrist` klasörüne kopyalar. Oradaki eski kopya `<ad>.<zaman>.eski.exe` olarak saklanır, yeni kopya SHA-256 ile doğrulanır. Kopya çalışıyorsa durur; `-Durdur` önce kapatır. Veritabanları yerinde kalır (`Desktop\hermes yazılım\kutuphane` ya da `TURSO_DB_PATH`). MCP yapılandırması `mcp-tools\el-fihrist\ibnunnedim.exe mcp`'yi gösterir.
+```powershell
+./kur.ps1
+```
 
 ##### Derleme ve Çalıştırma
 ```bash

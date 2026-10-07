@@ -43,3 +43,8 @@ graphify-rs-out/
 
 # Packaged Desktop extension (built from manifest.json + package-extension.py)
 *.mcpb
+
+# Koşu betiklerinin (crates/fihrist-canli/deneme) varsayılan çıktı klasörleri:
+# gerçek veritabanlarının yedeklerini ve kopyalarını içerir, commit'lenmez.
+/kurulum-*/
+/arama-gocu-*/

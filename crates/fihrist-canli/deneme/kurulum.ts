@@ -13,17 +13,20 @@
 // `kurulum_denemesi` tablosu yaratılır, ölçümler ona yazılır, sonunda DROP edilir;
 // deneme tüketicisinin imleç dosyası silinir (yoksa budamayı sonsuza dek tutar).
 // Turso yazarı `yaz` örneği, SQLite yazarı bun:sqlite (ve varsa Python).
+//
+// Ana katalogda sanal tablo varsa (ADR 0006 göçünden önce) kurulum orada reddedilmeli ve fts5
+// sağlığı uyarı olarak raporlanır. Göçten sonra sanal tablo kalmaz; katalog öteki dört dosya
+// gibi kurulur ve ölçülür (fts5 artık kutup_arama.db'de, bkz. arama-gocu.ts).
 
 import { Database } from "bun:sqlite";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { WIN, butunluk, kos, ro_sorgu, sha, uri } from "./ortak";
 
 const IZLENEN = ["kutup_kurallar", "kutup_ortak", "kutup_depolar", "kutup_kayitlar"];
-const KATALOG = "kutup_kutuphane"; // fts5'li: kurulum reddedilmeli (ADR 0003, 0005)
+const KATALOG = "kutup_kutuphane"; // fts5'li ise kurulum reddedilmeli (ADR 0003, 0005); göçten sonra izlenir (ADR 0006)
 const DENEME = "kurulum_denemesi";
 const TUKETICI = "kurulum-denetimi";
-const WIN = process.platform === "win32";
 const EXE = WIN ? ".exe" : "";
 
 function arg(ad: string): string | undefined {
@@ -79,35 +82,7 @@ function bolum(baslik: string) {
   rapor.push(``, `## ${baslik}`, ``);
 }
 
-// ── Yardımcılar ──────────────────────────────────────────────────────────────
-function sha(yol: string): string {
-  const h = createHash("sha256").update(readFileSync(yol));
-  if (existsSync(`${yol}-wal`)) h.update(readFileSync(`${yol}-wal`));
-  return h.digest("hex").slice(0, 16);
-}
-// SQLite URI: ters bölü → bölü, ASCII dışı ve boşluk yüzde kodlanır.
-function uri(yol: string): string {
-  const p = resolve(yol).replaceAll("\\", "/");
-  const k = [...new TextEncoder().encode(p)]
-    .map((b) => (/[A-Za-z0-9/._~:-]/.test(String.fromCharCode(b)) && b < 128 ? String.fromCharCode(b) : `%${b.toString(16).toUpperCase().padStart(2, "0")}`))
-    .join("");
-  return `file:${WIN ? "/" : ""}${k}?mode=ro`;
-}
-function kos(komut: string[], env: Record<string, string> = {}): { kod: number; cikti: string } {
-  const r = Bun.spawnSync(komut, { env: { ...process.env, ...env }, stdout: "pipe", stderr: "pipe" });
-  return { kod: r.exitCode ?? -1, cikti: (r.stdout.toString() + r.stderr.toString()).trim() };
-}
-function ro_sorgu<T>(yol: string, sql: string): T[] {
-  const db = new Database(yol, { readonly: true });
-  try {
-    return db.query(sql).all() as T[];
-  } finally {
-    db.close();
-  }
-}
-function butunluk(yol: string): string {
-  return ro_sorgu<{ integrity_check: string }>(yol, "PRAGMA integrity_check").map((r) => r.integrity_check).join(";");
-}
+// ── Yardımcılar (ortakları ortak.ts'te) ─────────────────────────────────────
 function sqlite_yaz(yol: string, sql: string) {
   const db = new Database(yol);
   try {
@@ -176,10 +151,21 @@ async function kur_ve_olc(db: string, etiket: string, kayitlar: boolean) {
     ["s", "turso", `DELETE FROM ${DENEME} WHERE id = 1`],
   ];
   for (const [islem, motor, sql] of yazislar) {
-    const t0 = Date.now();
+    let t0 = Date.now();
     if (motor === "turso") {
-      const r = kos([YAZ, db, sql]);
-      if (!adim(`${etiket}: Turso yazışı (${islem})`, r.kod === 0, r.cikti)) dur("Turso yazışı başarısız");
+      // Turso dosyayı bloklamayan fcntl kilidiyle açar; fihrist-izle o anda yokluyorsa yazış
+      // "Locking error" alır (ölçüldü: 250 ms yoklamada 200 yazışın 5'i). Sınırlı yeniden deneme,
+      // sayısı rapora yazılır.
+      let r = kos([YAZ, db, sql]);
+      let tekrar = 0;
+      while (r.kod !== 0 && /Locking error/.test(r.cikti) && tekrar < 5) {
+        await Bun.sleep(50);
+        t0 = Date.now();
+        r = kos([YAZ, db, sql]);
+        tekrar++;
+      }
+      const ayrinti = tekrar ? `${tekrar} kilit çakışmasından sonra${r.cikti ? `; ${r.cikti}` : ""}` : r.cikti;
+      if (!adim(`${etiket}: Turso yazışı (${islem})`, r.kod === 0, ayrinti)) dur("Turso yazışı başarısız");
     } else sqlite_yaz(db, sql);
     let gecikme = -1;
     while (Date.now() - t0 < 2000) {
@@ -295,16 +281,23 @@ for (const ad of [...IZLENEN, KATALOG]) {
   if (!adim(`${ad}: yedek alırken gerçek dosya değişmedi`, sha(kaynak) === ilk_sha[ad], ilk_sha[ad])) dur(`${ad} yedek sırasında değişti (açık yazan var mı?)`);
 }
 
+// ADR 0006 göçünden sonra katalogda sanal tablo kalmaz: o zaman o da izlenir.
+const katalog_sanal = ro_sorgu<{ n: number }>(join(yedek, `${KATALOG}.db`), "SELECT count(*) AS n FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'")[0].n > 0;
+const kurulacak = katalog_sanal ? IZLENEN : [...IZLENEN, KATALOG];
+if (!katalog_sanal) rapor.push("", `- ${KATALOG}: sanal tablo yok (ADR 0006 göçü yapılmış); öteki dosyalar gibi kurulur`);
+
 bolum("PROVA (kopyalarda)");
 const prova = join(cikti, "prova");
 mkdirSync(prova, { recursive: true });
 for (const ad of [...IZLENEN, KATALOG]) copyFileSync(join(yedek, `${ad}.db`), join(prova, `${ad}.db`));
-for (const ad of IZLENEN) await kur_ve_olc(join(prova, `${ad}.db`), `prova/${ad}`, ad === "kutup_kayitlar");
-await katalog_reddi(join(prova, `${KATALOG}.db`), `prova/${KATALOG}`);
-bolum("Ana katalog sağlığı (kopyada; kurulumu durdurmaz)");
-const fts_kopya = join(cikti, `${KATALOG}-fts-denetimi.db`);
-copyFileSync(join(yedek, `${KATALOG}.db`), fts_kopya);
-katalog_fts_denetimi(fts_kopya);
+for (const ad of kurulacak) await kur_ve_olc(join(prova, `${ad}.db`), `prova/${ad}`, ad === "kutup_kayitlar");
+if (katalog_sanal) {
+  await katalog_reddi(join(prova, `${KATALOG}.db`), `prova/${KATALOG}`);
+  bolum("Ana katalog sağlığı (kopyada; kurulumu durdurmaz)");
+  const fts_kopya = join(cikti, `${KATALOG}-fts-denetimi.db`);
+  copyFileSync(join(yedek, `${KATALOG}.db`), fts_kopya);
+  katalog_fts_denetimi(fts_kopya);
+}
 if (kirmizi > 0) dur(`provada ${kirmizi} kırmızı`);
 
 if (gercek) {
@@ -313,8 +306,8 @@ if (gercek) {
   for (const ad of [...IZLENEN, KATALOG]) {
     if (!adim(`${ad}: provadan beri değişmedi`, sha(join(dizin, `${ad}.db`)) === ilk_sha[ad])) dur(`${ad} yedekten sonra değişti; yeniden koşun`);
   }
-  for (const ad of IZLENEN) await kur_ve_olc(join(dizin, `${ad}.db`), ad, ad === "kutup_kayitlar");
-  await katalog_reddi(join(dizin, `${KATALOG}.db`), KATALOG);
+  for (const ad of kurulacak) await kur_ve_olc(join(dizin, `${ad}.db`), ad, ad === "kutup_kayitlar");
+  if (katalog_sanal) await katalog_reddi(join(dizin, `${KATALOG}.db`), KATALOG);
 } else rapor.push("", "GERÇEK evre koşulmadı (`--gercek` verilmedi).");
 
 rapor.push("", `**SONUÇ:** ${kirmizi === 0 ? "YEŞİL" : `${kirmizi} kırmızı`}${uyari ? ` · ana katalogda ${uyari} UYARI (yukarıda ⚠)` : ""}`, "", `Yedekler: ${yedek}`);

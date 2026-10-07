@@ -63,6 +63,10 @@ _Kaçın_: merge, senkron
 **Yabancı veritabanı**:
 Başka bir uygulamanın yazdığı, bizim yalnız okuduğumuz veritabanı (ör. `zotero.sqlite`); araç veritabanı değildir.
 
+**Arama dosyası**:
+Ana kataloğun yanında, fts5 tablolarını taşıyan türetilmiş dosya (`kutup_arama.db`, ADR 0006). Yalnız SQLite istemcileri `ATTACH` ile açar, Turso açmaz. Dış içerikli tabloları ana katalogdan her an yeniden kurulabilir (`--tazele`).
+_Kaçın_: fts dosyası, indeks veritabanı
+
 ### Canlı bildirim
 
 **Bildirim günlüğü**:
@@ -102,7 +106,7 @@ _Kaçın_: ikinci beyin, bilgi tabanı, wiki
 ### Aktörler
 
 **Kaynak kütüphane**:
-Hedef araçlara yetenek sağlayan dış ya da iç depo (turso, agentfs, graphify-rs, archify-graft-rs, laya, regex, rank_bm25, bge-embed-rs).
+Hedef araçlara yetenek sağlayan dış ya da iç depo (turso, agentfs, graphify-rs, archify-graft-rs, laya, regex, rank_bm25, ibnun-nedim — İbnü'n-Nedîm Gömme, eski adı bge-embed-rs).
 
 **Hedef araç**:
 Ercan'a ait, kaynak kütüphaneleri tüketen araç (zopay, zopay-word, agent-reach-rs, el-Fihrist, pasli-beyin, kervan).
@@ -176,13 +180,13 @@ _Kaçın_: çakışma
 - Bir **Kişi** aynı anda birden çok rol taşıyabilir (**Yazar**, **Taraf**, **Vekil**, **Arabulucu**); rol, Kişi'nin kimliğini değiştirmez.
 - Bir **Vekil** tam bir **Taraf**'ı temsil eder; Vekil'in kendisi Taraf sayılmaz.
 - Bir **Abone** bildirim günlüğünü yalnız "değişti" işareti olarak okur; doğruluğu yeniden koşulan sorgudan gelir, günlüğün eksiksizliğinden değil. Günlükte budanmış bir aralık görürse sorguyu koşulsuz yeniden koşar.
-- fts5 sanal tablosu olan dosyanın **Bildirim günlüğü** olmaz (ADR 0003); ana katalog bu yüzden izlenmez.
+- fts5 sanal tablosu olan dosyanın **Bildirim günlüğü** olmaz (ADR 0003). Ana katalogdaki fts5 tabloları bu yüzden **Arama dosyası**na taşınır (ADR 0006); göçten sonra ana katalog da izlenir.
 - **Yabancı veritabanı** turso kuralının dışındadır (turso, aynı dosyada SQLite ile karışık çok süreçli erişimi desteklemez).
 
 ## Örnek konuşma
 
-> **Geliştirici:** "Pasli-beyin bge-m3 gömmesini doğrudan bge-embed-rs'den mi alıyor?"
-> **Ercan:** "Hayır — **Merkez ödünç alma**: pasli-beyin `ibnunnedim-cli`'ye bağlı, bge-embed-rs'yi yalnız el-Fihrist tanır."
+> **Geliştirici:** "Pasli-beyin bge-m3 gömmesini doğrudan İbnü'n-Nedîm Gömme'den mi alıyor?"
+> **Ercan:** "Hayır — **Merkez ödünç alma**: pasli-beyin `ibnunnedim-cli`'ye bağlı, gömme sunucusunu (ibnun-nedim) yalnız el-Fihrist tanır."
 
 ## İşaretlenen belirsizlikler
 
@@ -191,6 +195,6 @@ _Kaçın_: çakışma
 - Merkez ödünç alma ile **Veritabanı ödünç alma** yön olarak zıttır: ilkinde araç el-Fihrist'in crate'ine derleme zamanında bağlanır, ikincisinde araç çalışma zamanında el-Fihrist'in verisini kullanır ve derleme zamanı bağımlılığı yoktur.
 - **Eşgüdüm** mekanizması: aynı veriye aynı anda erişim, **Dal** + **Birleştirme** ile çözülür (turso'nun çok süreçli WAL'ı deneysel; Windows'ta `experimental_win_iocp` gerekiyor). **Okur** ve **Atölye** ilişkileri dal gerektirmez.
 - "senkron" iki anlamda kullanılıyordu — graft'ın grafı kaynakla güncel tutması ve araç veritabanları arası uyum. Çözüm: ilki **tazelik**, ikincisi **Eşgüdüm**; archify-graft'ın el-Fihrist'e gömülmesi tazelik içindir.
-- pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu bge-embed-rs'dir (127.0.0.1:11434, Open Notebook'la paylaşılır; `FIHRIST_BGE_URL` ile değişir).
+- pasli-beyin'deki "Ollama bge-m3" ifadeleri eskimiş: gömme arka ucu İbnü'n-Nedîm Gömme'dir (`ibnun-nedim`, eski adı bge-embed-rs; 127.0.0.1:11434, Open Notebook'la paylaşılır; `FIHRIST_BGE_URL` ile değişir).
 - "Değişiklik günlüğü" iki anlamda kullanılıyordu: Dal'ın JSONL günlüğü (ADR 0002) ve tetikleyicilerin yazdığı `fihrist_degisiklik` tablosu (ADR 0003). Çözüm: ilki **Değişiklik günlüğü**, ikincisi **Bildirim günlüğü**. Tablo adı değişmedi.
 - "Yazar" iki anlamda kullanılıyordu — veriye yazan YZ oturumu ve bir eserin yazarı. Çözüm: ilki **Özne**, ikincisi **Yazar** (Kişi'nin rolü). "Kişi = yazar mı, taraf mı?" sorusu da böylece kapandı: ikisi de Kişi'nin rolüdür, biri ötekinin yerini almaz.

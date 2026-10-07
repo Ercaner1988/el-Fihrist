@@ -11,7 +11,7 @@
 //   Ingilizce/ad sorgularinda iyi (0.86-0.99), Turkce sorgu → Ingilizce belgede
 //   cokuyor: 'kok neden bulma yontemi' gommede 1., siralayicida 20.; olumlu Turkce
 //   sorgularin en iyi olasiligi 0.002-0.07, olumsuzlarinki <=0.002 → tek esikle
-//   "uygun arac yok" DENEMEZ. Yeniden siralayici kodu bge-embed-rs'e girmedi.
+//   "uygun arac yok" DENEMEZ. Yeniden siralayici kodu ibnun-nedim'e (eski bge-embed-rs) girmedi.
 //   Bu betik Laya ince ayari (ya da baska bir siralayici) ayni govdeyle olculurken
 //   yeniden kullanilir: rerank_url'yi degistirmek yeter.
 //
