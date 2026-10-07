@@ -59,6 +59,12 @@
 * Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`
 * Sistem Veritabanı: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
+##### Kurulum (Windows, mcp-tools)
+`kur.ps1`, `ibnunnedim.exe` ile `fihrist-izle.exe`'yi derleyip `%USERPROFILE%\Desktop\mcp-tools\el-fihrist` klasörüne kopyalar. Oradaki eski kopya `<ad>.<zaman>.eski.exe` olarak saklanır, yeni kopya SHA-256 ile doğrulanır. Kopya çalışıyorsa durur; `-Durdur` önce kapatır. Veritabanları yerinde kalır (`Desktop\hermes yazılım\kutuphane` ya da `TURSO_DB_PATH`). MCP yapılandırması `mcp-tools\el-fihrist\ibnunnedim.exe mcp`'yi gösterir.
+```powershell
+./kur.ps1
+```
+
 ##### Derleme ve Çalıştırma
 ```bash
 # Workspace release derlemesi
