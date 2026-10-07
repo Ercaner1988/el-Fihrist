@@ -60,9 +60,9 @@ const ORTAK_DB_ADI: &str = "kutup_ortak.db";
 struct Args {
     #[command(subcommand)]
     command: Command,
-    /// Yalnız `search` için ek kanal: yerel dosya İÇERİĞİ (Tikel Gözlemci), ayrı bölüm. tikeld kapalıysa bunu söyler.
-    #[arg(long, global = true)]
-    tikel: bool,
+    /// Yalnız `search` için ek kanal: yerel dosya İÇERİĞİ (Nazar), ayrı bölüm. nazard kapalıysa bunu söyler.
+    #[arg(long, global = true, alias = "tikel")]
+    nazar: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -210,8 +210,8 @@ struct Kural {
     etiketler: Vec<String>,
 }
 
-// Karakter sınırında kırpma: tek tanım fihrist-tikel'de (tikel bölümü de kullanır).
-use fihrist_tikel::{ek_bolum, kisalt};
+// Karakter sınırında kırpma: tek tanım fihrist-nazar'da (nazar bölümü de kullanır).
+use fihrist_nazar::{ek_bolum, kisalt};
 
 /// Kütüphaneyi bul: önce `TURSO_DB_PATH`, sonra çalışma dizini, sonra bilinen yeri.
 ///
@@ -1409,7 +1409,7 @@ async fn main() -> Result<()> {
                 );
                 println!("   {}", kisalt(&s.aciklama, 140));
             }
-            print!("{}", ek_bolum(args.tikel, &query, limit).await);
+            print!("{}", ek_bolum(args.nazar, &query, limit).await);
         }
         Command::List { kategori } => {
             let skills = list_all_skills(&conn, kategori.as_deref()).await?;

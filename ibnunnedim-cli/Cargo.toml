@@ -22,7 +22,7 @@ onnx = ["dep:fastembed"]
 turso.workspace = true
 katla.workspace = true
 terim.workspace = true
-fihrist-tikel.workspace = true
+fihrist-nazar.workspace = true
 # MCP kaynak aboneliği (resources, ADR 0004).
 fihrist-kaynak.workspace = true
 # Altın set ayrıştırma/puanlama (`olcum` komutu); sandık sınırı için ayrı crate.

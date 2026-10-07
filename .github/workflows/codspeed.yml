@@ -44,16 +44,16 @@ jobs:
           mv "$GITHUB_WORKSPACE/_kardesler/katla" "$(dirname "$GITHUB_WORKSPACE")/katla"
           rmdir "$GITHUB_WORKSPACE/_kardesler"
 
-      # tikel-gozlemci gizli depo (`../tikel-gozlemci`, fihrist-tikel path bağımlılığı).
-      - name: Checkout tikel-gozlemci (path bağımlılığı, gizli depo)
+      # Nazar gizli depo (`../Nazar`, fihrist-nazar path bağımlılığı).
+      - name: Checkout Nazar (path bağımlılığı, gizli depo)
         uses: actions/checkout@v4
         with:
-          repository: Ercaner1988/tikel-gozlemci
-          path: _kardesler/tikel-gozlemci
+          repository: Ercaner1988/Nazar
+          path: _kardesler/Nazar
           ssh-key: ${{ secrets.TIKEL_GOZLEMCI_DEPLOY_KEY }}
-      - name: tikel-gozlemci'yi ../ konumuna taşı
+      - name: Nazar'ı ../ konumuna taşı
         run: |
-          mv "$GITHUB_WORKSPACE/_kardesler/tikel-gozlemci" "$(dirname "$GITHUB_WORKSPACE")/tikel-gozlemci"
+          mv "$GITHUB_WORKSPACE/_kardesler/Nazar" "$(dirname "$GITHUB_WORKSPACE")/Nazar"
           rmdir "$GITHUB_WORKSPACE/_kardesler"
 
       - name: Setup rust toolchain, cache and cargo-codspeed binary

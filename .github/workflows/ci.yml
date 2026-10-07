@@ -45,11 +45,11 @@ jobs:
         with:
           repository: Ercaner1988/katla
           path: katla
-      - name: Checkout tikel-gozlemci (path bagimliligi, gizli depo)
+      - name: Checkout Nazar (path bagimliligi, gizli depo)
         uses: actions/checkout@v4
         with:
-          repository: Ercaner1988/tikel-gozlemci
-          path: tikel-gozlemci
+          repository: Ercaner1988/Nazar
+          path: Nazar
           ssh-key: ${{ secrets.TIKEL_GOZLEMCI_DEPLOY_KEY }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -79,11 +79,11 @@ jobs:
         with:
           repository: Ercaner1988/katla
           path: katla
-      - name: Checkout tikel-gozlemci (path bagimliligi, gizli depo)
+      - name: Checkout Nazar (path bagimliligi, gizli depo)
         uses: actions/checkout@v4
         with:
-          repository: Ercaner1988/tikel-gozlemci
-          path: tikel-gozlemci
+          repository: Ercaner1988/Nazar
+          path: Nazar
           ssh-key: ${{ secrets.TIKEL_GOZLEMCI_DEPLOY_KEY }}
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -95,7 +95,7 @@ jobs:
           workspaces: "el-Fihrist -> target"
           cache-on-failure: true
       - name: Check formatting
-        # --all gezerdi kardeş depoyu (tikel-gozlemci) ve onun yerel yollarını da; CI'da yok.
+        # --all gezerdi kardeş depoyu (Nazar) ve onun yerel yollarını da; CI'da yok.
         run: cargo fmt -- --check
       # `--all-features` BİLEREK YOK: `onnx` feature'ı `fastembed` → `ort`
       # ağacını çeker ve derleme sırasında ONNX Runtime ikilisini İNDİRİR.

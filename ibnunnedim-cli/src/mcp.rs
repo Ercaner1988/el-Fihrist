@@ -80,7 +80,7 @@ pub fn araclar() -> Value {
                     "query": {"type": "string", "description": "Aranacak metin"},
                     "limit": {"type": "integer", "description": "Azami sonuç sayısı (varsayılan 10)"},
                     "tam_metin": {"type": "boolean", "description": "true ise her sonucun tam metnini (SKILL.md gövdesi) de döndür; varsayılan false"},
-                    "tikel": {"type": "boolean", "description": "true ise yerel dosya İÇERİĞİ sonuçları (Tikel Gözlemci) ayrı bölüm olarak eklenir; tikeld kapalıysa bölüm bunu söyler. Varsayılan false"}
+                    "nazar": {"type": "boolean", "description": "true ise yerel dosya İÇERİĞİ sonuçları (Nazar) ayrı bölüm olarak eklenir; nazard kapalıysa bölüm bunu söyler. Varsayılan false"}
                 },
                 "required": ["query"]
             }
@@ -192,7 +192,7 @@ async fn arac_calistir(
             let q = metin(p, "query")?;
             let limit = p.get("limit").and_then(Value::as_u64).unwrap_or(10) as usize;
             let tam = p.get("tam_metin").and_then(Value::as_bool).unwrap_or(false);
-            let tikel = p.get("tikel").and_then(Value::as_bool).unwrap_or(false);
+            let nazar = p["nazar"] == true || p["tikel"] == true; // tikel: eski ad, istemci kırılmasın
             let (skills, toplam, sure, kanal) =
                 search_skills(conn, &q, limit, crate::gomme::Cekirdek::default())
                     .await
@@ -216,7 +216,7 @@ async fn arac_calistir(
                     kanal.ad()
                 },
                 serde_json::to_string_pretty(&cikti).map_err(|e| e.to_string())?,
-                fihrist_tikel::ek_bolum(tikel, &q, limit).await
+                fihrist_nazar::ek_bolum(nazar, &q, limit).await
             ))
         }
         "list_skills" => {

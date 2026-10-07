@@ -1,0 +1,10 @@
+[package]
+name = "fihrist-nazar"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "el-Fihrist ek arama kanalı: yerel dosya İÇERİĞİ (Nazar, nazard). Kendi kayıt/yetenek aramasının yerine geçmez"
+
+[dependencies]
+nazar-istemci.workspace = true
+tokio.workspace = true

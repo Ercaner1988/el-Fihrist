@@ -8,7 +8,7 @@ members = [
     "crates/terim",
     "crates/fihrist-tema",
     "crates/fihrist-canli",
-    "crates/fihrist-tikel",
+    "crates/fihrist-nazar",
     "crates/fihrist-kaynak",
     "crates/fihrist-olcum",
 ]
@@ -37,9 +37,9 @@ terim = { path = "crates/terim" }
 # baska depolardan git ile cekilince kardes yol (../kilim-tema) orada yok.
 kilim-tema = { git = "https://github.com/Ercaner1988/kilim-tema", rev = "a62bfc71227202fe1173b8f9d36aaa723fd5a12c" }
 fihrist-tema = { path = "crates/fihrist-tema" }
-# Tikel Gözlemci (yerel dosya içeriği araması). Kardeş repo: ../tikel-gozlemci
-tikel-istemci = { path = "../tikel-gozlemci/crates/tikel-istemci" }
-fihrist-tikel = { path = "crates/fihrist-tikel" }
+# Nazar (yerel dosya içeriği araması). Kardeş repo: ../Nazar
+nazar-istemci = { path = "../Nazar/crates/nazar-istemci" }
+fihrist-nazar = { path = "crates/fihrist-nazar" }
 fihrist-canli = { path = "crates/fihrist-canli" }
 fihrist-kaynak = { path = "crates/fihrist-kaynak" }
 fihrist-olcum = { path = "crates/fihrist-olcum" }

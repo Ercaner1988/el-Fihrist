@@ -1,15 +1,15 @@
-//! el-Fihrist ↔ Tikel Gözlemci: ek arama kanalı olarak yerel dosya İÇERİĞİ.
+//! el-Fihrist ↔ Nazar: ek arama kanalı olarak yerel dosya İÇERİĞİ.
 //!
 //! el-Fihrist'in kendi kayıt/yetenek/kural araması (BM25 + gömme) değişmez.
-//! Tikel sonuçları AYRI BÖLÜM olarak gelir, `harmanla` ile karıştırılmaz: iki
+//! Nazar sonuçları AYRI BÖLÜM olarak gelir, `harmanla` ile karıştırılmaz: iki
 //! kanalın derlemi başka (yetenek kaydı ↔ kullanıcı dosyalarının paragrafları),
 //! skorlar aynı ölçekte değil; "normalize ağırlıklı karışım" bu yüzden anlamsız.
 //!
-//! `tikeld` kapalıysa SESSİZ DÜŞÜLMEZ: bölüm "KAPALI" nedenini söyler.
+//! `nazard` kapalıysa SESSİZ DÜŞÜLMEZ: bölüm "KAPALI" nedenini söyler.
 
+use nazar_istemci::nazar_proto::{AramaYaniti, Duzey, Sorgu};
+use nazar_istemci::Istemci;
 use std::time::Duration;
-use tikel_istemci::tikel_proto::{AramaYaniti, Duzey, Sorgu};
-use tikel_istemci::Istemci;
 
 /// Daemon kabul edip yanıtlamazsa arama sonsuza dek asılmasın.
 const ZAMAN_ASIMI: Duration = Duration::from_secs(8);
@@ -30,7 +30,7 @@ pub fn kisalt(s: &str, azami: usize) -> String {
     format!("{kesik}… (+{} karakter)", toplam - azami)
 }
 
-/// Tikel'e anlam destekli arama sorar. Hata metni "tikel kapalı" nedenidir.
+/// Nazar'a anlam destekli arama sorar. Hata metni "nazar kapalı" nedenidir.
 pub async fn ara(sorgu: &str, limit: usize) -> Result<AramaYaniti, String> {
     let mut s = Sorgu::yeni(sorgu, Duzey::Anlam);
     s.limit = limit;
@@ -44,7 +44,7 @@ pub async fn ara(sorgu: &str, limit: usize) -> Result<AramaYaniti, String> {
     }
 }
 
-/// Arama çıktısına eklenecek bölüm; `acik` değilse boş (tikel'e hiç sorulmaz).
+/// Arama çıktısına eklenecek bölüm; `acik` değilse boş (nazar'a hiç sorulmaz).
 pub async fn ek_bolum(acik: bool, sorgu: &str, limit: usize) -> String {
     if !acik {
         return String::new();
@@ -52,9 +52,9 @@ pub async fn ek_bolum(acik: bool, sorgu: &str, limit: usize) -> String {
     bolum_metni(ara(sorgu, limit).await)
 }
 
-/// Saf: tikel yanıtını (ya da hatasını) insan-okunur bölüme çevirir.
+/// Saf: nazar yanıtını (ya da hatasını) insan-okunur bölüme çevirir.
 pub fn bolum_metni(yanit: Result<AramaYaniti, String>) -> String {
-    const BASLIK: &str = "\nYEREL DOSYA İÇERİĞİ (tikel)";
+    const BASLIK: &str = "\nYEREL DOSYA İÇERİĞİ (nazar)";
     let y = match yanit {
         Ok(y) => y,
         Err(neden) => {
@@ -69,7 +69,7 @@ pub fn bolum_metni(yanit: Result<AramaYaniti, String>) -> String {
         y.sure_ms
     );
     for u in &y.uyarilar {
-        s.push_str(&format!("  ! tikel uyarı: {u}\n"));
+        s.push_str(&format!("  ! nazar uyarı: {u}\n"));
     }
     for r in &y.sonuclar {
         s.push_str(&format!(
@@ -93,7 +93,7 @@ pub fn bolum_metni(yanit: Result<AramaYaniti, String>) -> String {
 #[cfg(test)]
 mod testler {
     use super::*;
-    use tikel_istemci::tikel_proto::AramaSonucu;
+    use nazar_istemci::nazar_proto::AramaSonucu;
 
     #[test]
     fn kapali_daemon_nedenini_soyler() {
@@ -119,7 +119,7 @@ mod testler {
         };
         let m = bolum_metni(Ok(y));
         assert!(m.contains("1 sonuç · 4 ms"), "{m}");
-        assert!(m.contains("! tikel uyarı: anlam kanalı kapalı"), "{m}");
+        assert!(m.contains("! nazar uyarı: anlam kanalı kapalı"), "{m}");
         assert!(
             m.contains(r"[harman 0.800] C:\tez\kuhn.pdf (yaprak 12)"),
             "{m}"
