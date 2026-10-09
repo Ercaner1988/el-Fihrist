@@ -820,9 +820,9 @@ const DEPO_TABLOSU: &str = "CREATE TABLE depolar (\
 ///    bir sonraki bağlantıda "no such table" diye reddetti, oysa satır
 ///    oradaydı ve SQLite 85 satırı okuyordu.
 ///
-/// Bu fts5 tabloları ölü değil — Python tarafı (`ibnunnedim_cli.py`,
-/// `ilkleme.py`) onları kullanıyor, silinemezler. O yüzden depo satırları
-/// hiç oraya girmiyor: kendi dosyasında Turso indeksi de şemayı da düzgün
+/// Bu fts5 tabloları ölü değil — Python tarafı (`ibnunnedim_cli.py`) onları
+/// kullanıyor; ADR 0006 göçünden (2026-10-09) beri `kutup_arama.db`'de, `ATTACH`
+/// ile. Depo satırları ana kataloğa hiç girmiyor: kendi dosyasında Turso indeksi de şemayı da düzgün
 /// yönetiyor ve `yetenekler` ile fts5 hiç dokunulmamış kalıyor.
 ///
 /// `yarat` false ise dosya yoksa `None` döner — arama yanında çöp dosya

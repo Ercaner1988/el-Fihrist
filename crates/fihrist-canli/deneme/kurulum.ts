@@ -2,7 +2,8 @@
 //
 // Kullanım (depo kökünden, önce: cargo build --release -p fihrist-canli --bins --examples):
 //   bun crates/fihrist-canli/deneme/kurulum.ts --dizin "<kutuphane dizini>" \
-//       [--ikili target/release] [--zopay <zopay ikilisi> --docx <bir .docx>] [--gercek]
+//       [--ikili target/release] [--zopay <kesfuzzunun ikilisi> --docx <bir .docx>] [--gercek]
+// (--zopay: KESFUZZUNUN_HAFIZA_DB'yi tanıyan kesfuzzunun.exe; eski zopay.exe onu tanımaz, gerçek hafızaya yazar.)
 //
 // İki evre. PROVA (varsayılan): gerçek dosyalar salt-okunur `.backup` ile kopyalanır,
 // her şey kopyada koşar; gerçek dosyalara yalnız okumak için dokunulur (sha256,
@@ -91,6 +92,12 @@ function sqlite_yaz(yol: string, sql: string) {
     db.close();
   }
 }
+// `kos`un eşzamansızı: çocuk koşarken olay döngüsü (izleyici okuyucusu) çalışmayı sürdürür.
+async function kos_async(komut: string[]): Promise<{ kod: number; cikti: string }> {
+  const p = Bun.spawn(komut, { stdout: "pipe", stderr: "pipe" });
+  const [o, e] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text(), p.exited]);
+  return { kod: p.exitCode ?? -1, cikti: (o + e).trim() };
+}
 function gunluk(yol: string, tablo: string): { no: number; islem: string; anahtar: string }[] {
   return ro_sorgu(yol, `SELECT no, islem, anahtar FROM fihrist_degisiklik WHERE tablo = '${tablo}' ORDER BY no`);
 }
@@ -151,32 +158,39 @@ async function kur_ve_olc(db: string, etiket: string, kayitlar: boolean) {
     ["s", "turso", `DELETE FROM ${DENEME} WHERE id = 1`],
   ];
   for (const [islem, motor, sql] of yazislar) {
+    // Gecikme yazışın BİTİŞİNDEN ölçülür: `yaz` ayrı süreçtir, açılışı ve şema okuması bellek
+    // darken 1-8 sn sürdü (ölçüldü, 2026-10-10, %98 bellek); başlangıçtan ölçmek o süreyi
+    // izleyiciye yüklüyor, 2 sn'yi aşınca hiç beklemeden "-1 ms" veriyordu. Yazış süresi ayrıca yazılır.
+    // `yaz` eşzamansız koşar (kos_async): spawnSync olay döngüsünü durdurur, izleyicinin satırları
+    // yazış bitene dek damgalanmaz ve gecikme hep ~0 görünürdü (yargıç yeniden üretti).
     let t0 = Date.now();
     if (motor === "turso") {
       // Turso dosyayı bloklamayan fcntl kilidiyle açar; fihrist-izle o anda yokluyorsa yazış
       // "Locking error" alır (ölçüldü: 250 ms yoklamada 200 yazışın 5'i). Sınırlı yeniden deneme,
       // sayısı rapora yazılır.
-      let r = kos([YAZ, db, sql]);
+      let r = await kos_async([YAZ, db, sql]);
       let tekrar = 0;
       while (r.kod !== 0 && /Locking error/.test(r.cikti) && tekrar < 5) {
         await Bun.sleep(50);
         t0 = Date.now();
-        r = kos([YAZ, db, sql]);
+        r = await kos_async([YAZ, db, sql]);
         tekrar++;
       }
       const ayrinti = tekrar ? `${tekrar} kilit çakışmasından sonra${r.cikti ? `; ${r.cikti}` : ""}` : r.cikti;
       if (!adim(`${etiket}: Turso yazışı (${islem})`, r.kod === 0, ayrinti)) dur("Turso yazışı başarısız");
     } else sqlite_yaz(db, sql);
+    const bitti = Date.now();
     let gecikme = -1;
-    while (Date.now() - t0 < 2000) {
+    while (Date.now() - bitti < 2000) {
       const s = k.satirlar.find((x) => x.s.split("\t")[2] === DENEME && x.s.split("\t")[3] === islem);
       if (s) {
-        gecikme = s.t - t0;
+        // Bildirim yazıcı süreci kapanmadan gelmiş olabilir (commit önce, çıkış sonra): 0 sayılır.
+        gecikme = Math.max(0, s.t - bitti);
         break;
       }
       await Bun.sleep(20);
     }
-    adim(`${etiket}: ${islem} (${motor}) 1 sn içinde bildirildi`, gecikme >= 0 && gecikme < 1000, `${gecikme} ms`);
+    adim(`${etiket}: ${islem} (${motor}) yazıştan sonra 1 sn içinde bildirildi`, gecikme >= 0 && gecikme < 1000, `${gecikme < 0 ? "2 sn'de gelmedi" : `${gecikme} ms`}; yazış ${bitti - t0} ms`);
   }
   const py = kos([WIN ? "python" : "python3", "-I", "-c", `import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute("INSERT INTO ${DENEME} VALUES (2,'py')"); c.commit()`, db]);
   if (py.kod === 0) {
@@ -200,13 +214,15 @@ async function kur_ve_olc(db: string, etiket: string, kayitlar: boolean) {
   adim(`${etiket}: öldür, yaz (5), başlat`, deneme_e >= 5 && tekil && yeni.length >= 5, `gelen ${gelen.length}, yeni ${yeni.length}, deneme eklemesi ${deneme_e}, tekrar ${tekil ? 0 : "VAR"}`);
 
   // zopay (yalnız kayitlar, yalnız kopyada): kayıt yazan komut günlüğe düşmeli.
+  // Keşfü'z-Zunûn adıyla (2026-10-07) hafıza `kesfuzzunun_*` tablolarına yazar; eski `zopay_*`
+  // tablolarına artık yazılmaz. Başarılı koşu da "hafıza: <yol>" basar: yalnız hata satırı kırmızıdır.
   if (kayitlar && !gercek_evre) {
     if (zopay && docx) {
-      const once = gunluk(db, "zopay_kosular").length;
-      const r = kos([zopay, "sayfa-dogrula", docx], { ZOPAY_HAFIZA_DB: db });
-      const sonra = gunluk(db, "zopay_kosular").length;
+      const once = gunluk(db, "kesfuzzunun_kosular").length;
+      const r = kos([zopay, "sayfa-dogrula", docx], { KESFUZZUNUN_HAFIZA_DB: db });
+      const sonra = gunluk(db, "kesfuzzunun_kosular").length;
       rapor.push("", "```text", r.cikti.split("\n").slice(-15).join("\n"), "```", "");
-      adim(`${etiket}: zopay sayfa-dogrula (ZOPAY_HAFIZA_DB=kopya) bozulmadı`, r.kod === 0 && !/hafıza:/.test(r.cikti) && sonra > once, `çıkış ${r.kod}, zopay_kosular günlüğü ${once} → ${sonra}`);
+      adim(`${etiket}: zopay sayfa-dogrula (KESFUZZUNUN_HAFIZA_DB=kopya) bozulmadı`, r.kod === 0 && !/hafıza( açılamadı|: .*(yazılamadı|okunamadı))/.test(r.cikti) && sonra > once, `çıkış ${r.kod}, kesfuzzunun_kosular günlüğü ${once} → ${sonra}`);
     } else rapor.push(`- ölçülmedi: zopay denemesi (--zopay ve --docx verilmedi)`);
   }
 

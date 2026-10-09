@@ -18,20 +18,23 @@ pub const RENDER: eframe::Renderer = eframe::Renderer::Glow;
 pub const RENDER: eframe::Renderer = eframe::Renderer::Wgpu;
 
 /// Pencere simgesi (kök dizindeki `icon.png`'nin 256 px'i; `.mcpb` paketi de onu taşır).
-fn pencere_simgesi() -> eframe::egui::IconData {
-    eframe::icon_data::from_png_bytes(include_bytes!("../ikon-256.png"))
-        .expect("ikon-256.png geçerli bir PNG")
+/// Çözülemezse None: pencere simgesiz açılır, çökmez (geçerliliği `testler` denetler).
+fn pencere_simgesi() -> Option<eframe::egui::IconData> {
+    eframe::icon_data::from_png_bytes(include_bytes!("../ikon-256.png")).ok()
 }
 
 /// Masaüstü uygulamasını başlatır
 pub fn run_fihrist_gui() -> eframe::Result {
+    let mut viewport = eframe::egui::ViewportBuilder::default()
+        .with_inner_size([900.0, 600.0])
+        .with_min_inner_size([400.0, 300.0])
+        .with_transparent(false)
+        .with_title("el-Fihrist");
+    if let Some(simge) = pencere_simgesi() {
+        viewport = viewport.with_icon(std::sync::Arc::new(simge));
+    }
     let native_options = eframe::NativeOptions {
-        viewport: eframe::egui::ViewportBuilder::default()
-            .with_inner_size([900.0, 600.0])
-            .with_min_inner_size([400.0, 300.0])
-            .with_transparent(false)
-            .with_title("el-Fihrist")
-            .with_icon(std::sync::Arc::new(pencere_simgesi())),
+        viewport,
         renderer: RENDER,
         // vsync: eframe 0.36'da alan yok; wgpu varsayılanı PresentMode::AutoVsync.
         multisampling: 0,
@@ -51,7 +54,9 @@ pub fn run_fihrist_gui() -> eframe::Result {
 mod tests {
     #[test]
     fn pencere_simgesi_cozulur() {
-        let s = super::pencere_simgesi();
+        let Some(s) = super::pencere_simgesi() else {
+            panic!("ikon-256.png çözülemedi: pencere simgesiz açılır");
+        };
         assert_eq!((s.width, s.height), (256, 256));
     }
 }

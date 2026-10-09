@@ -112,3 +112,14 @@ Göç betiği (sentetik, Linux, Bun 1.4.2):
 - Python okurlarının fts5 sorguları (`ibnunnedim_cli.py`, `ilkleme.py`) görülmedi. Rowid korunduğu için `rowid` birleştirmeleri göçten sonra da çalışır; kalıcı olması için `id`'ye çevrilmeleri önerilir.
 - Yeniden kurulum süresi gerçek metinle ve Windows'ta ölçülmedi. Göç betiği Windows'ta koşulmadı; `bun:sqlite`'ın orada fts5 taşıdığını betik ön koşulda sınar.
 - Bugünkü olası indeks bozulmasının (2026-09-10'daki `wrong # of entries in index`) göçten önce SQLite `REINDEX` ile onarılıp onarılamayacağı ölçülmedi. G-1 provası katalog sağlığını raporluyor; göç ancak sağlıklı bir kopyadan başlar.
+
+## Uygulama (2026-10-09, gerçek dosyada)
+
+Göç Windows'ta, gerçek `hermes yazılım\kutuphane` dizininde prova + `--gercek` ile koştu: kırmızı 0, uyarı 2. Rapor ve yedek: `kutuphane\arama-gocu-20261009\`.
+
+- Gerçek şema: iki tablo da **dış içerikli** (`yetenekler_fts` ← `yetenekler`, 147 satır; `kod_hazinesi_fts` ← `kod_hazinesi`, 11 satır, `id` UNINDEXED eklendi). fts5'e dokunan tetikleyici **yoktu**: eski dizin hiçbir yazışla güncellenmiyordu.
+- Uyarılar bunu doğruladı: `kod_hazinesi_fts`'te "altin" eski dizinde 0, kaynaktan kurulan yenide 1 satır (eski dizin bayattı).
+- İki dosyada `integrity_check` ok; `ATTACH` ile nitelemesiz `MATCH` çalışıyor; Turso 0.8.2 göçten sonra 7/7 tabloyu görüyor.
+- `ibnunnedim info` artık "FTS5 indeks: YOK (tanımlı; arama saf Rust BM25 ile yapılıyor)" diyor (yukarıdaki açık nokta).
+- Python okuru `ibnunnedim_cli.py` `kutup_arama.db`'yi `ATTACH` ediyor (fts sorgusu "rust" için 33 satır, `database_list` = main, arama). `--tazele` çağrısı eklenmedi; tetikleyici olmadığından eski dizin de hiç taze değildi, bayatlık göçle gelmedi.
+- `ilkleme.py` ve `toplu_aktarim.py` kataloğu `os.remove` ile silip `kutup_kutuphane.sql`'deki fts5'li şemayı kurar, yani bu göçü geri alır ve veriyi yok eder. İkisinin başına koşulsuz `SystemExit` kondu (yolları zaten ölü OneDrive yoluydu; kimse çağırmıyor).
