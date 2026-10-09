@@ -277,7 +277,7 @@ for (const ad of [...IZLENEN, KATALOG]) {
 }
 if (WIN) {
   const t = kos(["tasklist", "/FO", "CSV", "/NH"]);
-  const acik = ["ibnunnedim.exe", "zopay.exe", "fihrist-izle.exe", "python.exe"].filter((a) => t.cikti.toLowerCase().includes(`"${a}"`));
+  const acik = ["ibnunnedim.exe", "zopay.exe", "kesfuzzunun.exe", "fihrist-izle.exe", "python.exe"].filter((a) => t.cikti.toLowerCase().includes(`"${a}"`));
   if (!adim("dosyaları tutan süreç yok", acik.length === 0, acik.join(", ") || "yok")) dur(`önce durdurun (mevcut başlatma betikleriyle): ${acik.join(", ")}`);
 } else rapor.push("- ölçülmedi: açık süreç denetimi (yalnız Windows'ta)");
 

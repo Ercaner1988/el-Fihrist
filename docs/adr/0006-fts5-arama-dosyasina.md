@@ -2,7 +2,7 @@
 
 **Durum: kabul edildi** (Ercan, 2026-10-07). Göç betiği: `crates/fihrist-canli/deneme/arama-gocu.ts`.
 
-ADR 0005 bir sonucu açık bıraktı: Turso'nun bir sonraki sürümü `kutup_kutuphane.db`'yi açmayacak. Dosyada fts5 sanal tabloları var (`yetenekler_fts`, `kod_hazinesi_fts`). `main` (#9350) modülü bilinmeyen sanal tablo içeren dosyayı salt-okur kipte bile reddediyor. Bugünkü 0.8.2 dosyayı açıyor ama şemayı ilk fts5 satırında kesiyor (ADR 0003, bulgu 3). fts5'ten sonra gelen tablolar, indeksler ve tetikleyiciler Turso'ya görünmüyor; bu yüzden ana katalog izlenemiyor. Bu iki sorun aynı kökten geliyor. Python tarafı (`ibnunnedim_cli.py`, `ilkleme.py`) fts5 tablolarını kullanıyor (`ibnunnedim-cli/src/main.rs:823-826`, 2026-09-10); Rust tarafı aramayı bellekte BM25 ile yapıyor ve fts5'i okumuyor.
+ADR 0005 bir sonucu açık bıraktı: Turso'nun bir sonraki sürümü `kutup_kutuphane.db`'yi açmayacak. Dosyada fts5 sanal tabloları var (`yetenekler_fts`, `kod_hazinesi_fts`). `main` (#9350) modülü bilinmeyen sanal tablo içeren dosyayı salt-okur kipte bile reddediyor. Bugünkü 0.8.2 dosyayı açıyor ama şemayı ilk fts5 satırında kesiyor (ADR 0003, bulgu 3). fts5'ten sonra gelen tablolar, indeksler ve tetikleyiciler Turso'ya görünmüyor; bu yüzden ana katalog izlenemiyor. Bu iki sorun aynı kökten geliyor. Python tarafı (`ibnunnedim_cli.py`, `ilkleme.py`) fts5 tablolarını kullanıyor (`ibnunnedim-cli/src/main.rs:823-826`, 2026-09-10; 2026-10-10: `ilkleme.py` devre dışı, bkz. Uygulama); Rust tarafı aramayı bellekte BM25 ile yapıyor ve fts5'i okumuyor.
 
 ## Karar
 
@@ -83,7 +83,7 @@ Göç betiği (sentetik, Linux, Bun 1.4.2):
 
 - **Turso'nun kendi fts dizini** (`CREATE INDEX … USING fts`, tantivy). Ölçüldü:
   - Dizin bir kez kurulunca SQLite dosyayı **hiç açamıyor**: `malformed database schema (__turso_internal_fts_dir_…) - near "USING": syntax error`. Python sqlite3 de sqlite3 CLI de aynı hatayı verdi.
-  - Kataloğa SQLite ile yazanlar var (`ilkleme.py`, `toplu_aktarim.py`; ADR 0003, bulgu 1). Hepsi kırılırdı.
+  - Kataloğa SQLite ile yazanlar var (`ilkleme.py`, `toplu_aktarim.py`; ADR 0003, bulgu 1). Hepsi kırılırdı. (2026-10-10: ikisi de devre dışı, bkz. Uygulama.)
   - Özellik deneysel; `experimental_index_method` bayrağı ister.
   - Türkçe katlama yok: `ışık` araması `IŞIK`'ı ve `Işık`'ı bulmuyor; `istanbul` araması `İstanbul`'u bulmuyor.
 
@@ -101,16 +101,16 @@ Göç betiği (sentetik, Linux, Bun 1.4.2):
   - MCP kaynak beyaz listesine `kutup_kutuphane` eklenebilir (ayrı iş, ADR 0004 güncellenir).
   - Tetikleyiciler kurulunca Python'un yazışı da `json_array` ister (SQLite ≥ 3.38; ADR 0003).
 - Bir sonraki Turso yükseltmesi ancak bu göç gerçek dosyada yapıldıktan sonra yapılır.
-- `ibnunnedim info` ve MCP çıktısındaki fts satırı (`fts_indeksleri`) ana dosyaya bakıyor; göçten sonra "yok" der. Ya arama dosyasına bakacak biçimde değişir ya da satır kaldırılır.
+- `ibnunnedim info` ve MCP çıktısındaki fts satırı (`fts_indeksleri`) ana dosyaya bakıyor; göçten sonra "yok" der. Ya arama dosyasına bakacak biçimde değişir ya da satır kaldırılır. (2026-10-10: hâlâ açık; `info` "YOK (tanımlı; …)" diyor, Python `info` ise "ETKİN".)
 - CONTEXT.md'ye **Arama dosyası** terimi girdi.
 - Python okurları `ATTACH`'a çevrilir ve aramadan önce `--tazele` çağırır (Python kodu bu depoda değil; Ercan).
 - Türkçe katlama bu kararın konusu değil. fts5 `unicode61` bugün de `ışık` ile `IŞIK`'ı eşlemiyor (ölçüldü). Arapça harekeleri de kaldırmıyor: `remove_diacritics` yalnız Latin harflerine işler. Harekesiz `كتاب` sorgusu harekeli metinde 0 satır, harekeli `كِتَابُ` 21 satır buldu (ölçüldü). Göç tokenizer'ı aynen taşır, bu durumu değiştirmez.
 
 ## Ölçülmedi ya da görülmedi
 
-- Gerçek `kutup_kutuphane.db`'nin şeması. fts5'in dış içerikli olup olmadığı, tetikleyicileri ve sütunları görülmedi; yukarıdaki sentetik dosya bir tahmindir. Göç betiği bu yüzden şemayı dosyadan okur.
-- Python okurlarının fts5 sorguları (`ibnunnedim_cli.py`, `ilkleme.py`) görülmedi. Rowid korunduğu için `rowid` birleştirmeleri göçten sonra da çalışır; kalıcı olması için `id`'ye çevrilmeleri önerilir.
-- Yeniden kurulum süresi gerçek metinle ve Windows'ta ölçülmedi. Göç betiği Windows'ta koşulmadı; `bun:sqlite`'ın orada fts5 taşıdığını betik ön koşulda sınar.
+- Gerçek `kutup_kutuphane.db`'nin şeması. fts5'in dış içerikli olup olmadığı, tetikleyicileri ve sütunları görülmedi; yukarıdaki sentetik dosya bir tahmindir. Göç betiği bu yüzden şemayı dosyadan okur. → Ölçüldü (2026-10-09): ikisi de dış içerikli, fts5 tetikleyicisi yok (bkz. Uygulama).
+- Python okurlarının fts5 sorguları (`ibnunnedim_cli.py`, `ilkleme.py`) görülmedi. Rowid korunduğu için `rowid` birleştirmeleri göçten sonra da çalışır; kalıcı olması için `id`'ye çevrilmeleri önerilir. → `ibnunnedim_cli.py` görüldü: `rowid IN (SELECT rowid FROM yetenekler_fts …)`, ATTACH ile çalışıyor (bkz. Uygulama); `id`'ye çevrilmedi.
+- Yeniden kurulum süresi gerçek metinle ve Windows'ta ölçülmedi. Göç betiği Windows'ta koşulmadı; `bun:sqlite`'ın orada fts5 taşıdığını betik ön koşulda sınar. → Windows'ta koştu (2026-10-09; bun:sqlite fts5 ön koşulu geçti); yeniden kurulum süresi ölçülmedi.
 - Bugünkü olası indeks bozulmasının (2026-09-10'daki `wrong # of entries in index`) göçten önce SQLite `REINDEX` ile onarılıp onarılamayacağı ölçülmedi. G-1 provası katalog sağlığını raporluyor; göç ancak sağlıklı bir kopyadan başlar.
 
 ## Uygulama (2026-10-09, gerçek dosyada)
