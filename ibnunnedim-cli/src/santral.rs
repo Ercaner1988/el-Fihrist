@@ -56,9 +56,15 @@ impl Santral {
         }
     }
 
+    /// Kutulara kilit. Başka iş parçacığı kilit altında çöktüyse (zehirli kilit) içerik yine
+    /// kullanılır: kutular düz bir eşlemdir, yarım kalmış bir değişmez yoktur.
+    fn kilit(&self) -> std::sync::MutexGuard<'_, HashMap<String, Vec<SantralMesaji>>> {
+        self.kutular.lock().unwrap_or_else(|z| z.into_inner())
+    }
+
     /// Mesajı hedefin gelen kutusuna bırakır.
     pub fn ilet(&self, mesaj: SantralMesaji) -> usize {
-        let mut k = self.kutular.lock().unwrap();
+        let mut k = self.kilit();
         let kuyruk = k.entry(mesaj.hedef.clone()).or_default();
         kuyruk.push(mesaj);
         kuyruk.len()
@@ -66,19 +72,19 @@ impl Santral {
 
     /// Bir oturuma ait birikmiş mesajları çeker ve kutuyu boşaltır.
     pub fn yokla(&self, oturum: &str) -> Vec<SantralMesaji> {
-        let mut k = self.kutular.lock().unwrap();
+        let mut k = self.kilit();
         k.remove(oturum).unwrap_or_default()
     }
 
     /// Bekleyen toplam mesaj sayısı.
     pub fn bekleyen_sayisi(&self, oturum: &str) -> usize {
-        let k = self.kutular.lock().unwrap();
+        let k = self.kilit();
         k.get(oturum).map(|v| v.len()).unwrap_or(0)
     }
 
     /// Aktif kutusu olan tüm oturumları listeler.
     pub fn aktif_hedefler(&self) -> Vec<String> {
-        let k = self.kutular.lock().unwrap();
+        let k = self.kilit();
         k.keys().cloned().collect()
     }
 }
