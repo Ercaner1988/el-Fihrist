@@ -28,21 +28,7 @@
 
 * **純粋なRust BM25検索エンジン:** トルコ語の文字折りたたみ（例: `İ→i`, `I→ı`, `Ş→ş`）を備えた、メモリ内高速関連性検索エンジン。
 * **Turso / SQLiteコア:** 140以上の外部スキルと組み込みのRustツールを含むポータブルSQLiteデータベース（`kutup_kutuphane.db`）。
-* **マルチクレートアーキテクチャ:** CLI (`ibnunnedim-cli`) と Core (`hermes-tools-core`) の2クレートから成るモジュール式Rust構造。
-* **厳格な検証 (Maşa Döngüsü):** D1-D3およびR2のGolden衛生検査ゲートによる、安全なコードおよびレポート監査。
-
-##### 🧰 利用可能なスキルとシステムモジュール
-`hermes-tools-core` ライブラリは10個のモジュールを提供する。これらはRust APIであり、`ibnunnedim` バイナリはこのクレートに依存していない — バイナリのコマンドについては後述の使用方法を参照。
-1. **citation:** Zopayインフラストラクチャを介した、論文や学術テキストの引用の検証と報告（`verify_citations`）。
-2. **codebase:** ソースコードの要約、ファイルコンテンツ分析、および品質検出（`analyze_file_content`）。
-3. **docx:** MS Word XMLレイヤーの解析と低フォームファクタ読み取り（`extract_paragraphs_from_xml`）。
-4. **extract:** ノイズのないクリーンなHTMLおよびコンテンツ抽出用のスマートエンジン（`html_ayikla`）。
-5. **masa_dongusu:** 4つのゲート（D1、D2、D3、R2）による検証とゲート移行レポート（`validate_masa_dongusu`）。
-6. **multilingual:** 標準化された並列多言語READMEエンジンと品質コントローラ。
-7. **router:** エージェントサブネットのルーティング、グラフ上のダイクストラ最短経路、およびEdge/Route管理（`RouteResult`）。
-8. **rules_checker:** 高度なRustソースコードルールおよび品質基準の監査（`check_rust_code_rules`）。
-9. **session:** 通信セッションおよびメモリデータ向けの部分文字列一致検索モジュール（`search_session`）。
-10. **skillopt:** エージェントスキルの自律的な進化。スコアリングマトリクスを利用したソフト/ハードゲートの検証コマンドインフラストラクチャ。
+* **マルチクレートアーキテクチャ:** CLI (`ibnunnedim-cli`) と `crates/` 配下の9つのライブラリクレートから成るモジュール式Rust構造（下記参照）。
 
 ---
 
@@ -50,7 +36,7 @@
 
 ##### 依存関係とクレート
 * **Rust 1.63+** (Edition 2021)
-* ワークスペースクレート: `ibnunnedim-cli`, `crates/hermes-tools-core`
+* ワークスペースクレート: `ibnunnedim-cli`, `crates/fihrist-core`, `crates/fihrist-storage`, `crates/fihrist-gui`, `crates/fihrist-canli`, `crates/fihrist-nazar`, `crates/fihrist-kaynak`, `crates/fihrist-olcum`, `crates/fihrist-tema`, `crates/terim`
 * システムデータベース: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### ビルドと実行

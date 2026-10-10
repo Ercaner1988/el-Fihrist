@@ -658,7 +658,7 @@ mod testler {
         assert!(matches!(ayristir(r#"{"id":1}"#), Istek::Bozuk(_)));
     }
 
-    /// Açılan araç adları `plugin.json`'daki listeyle aynı kalmalı; kayarsa
+    /// Açılan araç adları istemcilere bildirilen listeyle aynı kalmalı; kayarsa
     /// istemci var olmayan aracı çağırır.
     #[test]
     fn arac_adlari_beklenen_liste() {

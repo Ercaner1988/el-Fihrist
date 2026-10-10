@@ -28,21 +28,7 @@
 
 * **Pure Rust BM25 Search Engine:** High-speed, in-memory relevance search engine with Turkish character folding (e.g., `İ→i`, `I→ı`, `Ş→ş`).
 * **Turso / SQLite Core:** A portable SQLite database (`kutup_kutuphane.db`) containing 140+ external skills and built-in Rust tools.
-* **Multi-Crate Architecture:** A two-crate modular Rust structure: CLI (`ibnunnedim-cli`) and Core (`hermes-tools-core`).
-* **Strict Verification (Maşa Döngüsü):** Secure code and report auditing via D1-D3 and R2 Golden hygiene inspection gates.
-
-##### 🧰 Available Skills and System Modules
-The `hermes-tools-core` LIBRARY provides 10 modules. These are Rust APIs; the `ibnunnedim` binary does not depend on this crate — see the Usage section below for the binary's commands.
-1. **citation:** Citation verification and reporting for theses and academic texts via Zopay infrastructure (`verify_citations`).
-2. **codebase:** Source code summarization, file content analysis, and quality detection (`analyze_file_content`).
-3. **docx:** MS Word XML layer parsing and low-form-factor reading (`extract_paragraphs_from_xml`).
-4. **extract:** Smart, noise-free, clean HTML and content extraction engine (`html_ayikla`).
-5. **masa_dongusu:** 4-gate validation (D1, D2, D3, R2) and gate transition reporting (`validate_masa_dongusu`).
-6. **multilingual:** Standardized, parallel multi-language README engine and quality controller.
-7. **router:** Agent subnet routing, Dijkstra shortest-path over a graph, and Edge/Route management (`RouteResult`).
-8. **rules_checker:** Advanced Rust source code rules and quality standards auditor (`check_rust_code_rules`).
-9. **session:** Substring-match search module for communication sessions and memory data (`search_session`).
-10. **skillopt:** Autonomous evolution of agent skills; Soft/Hard gates validation command infrastructure with scoring matrix.
+* **Multi-Crate Architecture:** A modular Rust structure: the CLI (`ibnunnedim-cli`) plus nine library crates under `crates/` (listed below).
 
 ---
 
@@ -50,7 +36,7 @@ The `hermes-tools-core` LIBRARY provides 10 modules. These are Rust APIs; the `i
 
 ##### Dependencies & Crates
 * **Rust 1.63+** (Edition 2021)
-* Workspace Crates: `ibnunnedim-cli`, `crates/hermes-tools-core`
+* Workspace Crates: `ibnunnedim-cli`, `crates/fihrist-core`, `crates/fihrist-storage`, `crates/fihrist-gui`, `crates/fihrist-canli`, `crates/fihrist-nazar`, `crates/fihrist-kaynak`, `crates/fihrist-olcum`, `crates/fihrist-tema`, `crates/terim`
 * System Database: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### Build and Execution

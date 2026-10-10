@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "ibnunnedim-cli",
-    "crates/hermes-tools-core",
     "crates/fihrist-core",
     "crates/fihrist-storage",
     "crates/fihrist-gui",

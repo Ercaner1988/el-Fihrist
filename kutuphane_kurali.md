@@ -34,7 +34,7 @@ Kütüphane dışındaki kaynakların kullanılabilmesi için **açık onay** ge
 ibnunnedim search "rust"
 
 # Geçerli (açık onay varsa): Dışarıdaki kopyayı kullan
-user: "Lütfen dışarıdaki hermes-tools-core klasöründeki kodu doğrudan çalıştır"
+user: "Lütfen dışarıdaki şu klasördeki kodu doğrudan çalıştır"
 ```
 
 ---

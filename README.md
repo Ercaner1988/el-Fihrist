@@ -38,21 +38,7 @@
 
 * **Saf Rust BM25 Arama Motoru:** Bellek içi, Türkçe karakter katlamalı (`İ→i`, `I→ı`, `Ş→ş`) yüksek hızlı alaka arama motoru.
 * **Turso / SQLite Çekirdeği:** 140+ dış yetenek verisi, yerleşik Rust araçları ve taşınabilir SQLite veritabanı (`kutup_kutuphane.db`).
-* **Çoklu Crate Mimarisi:** CLI (`ibnunnedim-cli`) ve Core (`hermes-tools-core`) olmak üzere iki crate'lik modüler Rust yapısı.
-* **Katı Doğrulama (Maşa Döngüsü):** D1-D3 ve R2 Altın hygiene denetim kapılarıyla güvenli kod ve tekmil denetimi.
-
-##### 🧰 Mevcut Yetenekler ve Sistem Modülleri
-`hermes-tools-core` KÜTÜPHANESİNDE 10 modül bulunur. Bunlar Rust API'sidir; `ibnunnedim` ikilisi bu crate'e bağlı değildir — ikilinin komutları için aşağıdaki Kullanım bölümüne bakın.
-1. **citation:** Tez ve akademik metinler için Zopay altyapısıyla atıf doğrulama ve raporlama (`verify_citations`).
-2. **codebase:** Kaynak kod özetleme, dosya içerik analizi ve kalite tespiti (`analyze_file_content`).
-3. **docx:** MS Word XML katmanı ayrıştırma ve düşük form faktörlü okuma (`extract_paragraphs_from_xml`).
-4. **extract:** Akıllı, gürültüden arındırılmış temiz HTML ve içerik ayıklama motoru (`html_ayikla`).
-5. **masa_dongusu:** 4 kapılı doğrulama (D1, D2, D3, R2) ve kapı geçiş raporu (`validate_masa_dongusu`).
-6. **multilingual:** Standartlara oturtulmuş, paralel çok dilli README motoru ve kalite denetleyicisi.
-7. **router:** Ajan alt ağları yönlendirmesi, çizge üzerinde Dijkstra ile en kısa yol ve Edge/Route yönetimi (`RouteResult`).
-8. **rules_checker:** Gelişmiş Rust kaynak kod kuralları, kalite standartları denetçisi (`check_rust_code_rules`).
-9. **session:** İletişim oturumları ve hafıza verileri için alt dize (substring) eşleşmeli arama modülü (`search_session`).
-10. **skillopt:** Ajan yeteneklerinin otonom evrimi, puan matrisli doğrulama (Soft/Hard gates) komut altyapısı.
+* **Çoklu Crate Mimarisi:** CLI (`ibnunnedim-cli`) ve `crates/` altındaki dokuz kütüphane crate'inden oluşan modüler Rust yapısı (aşağıda listeli).
 
 ---
 
@@ -60,7 +46,7 @@
 
 ##### Bağımlılıklar & Crate'ler
 * **Rust 1.63+** (Edition 2021)
-* Workspace Crate'leri: `ibnunnedim-cli`, `crates/hermes-tools-core`
+* Workspace Crate'leri: `ibnunnedim-cli`, `crates/fihrist-core`, `crates/fihrist-storage`, `crates/fihrist-gui`, `crates/fihrist-canli`, `crates/fihrist-nazar`, `crates/fihrist-kaynak`, `crates/fihrist-olcum`, `crates/fihrist-tema`, `crates/terim`
 * Sistem Veritabanı: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### Kurulum (Windows, mcp-tools)

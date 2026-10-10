@@ -28,21 +28,7 @@
 
 * **纯 Rust BM25 搜索引擎:** 高速的内存相关性搜索引擎，支持土耳其语字符折叠（例如 `İ→i`, `I→ı`, `Ş→ş`）。
 * **Turso / SQLite 核心:** 便携式 SQLite 数据库（`kutup_kutuphane.db`），包含 140 多个外部技能及内置 Rust 工具。
-* **多 Crate 架构:** 由 CLI (`ibnunnedim-cli`) 和 Core (`hermes-tools-core`) 两个 crate 组成的模块化 Rust 结构。
-* **严格验证机制 (Maşa Döngüsü):** 通过 D1-D3 门和 R2 黄金卫生检查门实现安全的代码和报告审计。
-
-##### 🧰 可用技能与系统模块
-`hermes-tools-core` 库提供 10 个模块。它们是 Rust API；`ibnunnedim` 二进制文件并不依赖该 crate —— 二进制文件的命令请参见下方的使用章节。
-1. **citation:** 基于 Zopay 基础设施的论文和学术文本引用验证与报告（`verify_citations`）。
-2. **codebase:** 源代码摘要、文件内容分析和质量检测（`analyze_file_content`）。
-3. **docx:** MS Word XML 层解析及轻量级读取（`extract_paragraphs_from_xml`）。
-4. **extract:** 智能、无噪音的纯净 HTML 和内容提取引擎（`html_ayikla`）。
-5. **masa_dongusu:** 4 门验证机制（D1、D2、D3、R2）及门过渡报告（`validate_masa_dongusu`）。
-6. **multilingual:** 标准化的并行多语言 README 引擎和质量控制器。
-7. **router:** 智能体子网路由、图上的 Dijkstra 最短路径以及 Edge/Route 管理（`RouteResult`）。
-8. **rules_checker:** 高级 Rust 源代码规则与质量标准审核器（`check_rust_code_rules`）。
-9. **session:** 针对通信会话和内存数据的子串匹配搜索模块（`search_session`）。
-10. **skillopt:** 智能体技能自治进化模块；带评分矩阵的软/硬门验证命令基础设施。
+* **多 Crate 架构:** 由 CLI (`ibnunnedim-cli`) 和 `crates/` 下九个库 crate 组成的模块化 Rust 结构（见下文）。
 
 ---
 
@@ -50,7 +36,7 @@
 
 ##### 依赖与 Crates
 * **Rust 1.63+** (Edition 2021)
-* 工作区 Crates: `ibnunnedim-cli`, `crates/hermes-tools-core`
+* 工作区 Crates: `ibnunnedim-cli`, `crates/fihrist-core`, `crates/fihrist-storage`, `crates/fihrist-gui`, `crates/fihrist-canli`, `crates/fihrist-nazar`, `crates/fihrist-kaynak`, `crates/fihrist-olcum`, `crates/fihrist-tema`, `crates/terim`
 * 系统数据库: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### 构建与执行

@@ -28,21 +28,7 @@
 
 * **محرك بحث BM25 بلغة Rust الخالصة:** محرك بحث في الذاكرة عالي السرعة للملاءمة، مع دعم طي الأحرف التركية (مثل `İ→i`, `I→ı`, `Ş→ş`).
 * **نواة Turso / SQLite:** قاعدة بيانات محمولة (`kutup_kutuphane.db`) تحتوي على أكثر من 140 مهارة خارجية وأدوات Rust مدمجة.
-* **بنية متعددة الوحدات (Multi-Crate):** هيكل Rust معياري من وحدتين: CLI (`ibnunnedim-cli`) وCore (`hermes-tools-core`).
-* **تحقق صارم (Maşa Döngüsü):** بوابات فحص ذهبية (D1-D3 و R2) لضمان سلامة الأكواد والتقارير.
-
-##### 🧰 المهارات المتاحة ووحدات النظام
-توفّر مكتبة `hermes-tools-core` عشر وحدات. هذه واجهات برمجية بلغة Rust؛ ولا يعتمد الملف التنفيذي `ibnunnedim` على هذه الوحدة — راجع قسم الاستخدام أدناه لمعرفة أوامر الملف التنفيذي.
-1. **citation:** التحقق من الاقتباسات وإعداد التقارير للرسائل والنصوص الأكاديمية عبر البنية التحتية Zopay (`verify_citations`).
-2. **codebase:** تلخيص الكود المصدري، تحليل محتوى الملفات، واكتشاف الجودة (`analyze_file_content`).
-3. **docx:** تحليل طبقة MS Word XML وقراءتها بنموذج مبسط (`extract_paragraphs_from_xml`).
-4. **extract:** محرك استخراج محتوى ذكي لـ HTML نظيف وخالي من الضوضاء (`html_ayikla`).
-5. **masa_dongusu:** آليات تحقق من 4 بوابات (D1، D2، D3، R2) وتقرير انتقال البوابات (`validate_masa_dongusu`).
-6. **multilingual:** محرك README متوازي متعدد اللغات ومراقب جودة بمعايير قياسية.
-7. **router:** توجيه الشبكات الفرعية للوكلاء، أقصر مسار بخوارزمية Dijkstra على الرسم البياني، وإدارة المسارات (Edge/Route) (`RouteResult`).
-8. **rules_checker:** مدقق متقدم لقواعد كود Rust ومعايير الجودة (`check_rust_code_rules`).
-9. **session:** وحدة بحث بمطابقة السلاسل الفرعية لجلسات الاتصال وبيانات الذاكرة (`search_session`).
-10. **skillopt:** التطور المستقل لمهارات الوكلاء؛ بنية أوامر للتحقق عبر البوابات (Soft/Hard gates) مع مصفوفة نقاط.
+* **بنية متعددة الوحدات (Multi-Crate):** هيكل Rust معياري: واجهة الأوامر (`ibnunnedim-cli`) وتسع وحدات مكتبية ضمن `crates/` (مذكورة أدناه).
 
 ---
 
@@ -50,7 +36,7 @@
 
 ##### التبعيات والوحدات (Crates)
 * **Rust 1.63+** (الإصدار 2021)
-* وحدات مساحة العمل: `ibnunnedim-cli`, `crates/hermes-tools-core`
+* وحدات مساحة العمل: `ibnunnedim-cli`, `crates/fihrist-core`, `crates/fihrist-storage`, `crates/fihrist-gui`, `crates/fihrist-canli`, `crates/fihrist-nazar`, `crates/fihrist-kaynak`, `crates/fihrist-olcum`, `crates/fihrist-tema`, `crates/terim`
 * قاعدة بيانات النظام: `Turso SQLite 0.8.2` (`kutup_kutuphane.db`)
 
 ##### البناء والتشغيل

@@ -80,7 +80,7 @@ Kütüphanede bulunan bir yetenek/dosya ile **dışarıdaki** (daha gelişmiş/�
 
 ```bash
 # Dışardaki dosyaları tespit et ve kütüphanedeki sürümle karşılaştır
-ibnunnedim check-duplicates --path "crates/hermes-tools-core"
+ibnunnedim check-duplicates --path "<dış klasör>"
 
 # Sonuç: skillopt_kuyrugu'na eklenecekler listesi
 ```
