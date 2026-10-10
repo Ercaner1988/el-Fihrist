@@ -6,7 +6,7 @@
 //! arayüzlerde bulunduğu `arayuzler`de tutulur (CodSpeed, penpot, agent-reach
 //! üç arayüzde birden kurulu).
 //!
-//! Hermes'in `yetenekler` tablosuna YAZILMAZ: ana kütüphanede fts5 var ve
+//! Ana `yetenekler` tablosuna YAZILMAZ: ana kütüphanede fts5 var ve
 //! Turso onu uygulamadığı için yeni satırı indeks görmüyor (bkz. main.rs
 //! `depo_baglan`). Satırlar kendi yan dosyasına gider (`kutup_ortak.db`).
 //!

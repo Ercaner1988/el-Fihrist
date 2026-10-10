@@ -8,6 +8,6 @@ formats = ["json", "report", "html"]
 
 [llm]
 provider = "openai_compatible"
-model = "hermes-kas"
+model = "kas"
 openai_compatible_base_url = "http://localhost:20128/v1"
-openai_compatible_api_key = "<HERMES_CUSTOM_LOCALHOST_20128_API_KEY buraya>"
+openai_compatible_api_key = "<CUSTOM_LOCALHOST_20128_API_KEY buraya>"

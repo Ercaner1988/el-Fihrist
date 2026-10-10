@@ -99,7 +99,7 @@ mod testler {
         let m1 = SantralMesaji {
             id: "1".into(),
             gonderen: "oturum-a".into(),
-            hedef: "hermes".into(),
+            hedef: "ajan-1".into(),
             konu: "gorev-devri".into(),
             icerik: "testleri kos".into(),
             zaman_ms: 100,
@@ -107,7 +107,7 @@ mod testler {
         let m2 = SantralMesaji {
             id: "2".into(),
             gonderen: "oturum-b".into(),
-            hedef: "hermes".into(),
+            hedef: "ajan-1".into(),
             konu: "bilgi".into(),
             icerik: "graf hazir".into(),
             zaman_ms: 200,
@@ -115,16 +115,16 @@ mod testler {
 
         assert_eq!(s.ilet(m1.clone()), 1);
         assert_eq!(s.ilet(m2.clone()), 2);
-        assert_eq!(s.bekleyen_sayisi("hermes"), 2);
+        assert_eq!(s.bekleyen_sayisi("ajan-1"), 2);
         assert_eq!(s.bekleyen_sayisi("oturum-a"), 0);
 
-        let alinan = s.yokla("hermes");
+        let alinan = s.yokla("ajan-1");
         assert_eq!(alinan.len(), 2);
         assert_eq!(alinan[0].konu, "gorev-devri");
         assert_eq!(alinan[1].konu, "bilgi");
 
         // İkinci yoklamada kutu boş olmalı
-        assert_eq!(s.bekleyen_sayisi("hermes"), 0);
-        assert!(s.yokla("hermes").is_empty());
+        assert_eq!(s.bekleyen_sayisi("ajan-1"), 0);
+        assert!(s.yokla("ajan-1").is_empty());
     }
 }

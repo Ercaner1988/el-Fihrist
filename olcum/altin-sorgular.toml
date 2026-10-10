@@ -114,7 +114,7 @@ beklenen = ["manim-video"]
 
 # ============================================================================
 # ÖBEK (d) — ORTAK KATALOG (F1, 2026-09-25)
-# Hermes kataloğunda OLMAYAN, `arayuz-tara` ile gelen kayıtlar: Claude Code
+# Ana katalogda OLMAYAN, `arayuz-tara` ile gelen kayıtlar: Claude Code
 # yetenekleri (kapatılmış 140'tan biri dahil: scanpy), Antigravity eklenti
 # yetenekleri ve MCP araçları. Sorgular kimlikler görüldükten SONRA yazıldı;
 # ad sorguya konmadı, yine de bir kolaylık payı olabilir.

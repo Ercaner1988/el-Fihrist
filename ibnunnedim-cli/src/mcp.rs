@@ -68,7 +68,7 @@ pub fn hata(id: &Value, kod: i64, mesaj: &str) -> Value {
     json!({"jsonrpc": "2.0", "id": id, "error": {"code": kod, "message": mesaj}})
 }
 
-/// Açılan araçlar. `plugin.json`'daki `hermes.tools` listesiyle aynı adlar.
+/// Açılan MCP araçları.
 pub fn araclar() -> Value {
     json!([
         {
@@ -156,7 +156,7 @@ pub fn araclar() -> Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "hedef": {"type": "string", "description": "Hedef oturum kimliği veya rol (örn: 'hermes', 'claude-code', 'nazar', 'hepsi')"},
+                    "hedef": {"type": "string", "description": "Hedef oturum kimliği veya rol (örn: 'claude-code', 'nazar', 'hepsi')"},
                     "konu": {"type": "string", "description": "Mesajın konusu veya eylem türü (örn: 'is-devri', 'bilgi', 'soru')"},
                     "icerik": {"type": "string", "description": "İletilecek mesaj metni veya JSON yükü"}
                 },
