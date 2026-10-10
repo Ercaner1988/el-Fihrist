@@ -2,7 +2,7 @@
 
 **Durum: kabul edildi** (Ercan, 2026-10-07). Göç betiği: `crates/fihrist-canli/deneme/arama-gocu.ts`.
 
-ADR 0005 bir sonucu açık bıraktı: Turso'nun bir sonraki sürümü `kutup_kutuphane.db`'yi açmayacak. Dosyada fts5 sanal tabloları var (`yetenekler_fts`, `kod_hazinesi_fts`). `main` (#9350) modülü bilinmeyen sanal tablo içeren dosyayı salt-okur kipte bile reddediyor. Bugünkü 0.8.2 dosyayı açıyor ama şemayı ilk fts5 satırında kesiyor (ADR 0003, bulgu 3). fts5'ten sonra gelen tablolar, indeksler ve tetikleyiciler Turso'ya görünmüyor; bu yüzden ana katalog izlenemiyor. Bu iki sorun aynı kökten geliyor. Python tarafı (`ibnunnedim_cli.py`, `ilkleme.py`) fts5 tablolarını kullanıyor (`ibnunnedim-cli/src/main.rs:823-826`, 2026-09-10; 2026-10-10: `ilkleme.py` devre dışı, bkz. Uygulama); Rust tarafı aramayı bellekte BM25 ile yapıyor ve fts5'i okumuyor.
+ADR 0005 bir sonucu açık bıraktı: Turso'nun bir sonraki sürümü `kutup_kutuphane.db`'yi açmayacak. Dosyada fts5 sanal tabloları var (`yetenekler_fts`, `kod_hazinesi_fts`). `main` (#9350) modülü bilinmeyen sanal tablo içeren dosyayı salt-okur kipte bile reddediyor. Bugünkü 0.8.2 dosyayı açıyor ama şemayı ilk fts5 satırında kesiyor (ADR 0003, bulgu 3). fts5'ten sonra gelen tablolar, indeksler ve tetikleyiciler Turso'ya görünmüyor; bu yüzden ana katalog izlenemiyor. Bu iki sorun aynı kökten geliyor. Python tarafı (`ibnunnedim_cli.py`, `ilkleme.py`) fts5 tablolarını kullanıyor (`ibnunnedim-cli/src/main.rs:823-826`, 2026-09-10; 2026-10-10: `ilkleme.py` silindi, bkz. Uygulama); Rust tarafı aramayı bellekte BM25 ile yapıyor ve fts5'i okumuyor.
 
 ## Karar
 
@@ -83,7 +83,7 @@ Göç betiği (sentetik, Linux, Bun 1.4.2):
 
 - **Turso'nun kendi fts dizini** (`CREATE INDEX … USING fts`, tantivy). Ölçüldü:
   - Dizin bir kez kurulunca SQLite dosyayı **hiç açamıyor**: `malformed database schema (__turso_internal_fts_dir_…) - near "USING": syntax error`. Python sqlite3 de sqlite3 CLI de aynı hatayı verdi.
-  - Kataloğa SQLite ile yazanlar var (`ilkleme.py`, `toplu_aktarim.py`; ADR 0003, bulgu 1). Hepsi kırılırdı. (2026-10-10: ikisi de devre dışı, bkz. Uygulama.)
+  - Kataloğa SQLite ile yazanlar var (`ilkleme.py`, `toplu_aktarim.py`; ADR 0003, bulgu 1). Hepsi kırılırdı. (2026-10-10: ikisi de silindi, bkz. Uygulama.)
   - Özellik deneysel; `experimental_index_method` bayrağı ister.
   - Türkçe katlama yok: `ışık` araması `IŞIK`'ı ve `Işık`'ı bulmuyor; `istanbul` araması `İstanbul`'u bulmuyor.
 
@@ -122,4 +122,4 @@ Göç Windows'ta, gerçek `hermes yazılım\kutuphane` dizininde prova + `--gerc
 - İki dosyada `integrity_check` ok; `ATTACH` ile nitelemesiz `MATCH` çalışıyor; Turso 0.8.2 göçten sonra 7/7 tabloyu görüyor.
 - `ibnunnedim info` artık "FTS5 indeks: YOK (tanımlı; arama saf Rust BM25 ile yapılıyor)" diyor (yukarıdaki açık nokta).
 - Python okuru `ibnunnedim_cli.py` `kutup_arama.db`'yi `ATTACH` ediyor (fts sorgusu "rust" için 33 satır, `database_list` = main, arama). `--tazele` çağrısı eklenmedi; tetikleyici olmadığından eski dizin de hiç taze değildi, bayatlık göçle gelmedi.
-- `ilkleme.py` ve `toplu_aktarim.py` kataloğu `os.remove` ile silip `kutup_kutuphane.sql`'deki fts5'li şemayı kurar, yani bu göçü geri alır ve veriyi yok eder. İkisinin başına koşulsuz `SystemExit` kondu (yolları zaten ölü OneDrive yoluydu; kimse çağırmıyor).
+- `ilkleme.py` ve `toplu_aktarim.py` kataloğu `os.remove` ile silip `kutup_kutuphane.sql`'deki fts5'li şemayı kurar, yani bu göçü geri alır ve veriyi yok eder. İkisinin başına önce koşulsuz `SystemExit` kondu, aynı gün Ercan'ın isteğiyle silindi (Geri Dönüşüm Kutusu'na; yolları zaten ölü OneDrive yoluydu, kimse çağırmıyordu). Yalnız onların okuduğu `kutup_kutuphane.sql` yerinde duruyor.

@@ -10,7 +10,7 @@ Yol haritası Görev 1 (`docs/gorev-canli-sorgu-ve-vektor-dizini.md`), Turso'nun
 
 ## Ölçülen bulgular (Turso 0.7.2)
 
-1. **CDC yalnız kendi bağlantısını görür.** `unstable_capture_data_changes_conn('full')` Turso'nun yazışını yakaladı, aynı dosyaya Python `sqlite3` ile yapılan yazışı kaçırdı. Kütüphaneyi Python betikleri de besliyor (`ilkleme.py`, `toplu_aktarim.py`; 2026-10-10'dan beri devre dışı, ADR 0006 Uygulama). Ayrıca CDC birincil anahtarı değil rowid'i kaydediyor.
+1. **CDC yalnız kendi bağlantısını görür.** `unstable_capture_data_changes_conn('full')` Turso'nun yazışını yakaladı, aynı dosyaya Python `sqlite3` ile yapılan yazışı kaçırdı. Kütüphaneyi Python betikleri de besliyor (`ilkleme.py`, `toplu_aktarim.py`; 2026-10-10'da silindi, ADR 0006 Uygulama). Ayrıca CDC birincil anahtarı değil rowid'i kaydediyor.
 2. **Tetikleyici her yazanı yakalar.** Turso, Python `sqlite3` ve sqlite3 CLI'nin yazışlarının hepsi, gerçek anahtarla günlüğe düştü. `integrity_check` sonucu `ok`.
 3. **fts5 şemayı keser.** Turso'da fts5 modülü yok. Şema yüklemesi ilk fts5 satırında hata alıyor, hata yutuluyor ve sonraki her şey yok sayılıyor. Sonradan eklenen günlük ve tetikleyiciler Turso'ya görünmüyor; Turso'nun o dosyaya yaptığı yazış tetikleyiciyi hatasız atlıyor. (2026-09-10'da `depolar` tablosunda görülen kesilmeyle aynı kök.)
 4. **Açık bağlantı bayat kalır.** Uzun süre açık tutulan bir Turso bağlantısı başka süreçlerin commit'lerini görmedi; taze açılan hemen gördü. Yeniden açmanın maliyeti 56 MB'lık `kutup_kayitlar.db`'de ~5 ms.
