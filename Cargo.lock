@@ -2837,6 +2837,7 @@ dependencies = [
  "fihrist-nazar",
  "fihrist-olcum",
  "katla",
+ "nazar-istemci",
  "reqwest",
  "serde",
  "serde_json",

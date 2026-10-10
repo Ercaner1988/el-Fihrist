@@ -25,6 +25,7 @@ mod hizmet;
 mod kayit;
 mod mcp;
 mod olay;
+mod santral;
 mod sicak;
 mod tara;
 

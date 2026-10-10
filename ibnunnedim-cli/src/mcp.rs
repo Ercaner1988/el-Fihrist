@@ -149,6 +149,37 @@ pub fn araclar() -> Value {
                     "etiket": {"type": "string", "description": "Süzülecek etiket; boşsa tümü"}
                 }
             }
+        },
+        {
+            "name": "santral_gonder",
+            "description": "Oturumlar arası veya Nazar/santral hattına doğrudan mesaj, durum veya iş devri (handoff) gönderir.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "hedef": {"type": "string", "description": "Hedef oturum kimliği veya rol (örn: 'hermes', 'claude-code', 'nazar', 'hepsi')"},
+                    "konu": {"type": "string", "description": "Mesajın konusu veya eylem türü (örn: 'is-devri', 'bilgi', 'soru')"},
+                    "icerik": {"type": "string", "description": "İletilecek mesaj metni veya JSON yükü"}
+                },
+                "required": ["hedef", "konu", "icerik"]
+            }
+        },
+        {
+            "name": "santral_yokla",
+            "description": "Bu oturuma veya belirtilen hedefe gelen bekleyen santral mesajlarını okur ve kutuyu boşaltır.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "hedef": {"type": "string", "description": "Yoklanacak oturum/rol (boş bırakılırsa bu oturumun kimliği)"}
+                }
+            }
+        },
+        {
+            "name": "santral_durum",
+            "description": "Santral operatörü ve Nazar durumunu görüntüler: aktif oturumlar, bekleyen mesajlar ve Nazar IPC durumu.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
         }
     ])
 }
@@ -186,6 +217,7 @@ async fn arac_calistir(
     conn: &Connection,
     ad: &str,
     p: &Value,
+    santral: &crate::santral::Santral,
 ) -> std::result::Result<String, String> {
     match ad {
         "search_skills" => {
@@ -288,6 +320,36 @@ async fn arac_calistir(
                 .map_err(|e| e.to_string())?;
             serde_json::to_string_pretty(&liste).map_err(|e| e.to_string())
         }
+        "santral_gonder" => {
+            let hedef = metin(p, "hedef")?;
+            let konu = metin(p, "konu")?;
+            let icerik = metin(p, "icerik")?;
+            let gonderen = "oturum".to_string();
+            let mesaj = crate::santral::SantralMesaji::yeni(gonderen, hedef.clone(), konu, icerik);
+            let kuyruk_boyu = santral.ilet(mesaj);
+            Ok(format!("Santral mesajı iletildi: hedef='{hedef}', bekleyen kuyruk boyu={kuyruk_boyu}"))
+        }
+        "santral_yokla" => {
+            let hedef = p.get("hedef").and_then(Value::as_str).unwrap_or("");
+            let gelenler = santral.yokla(hedef);
+            serde_json::to_string_pretty(&gelenler).map_err(|e| e.to_string())
+        }
+        "santral_durum" => {
+            let hedefler = santral.aktif_hedefler();
+            // Nazar daemon durumu denemesi
+            let nazar_durum = match nazar_istemci::Istemci::baglan_varsayilan().await {
+                Ok(mut istemci) => match istemci.durum().await {
+                    Ok(d) => format!("AÇIK (belge: {}, parça: {}, ocr: {})", d.belge_sayisi, d.parca_sayisi, d.ocr_kuyrugu),
+                    Err(e) => format!("BAĞLANDI ANCAK HATA: {e}"),
+                },
+                Err(e) => format!("KAPALI ({e})"),
+            };
+            Ok(format!(
+                "Santral Operatörü Durumu:\n- Aktif Mesaj Kutuları: {}\n- Nazar IPC (Named Pipe): {}",
+                if hedefler.is_empty() { "Yok (kuyruklar boş)".to_string() } else { hedefler.join(", ") },
+                nazar_durum
+            ))
+        }
         _ => Err(format!("bilinmeyen araç: {ad}")),
     }
 }
@@ -323,7 +385,13 @@ async fn kural_baglan_bekle() -> crate::Result<Connection> {
 }
 
 /// Bir isteği yanıta çevirir. `None` dönerse hiçbir şey yazılmaz.
-async fn ele_al(b: &mut Baglam, s: &mut Sicak, k: &mut Kaynaklar, istek: Istek) -> Option<Value> {
+async fn ele_al(
+    b: &mut Baglam,
+    s: &mut Sicak,
+    k: &mut Kaynaklar,
+    santral: &crate::santral::Santral,
+    istek: Istek,
+) -> Option<Value> {
     match istek {
         Istek::Bildirim => None,
         Istek::Bozuk(e) => Some(hata(&Value::Null, -32700, &format!("ayrıştırılamadı: {e}"))),
@@ -376,7 +444,7 @@ async fn ele_al(b: &mut Baglam, s: &mut Sicak, k: &mut Kaynaklar, istek: Istek) 
                         Some(kimlik) => tam_metin(&conn, &kimlik)
                             .await
                             .ok_or_else(|| format!("yetenek artık kütüphanede yok: {kimlik}")),
-                        None => arac_calistir(&conn, &ad, &arg).await,
+                        None => arac_calistir(&conn, &ad, &arg, santral).await,
                     },
                     Err(e) => Err(format!("kütüphane açılamadı: {e}")),
                 };
@@ -409,7 +477,20 @@ async fn ele_al(b: &mut Baglam, s: &mut Sicak, k: &mut Kaynaklar, istek: Istek) 
 
 /// Satır satır JSON-RPC konuşur — stdio'da da hizmetin TCP bağlantısında da
 /// AYNI döngü. Okuyucu bitince (EOF) döner.
-pub(crate) async fn konus<R, W>(okur: R, mut yazar: W, mut b: Baglam) -> crate::Result<()>
+pub(crate) async fn konus<R, W>(okur: R, yazar: W, b: Baglam) -> crate::Result<()>
+where
+    R: AsyncBufRead + Unpin,
+    W: AsyncWrite + Unpin,
+{
+    konus_santral(okur, yazar, b, crate::santral::Santral::yeni()).await
+}
+
+pub(crate) async fn konus_santral<R, W>(
+    okur: R,
+    mut yazar: W,
+    mut b: Baglam,
+    santral: crate::santral::Santral,
+) -> crate::Result<()>
 where
     R: AsyncBufRead + Unpin,
     W: AsyncWrite + Unpin,
@@ -441,7 +522,7 @@ where
             }
         };
         if !satir.trim().is_empty() {
-            if let Some(y) = ele_al(&mut b, &mut s, &mut k, ayristir(&satir)).await {
+            if let Some(y) = ele_al(&mut b, &mut s, &mut k, &santral, ayristir(&satir)).await {
                 yazar.write_all(format!("{y}\n").as_bytes()).await?;
             }
         }
@@ -526,7 +607,8 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
             yerel = true;
             geri.abort();
         }
-        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, &mut kaynaklar, ayristir(&satir)).await {
+        let santral = crate::santral::Santral::yeni();
+        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, &mut kaynaklar, &santral, ayristir(&satir)).await {
             let mut cikti = tokio::io::stdout();
             cikti.write_all(format!("{y}\n").as_bytes()).await?;
             cikti.flush().await?;
@@ -596,7 +678,10 @@ mod testler {
                 "tekmil_ver",
                 "kural_ekle",
                 "kural_ara",
-                "kural_listele"
+                "kural_listele",
+                "santral_gonder",
+                "santral_yokla",
+                "santral_durum"
             ]
         );
     }

@@ -32,8 +32,10 @@ pub fn port() -> u16 {
 pub async fn calistir() -> crate::Result<()> {
     let dinleyici = TcpListener::bind(("127.0.0.1", port())).await?;
     eprintln!("el-fihrist hizmeti dinliyor: 127.0.0.1:{}", port());
+    let santral = crate::santral::Santral::yeni();
     loop {
         let (akis, _) = dinleyici.accept().await?;
+        let s_klon = santral.clone();
         tokio::spawn(async move {
             let (okur, yazar) = akis.into_split();
             // Aktarıcı bağlamını göndermezse (doğrudan bağlanan istemci) kimlik bağlantıya ait.
@@ -42,7 +44,7 @@ pub async fn calistir() -> crate::Result<()> {
                 oturum: format!("uzak-{}", simdi_ms()),
                 proje: None,
             };
-            if let Err(e) = crate::mcp::konus(BufReader::new(okur), yazar, b).await {
+            if let Err(e) = crate::mcp::konus_santral(BufReader::new(okur), yazar, b, s_klon).await {
                 eprintln!("! hizmet bağlantısı: {e}");
             }
         });
