@@ -24,7 +24,12 @@ pub struct SantralMesaji {
 }
 
 impl SantralMesaji {
-    pub fn yeni(gonderen: impl Into<String>, hedef: impl Into<String>, konu: impl Into<String>, icerik: impl Into<String>) -> Self {
+    pub fn yeni(
+        gonderen: impl Into<String>,
+        hedef: impl Into<String>,
+        konu: impl Into<String>,
+        icerik: impl Into<String>,
+    ) -> Self {
         let zaman = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .map(|d| d.as_millis() as u64)

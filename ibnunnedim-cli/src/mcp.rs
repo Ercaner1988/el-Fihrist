@@ -327,7 +327,9 @@ async fn arac_calistir(
             let gonderen = "oturum".to_string();
             let mesaj = crate::santral::SantralMesaji::yeni(gonderen, hedef.clone(), konu, icerik);
             let kuyruk_boyu = santral.ilet(mesaj);
-            Ok(format!("Santral mesajı iletildi: hedef='{hedef}', bekleyen kuyruk boyu={kuyruk_boyu}"))
+            Ok(format!(
+                "Santral mesajı iletildi: hedef='{hedef}', bekleyen kuyruk boyu={kuyruk_boyu}"
+            ))
         }
         "santral_yokla" => {
             let hedef = p.get("hedef").and_then(Value::as_str).unwrap_or("");
@@ -339,7 +341,10 @@ async fn arac_calistir(
             // Nazar daemon durumu denemesi
             let nazar_durum = match nazar_istemci::Istemci::baglan_varsayilan().await {
                 Ok(mut istemci) => match istemci.durum().await {
-                    Ok(d) => format!("AÇIK (belge: {}, parça: {}, ocr: {})", d.belge_sayisi, d.parca_sayisi, d.ocr_kuyrugu),
+                    Ok(d) => format!(
+                        "AÇIK (belge: {}, parça: {}, ocr: {})",
+                        d.belge_sayisi, d.parca_sayisi, d.ocr_kuyrugu
+                    ),
                     Err(e) => format!("BAĞLANDI ANCAK HATA: {e}"),
                 },
                 Err(e) => format!("KAPALI ({e})"),
@@ -608,7 +613,15 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
             geri.abort();
         }
         let santral = crate::santral::Santral::yeni();
-        if let Some(y) = ele_al(&mut b, &mut yerel_sicak, &mut kaynaklar, &santral, ayristir(&satir)).await {
+        if let Some(y) = ele_al(
+            &mut b,
+            &mut yerel_sicak,
+            &mut kaynaklar,
+            &santral,
+            ayristir(&satir),
+        )
+        .await
+        {
             let mut cikti = tokio::io::stdout();
             cikti.write_all(format!("{y}\n").as_bytes()).await?;
             cikti.flush().await?;

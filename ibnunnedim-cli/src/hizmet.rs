@@ -44,7 +44,8 @@ pub async fn calistir() -> crate::Result<()> {
                 oturum: format!("uzak-{}", simdi_ms()),
                 proje: None,
             };
-            if let Err(e) = crate::mcp::konus_santral(BufReader::new(okur), yazar, b, s_klon).await {
+            if let Err(e) = crate::mcp::konus_santral(BufReader::new(okur), yazar, b, s_klon).await
+            {
                 eprintln!("! hizmet bağlantısı: {e}");
             }
         });
