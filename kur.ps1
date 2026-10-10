@@ -1,5 +1,5 @@
 ﻿# el-Fihrist ikililerini (ibnunnedim.exe, fihrist-izle.exe) masaüstündeki mcp-tools klasörüne kurar.
-# Veritabanları yerinde kalır (Desktop\hermes yazılım\kutuphane ya da TURSO_DB_PATH).
+# Katalog hedefin altındaki kutuphane\ klasöründe durur; betik ona dokunmaz (ya da TURSO_DB_PATH).
 # Yöntem altin-kapi G-20'dekidir: derle, çalışan kopyayı denetle, eski ikiliyi
 # yedekle, kopyala, SHA-256'nın kaynakla aynı olduğunu doğrula.
 #

@@ -42,7 +42,7 @@ impl TursoDb {
 /// Veritabanı dosya yolunu arar:
 /// 1. `TURSO_DB_PATH` ortam değişkeni
 /// 2. Yerel dosya `kutup_kutuphane.db`
-/// 3. Bilinen standart dizinler (`kutuphane/`, `hermes yazılım/kutuphane/`)
+/// 3. Göreli `kutuphane/`, sonra kurulum klasöründeki `kutuphane\`
 pub fn find_database_path() -> Result<PathBuf> {
     if let Ok(env_path) = std::env::var("TURSO_DB_PATH") {
         let p = PathBuf::from(env_path);
@@ -63,13 +63,15 @@ pub fn find_database_path() -> Result<PathBuf> {
         }
     }
 
-    // Windows OneDrive / Desktop fallback
-    if let Ok(userprofile) = std::env::var("USERPROFILE") {
-        let p = PathBuf::from(userprofile)
-            .join("Desktop")
-            .join("hermes yazılım")
-            .join("kutuphane")
-            .join("kutup_kutuphane.db");
+    // Kurulum klasörü: katalog ikilinin yanındaki `kutuphane\`; depodan çalışınca
+    // `kur.ps1`'in hedefi (`Desktop\mcp-tools\el-fihrist\kutuphane`).
+    let exe = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(PathBuf::from));
+    let kurulum = std::env::var_os("USERPROFILE")
+        .map(|h| PathBuf::from(h).join(r"Desktop\mcp-tools\el-fihrist"));
+    for kok in exe.into_iter().chain(kurulum) {
+        let p = kok.join("kutuphane").join("kutup_kutuphane.db");
         if p.exists() {
             return Ok(p);
         }

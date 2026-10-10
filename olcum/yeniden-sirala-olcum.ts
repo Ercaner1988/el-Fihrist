@@ -21,7 +21,7 @@ import { $ } from "bun";
 
 const RERANK = Bun.argv[2] ?? "http://127.0.0.1:11439/v1/rerank";
 const EXE = "C:/Users/buzbe/Desktop/mcp-tools/el-fihrist/ibnunnedim.exe";
-const KUTUP = "C:/Users/buzbe/Desktop/hermes yazılım/kutuphane";
+const KUTUP = "C:/Users/buzbe/Desktop/mcp-tools/el-fihrist/kutuphane";
 const DB = `${KUTUP}/kutup_kutuphane.db`, DEPO_DB = `${KUTUP}/kutup_depolar.db`; // depolar ayrı dosyada (main.rs DEPO_DB_ADI)
 const K = 20, LIMIT = 5;
 

@@ -39,6 +39,8 @@ use turso::{params, Builder, Connection};
 
 /// Kütüphane dosyasının adı. Aranacak yerler için `kutuphane_yolu`.
 const DB_ADI: &str = "kutup_kutuphane.db";
+/// Kurulum klasörü (`kur.ps1` hedefi), `USERPROFILE`'a göre; katalog altında `kutuphane\`.
+const KURULUM: &str = r"Desktop\mcp-tools\el-fihrist";
 
 /// Depo kataloğu — ana kütüphanenin yanında ayrı dosya. Gerekçesi `depo_baglan`.
 const DEPO_DB_ADI: &str = "kutup_depolar.db";
@@ -214,7 +216,7 @@ struct Kural {
 // Karakter sınırında kırpma: tek tanım fihrist-nazar'da (nazar bölümü de kullanır).
 use fihrist_nazar::{ek_bolum, kisalt};
 
-/// Kütüphaneyi bul: önce `TURSO_DB_PATH`, sonra çalışma dizini, sonra bilinen yeri.
+/// Kütüphaneyi bul: önce `TURSO_DB_PATH`, sonra çalışma dizini, sonra kurulum klasörü.
 ///
 /// Eski hâli çıplak bir göreli addı ve `Builder::new_local` olmayan dosyayı
 /// **yaratır**. Kütüphane dizini dışından çalıştırınca sessizce boş bir DB
@@ -243,16 +245,15 @@ fn kutuphane_yolu() -> std::result::Result<PathBuf, String> {
     if let Some(p) = aday(PathBuf::from(DB_ADI)) {
         return Ok(p);
     }
-    for kok in ["USERPROFILE", "HOME"] {
-        if let Ok(h) = std::env::var(kok) {
-            let p = PathBuf::from(h)
-                .join("Desktop")
-                .join("hermes yazılım")
-                .join("kutuphane")
-                .join(DB_ADI);
-            if let Some(p) = aday(p) {
-                return Ok(p);
-            }
+    // Katalog kurulumun içinde durur (`mcp-tools\el-fihrist\kutuphane`): önce ikilinin
+    // yanına, depodan (`target\release`) çalışınca da kurulum klasörüne bakılır.
+    let exe = std::env::current_exe()
+        .ok()
+        .and_then(|e| e.parent().map(PathBuf::from));
+    let kurulum = std::env::var_os("USERPROFILE").map(|h| PathBuf::from(h).join(KURULUM));
+    for kok in exe.into_iter().chain(kurulum) {
+        if let Some(p) = aday(kok.join("kutuphane").join(DB_ADI)) {
+            return Ok(p);
         }
     }
     Err(format!(
