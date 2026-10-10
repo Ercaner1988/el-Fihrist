@@ -2104,6 +2104,16 @@ name = "fihrist-olcum"
 version = "0.1.0"
 
 [[package]]
+name = "fihrist-santral"
+version = "0.1.0"
+dependencies = [
+ "nazar-istemci",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "fihrist-storage"
 version = "0.1.0"
 dependencies = [
@@ -2822,11 +2832,12 @@ dependencies = [
  "clap",
  "codspeed-divan-compat",
  "fastembed",
+ "fihrist-core",
  "fihrist-kaynak",
  "fihrist-nazar",
  "fihrist-olcum",
+ "fihrist-santral",
  "katla",
- "nazar-istemci",
  "reqwest",
  "serde",
  "serde_json",

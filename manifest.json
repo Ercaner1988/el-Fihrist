@@ -3,7 +3,7 @@
   "name": "el-fihrist",
   "display_name": "el-Fihrist",
   "version": "0.1.0",
-  "description": "Search and rate the local skills library (BM25, Turkish-aware) from an AI agent.",
+  "description": "Search the local skills library (bge-m3 semantic search, Turkish-aware BM25 fallback), rate skills, share agent rules and leave messages between sessions.",
   "author": {
     "name": "Ercan ER",
     "url": "https://github.com/Ercaner1988"
@@ -35,7 +35,7 @@
   "tools": [
     {
       "name": "search_skills",
-      "description": "Yetenek kütüphanesinde BM25 ile arama yapar (Türkçe katlamalı)."
+      "description": "Yetenek kütüphanesinde anlam araması (bge-m3); gömme sunucusu yoksa Türkçe katlamalı BM25."
     },
     {
       "name": "list_skills",
@@ -48,20 +48,44 @@
     {
       "name": "tekmil_ver",
       "description": "Bir yeteneğe 0-100 arası tekmil puanı yazar ve ortalamayı günceller. YAZMA işlemidir."
+    },
+    {
+      "name": "kural_ekle",
+      "description": "Paylaşılan kural kataloğuna bir kural ekler. YAZMA işlemidir."
+    },
+    {
+      "name": "kural_ara",
+      "description": "Aktif kurallarda alt-dize arar."
+    },
+    {
+      "name": "kural_listele",
+      "description": "Aktif kuralları listeler; istenirse tek etiketle sınırlar."
+    },
+    {
+      "name": "santral_gonder",
+      "description": "Başka bir oturumun santral kutusuna mesaj bırakır."
+    },
+    {
+      "name": "santral_yokla",
+      "description": "Bir santral kutusundaki mesajları okur ve kutuyu boşaltır."
+    },
+    {
+      "name": "santral_durum",
+      "description": "Mesaj bekleyen kutuları ve Nazar'ın açık olup olmadığını gösterir."
     }
   ],
   "user_config": {
     "turso_db_path": {
       "type": "file",
       "title": "Skills Database Path",
-      "description": "Kütüphane veritabanının yolu. Boş bırakılırsa çalışma dizininden ya da $HOME'dan otomatik aranır.",
+      "description": "Kütüphane veritabanının (kutup_kutuphane.db) yolu. Boş bırakılırsa çalışma dizininde, sonra ikilinin yanındaki kutuphane\\ klasöründe aranır.",
       "required": false
     }
   },
   "long_description": "el-Fihrist (ibnunnedim), yerel yetenek/skill kütüphanesinde Türkçe-katlamalı BM25 araması yapar, kategoriye göre listeler ve bir yeteneğe kullanım sonrası tekmil (0-100 puan) yazar.",
   "documentation": "https://github.com/Ercaner1988/el-Fihrist/blob/main/README.md",
   "support": "https://github.com/Ercaner1988/el-Fihrist/issues",
-  "tools_generated": false,
+  "tools_generated": true,
   "compatibility": {
     "claude_desktop": ">=0.10.0",
     "platforms": [

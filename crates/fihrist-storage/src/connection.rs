@@ -39,46 +39,7 @@ impl TursoDb {
     }
 }
 
-/// Veritabanı dosya yolunu arar:
-/// 1. `TURSO_DB_PATH` ortam değişkeni
-/// 2. Yerel dosya `kutup_kutuphane.db`
-/// 3. Göreli `kutuphane/`, sonra kurulum klasöründeki `kutuphane\`
+/// Veritabanı dosya yolunu arar; sıra CLI ile aynıdır (`fihrist_core::konum::kutuphane_yolu`).
 pub fn find_database_path() -> Result<PathBuf> {
-    if let Ok(env_path) = std::env::var("TURSO_DB_PATH") {
-        let p = PathBuf::from(env_path);
-        if p.exists() {
-            return Ok(p);
-        }
-    }
-
-    let candidates = [
-        PathBuf::from("kutup_kutuphane.db"),
-        PathBuf::from("../kutuphane/kutup_kutuphane.db"),
-        PathBuf::from("kutuphane/kutup_kutuphane.db"),
-    ];
-
-    for c in &candidates {
-        if c.exists() {
-            return Ok(c.clone());
-        }
-    }
-
-    // Kurulum klasörü: katalog ikilinin yanındaki `kutuphane\`; depodan çalışınca
-    // `kur.ps1`'in hedefi (`Desktop\mcp-tools\el-fihrist\kutuphane`).
-    let exe = std::env::current_exe()
-        .ok()
-        .and_then(|e| e.parent().map(PathBuf::from));
-    let kurulum = std::env::var_os("USERPROFILE")
-        .map(|h| PathBuf::from(h).join(r"Desktop\mcp-tools\el-fihrist"));
-    for kok in exe.into_iter().chain(kurulum) {
-        let p = kok.join("kutuphane").join("kutup_kutuphane.db");
-        if p.exists() {
-            return Ok(p);
-        }
-    }
-
-    Err(FihristError::Config(
-        "kutup_kutuphane.db dosyası bulunamadı. Lütfen TURSO_DB_PATH ortam değişkenini ayarlayın."
-            .into(),
-    ))
+    fihrist_core::konum::kutuphane_yolu().map_err(FihristError::Config)
 }

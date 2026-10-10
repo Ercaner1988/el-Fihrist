@@ -25,7 +25,6 @@ mod hizmet;
 mod kayit;
 mod mcp;
 mod olay;
-mod santral;
 mod sicak;
 mod tara;
 
@@ -37,10 +36,8 @@ use std::path::PathBuf;
 use std::time::Instant;
 use turso::{params, Builder, Connection};
 
-/// Kütüphane dosyasının adı. Aranacak yerler için `kutuphane_yolu`.
-const DB_ADI: &str = "kutup_kutuphane.db";
-/// Kurulum klasörü (`kur.ps1` hedefi), `USERPROFILE`'a göre; katalog altında `kutuphane\`.
-const KURULUM: &str = r"Desktop\mcp-tools\el-fihrist";
+// Kütüphanenin yeri tek tanımdan: CLI, MCP ve GUI aynı sırayla arar.
+use fihrist_core::konum::kutuphane_yolu;
 
 /// Depo kataloğu — ana kütüphanenin yanında ayrı dosya. Gerekçesi `depo_baglan`.
 const DEPO_DB_ADI: &str = "kutup_depolar.db";
@@ -166,8 +163,8 @@ enum Command {
         puan: f64,
         #[arg(long)]
         gerekce: String,
-        /// Hafta numarası (YYYYWW)
-        #[arg(long, default_value = "202634")]
+        /// ISO yıl ve hafta (YYYYWW); verilmezse bu hafta
+        #[arg(long, default_value_t = fihrist_core::hafta::bu_hafta())]
         hafta: i64,
     },
     /// Paylaşılan kurallar kataloğuna bir kural ekler (ayrı dosya, ana kütüphaneye dokunmaz).
@@ -215,53 +212,6 @@ struct Kural {
 
 // Karakter sınırında kırpma: tek tanım fihrist-nazar'da (nazar bölümü de kullanır).
 use fihrist_nazar::{ek_bolum, kisalt};
-
-/// Kütüphaneyi bul: önce `TURSO_DB_PATH`, sonra çalışma dizini, sonra kurulum klasörü.
-///
-/// Eski hâli çıplak bir göreli addı ve `Builder::new_local` olmayan dosyayı
-/// **yaratır**. Kütüphane dizini dışından çalıştırınca sessizce boş bir DB
-/// açılıyor, komut "no such table: yetenekler" diye düşüyor ve geride bir
-/// çöp dosya kalıyordu — okuyan kişiye kütüphane bozukmuş gibi görünüyor.
-/// Bulunamadıysa yaratmak değil, nereye baktığını söyleyip durmak doğrusu.
-fn kutuphane_yolu() -> std::result::Result<PathBuf, String> {
-    let mut denenen = Vec::new();
-    let mut aday = |p: PathBuf| -> Option<PathBuf> {
-        if p.is_file() {
-            return Some(p);
-        }
-        denenen.push(p.display().to_string());
-        None
-    };
-
-    if let Ok(v) = std::env::var("TURSO_DB_PATH") {
-        // Açıkça verilmişse tahmin yürütme: ya odur ya hata.
-        let p = PathBuf::from(&v);
-        return if p.is_file() {
-            Ok(p)
-        } else {
-            Err(format!("TURSO_DB_PATH bir dosyayı göstermiyor: {v}"))
-        };
-    }
-    if let Some(p) = aday(PathBuf::from(DB_ADI)) {
-        return Ok(p);
-    }
-    // Katalog kurulumun içinde durur (`mcp-tools\el-fihrist\kutuphane`): önce ikilinin
-    // yanına, depodan (`target\release`) çalışınca da kurulum klasörüne bakılır.
-    let exe = std::env::current_exe()
-        .ok()
-        .and_then(|e| e.parent().map(PathBuf::from));
-    let kurulum = std::env::var_os("USERPROFILE").map(|h| PathBuf::from(h).join(KURULUM));
-    for kok in exe.into_iter().chain(kurulum) {
-        if let Some(p) = aday(kok.join("kutuphane").join(DB_ADI)) {
-            return Ok(p);
-        }
-    }
-    Err(format!(
-        "kütüphane bulunamadı. Bakılan yerler:\n  {}\n\
-         TURSO_DB_PATH ile açıkça gösterebilirsin.",
-        denenen.join("\n  ")
-    ))
-}
 
 async fn baglan() -> Result<Connection> {
     let yol = kutuphane_yolu().map_err(CliError::Girdi)?;
@@ -618,6 +568,18 @@ async fn tekmil_ver(
     if !(0.0..=100.0).contains(&puan) {
         return Err(CliError::Girdi(format!(
             "puan 0-100 aralığında olmalı: {puan}"
+        )));
+    }
+    // Bilinmeyen id'ye puan yazılırsa satır eklenir ama hiçbir ortalama değişmez; sessiz kayıp.
+    let var = {
+        let mut s = conn
+            .query("SELECT 1 FROM yetenekler WHERE id = ?", params![yetenek_id])
+            .await?;
+        s.next().await?.is_some()
+    };
+    if !var {
+        return Err(CliError::Girdi(format!(
+            "yetenek kütüphanede yok: {yetenek_id}"
         )));
     }
     conn.execute(
@@ -1786,6 +1748,51 @@ mod testler {
             kural_ara(&conn, "bun", 10).await.unwrap().is_empty(),
             "pasifleştirilen kural aramada görünmemeli"
         );
+
+        let _ = std::fs::remove_file(&yol);
+    }
+
+    /// Gerileme: bilinmeyen yetenek id'sine tekmil eskiden "kaydedildi" diyor, satırı
+    /// ekliyor ama hiçbir ortalamayı değiştirmiyordu. Artık hata verir, satır eklenmez.
+    #[tokio::test]
+    async fn tekmil_bilinmeyen_yetenegi_reddeder() {
+        let yol =
+            std::env::temp_dir().join(format!("ibnunnedim-tekmil-test-{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&yol);
+        let db = Builder::new_local(yol.to_string_lossy().as_ref())
+            .build()
+            .await
+            .unwrap();
+        let conn = db.connect().unwrap();
+        for sql in [
+            "CREATE TABLE yetenekler (id TEXT PRIMARY KEY, basari_puani_ort REAL, puanlayan_ajan_sayisi INTEGER)",
+            "CREATE TABLE ajan_tekmilleri (hafta_no INTEGER, ajan_adi TEXT, yetenek_id TEXT, verilen_puan REAL, degerlendirme_gerekcesi TEXT)",
+            "INSERT INTO yetenekler (id) VALUES ('var')",
+        ] {
+            conn.execute(sql, ()).await.unwrap();
+        }
+
+        assert!(tekmil_ver(&conn, 202641, "deneme", "yok", 80.0, "g")
+            .await
+            .is_err());
+        assert_eq!(
+            say(&conn, "ajan_tekmilleri").await.unwrap(),
+            0,
+            "red edilen puan yazılmamalı"
+        );
+
+        tekmil_ver(&conn, 202641, "deneme", "var", 80.0, "g")
+            .await
+            .unwrap();
+        let mut r = conn
+            .query(
+                "SELECT basari_puani_ort FROM yetenekler WHERE id = 'var'",
+                (),
+            )
+            .await
+            .unwrap();
+        let ort = r.next().await.unwrap().unwrap().get::<f64>(0).unwrap();
+        assert_eq!(ort, 80.0);
 
         let _ = std::fs::remove_file(&yol);
     }

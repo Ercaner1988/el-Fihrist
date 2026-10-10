@@ -1,0 +1,15 @@
+[package]
+name = "fihrist-santral"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Oturumlar arası mesaj kutuları (santral) ve onların MCP araçları"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+# santral_durum Nazar'ın açık olup olmadığını bildirir.
+nazar-istemci.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

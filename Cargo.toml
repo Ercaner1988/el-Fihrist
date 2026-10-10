@@ -10,6 +10,7 @@ members = [
     "crates/fihrist-nazar",
     "crates/fihrist-kaynak",
     "crates/fihrist-olcum",
+    "crates/fihrist-santral",
 ]
 resolver = "2"
 
@@ -42,4 +43,5 @@ fihrist-nazar = { path = "crates/fihrist-nazar" }
 fihrist-canli = { path = "crates/fihrist-canli" }
 fihrist-kaynak = { path = "crates/fihrist-kaynak" }
 fihrist-olcum = { path = "crates/fihrist-olcum" }
+fihrist-santral = { path = "crates/fihrist-santral" }
 

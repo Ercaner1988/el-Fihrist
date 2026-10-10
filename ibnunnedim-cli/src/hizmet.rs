@@ -32,7 +32,7 @@ pub fn port() -> u16 {
 pub async fn calistir() -> crate::Result<()> {
     let dinleyici = TcpListener::bind(("127.0.0.1", port())).await?;
     eprintln!("el-fihrist hizmeti dinliyor: 127.0.0.1:{}", port());
-    let santral = crate::santral::Santral::yeni();
+    let santral = fihrist_santral::Santral::yeni();
     loop {
         let (akis, _) = dinleyici.accept().await?;
         let s_klon = santral.clone();

@@ -15,6 +15,7 @@ use crate::{
     list_all_skills, say, search_skills, tekmil_ver,
 };
 use fihrist_kaynak::Kaynaklar;
+use fihrist_santral::Santral;
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
 use turso::Connection;
@@ -70,7 +71,7 @@ pub fn hata(id: &Value, kod: i64, mesaj: &str) -> Value {
 
 /// Açılan MCP araçları.
 pub fn araclar() -> Value {
-    json!([
+    let mut a = json!([
         {
             "name": "search_skills",
             "description": "Yetenek kütüphanesinde anlam araması (bge-m3; Türkçe sorgu → İngilizce açıklama da bulunur). Gömme sunucusu yoksa ya da sonuç çıkmazsa Türkçe katlamalı BM25 sözcük aramasına düşer. Sonuç: id, ad, kategori, başarı puanı, açıklama; tam_metin=true ise yeteneğin tam metni de.",
@@ -87,11 +88,11 @@ pub fn araclar() -> Value {
         },
         {
             "name": "list_skills",
-            "description": "Yetenekleri listeler; istenirse tek kategoriyle sınırlar.",
+            "description": "Kütüphanedeki yetenekleri kategori ve ada göre sıralı listeler: id, ad, kategori, başarı ortalaması. Açıklama alanı bu listede boş gelir; bir konuya uyan yeteneği bulmak için search_skills kullan. Kategori verilmezse kütüphanenin tamamı döner.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "kategori": {"type": "string", "description": "Süzülecek kategori; boşsa tümü"}
+                    "kategori": {"type": "string", "description": "Süzülecek kategori, birebir eşleşme; boşsa tümü"}
                 }
             }
         },
@@ -102,15 +103,15 @@ pub fn araclar() -> Value {
         },
         {
             "name": "tekmil_ver",
-            "description": "Bir yeteneğe 0-100 arası tekmil puanı yazar ve ortalamayı günceller. YAZMA işlemidir.",
+            "description": "Bir yeteneği kullandıktan sonra ne kadar işe yaradığını 0-100 puanla kaydeder. YAZMA işlemidir: ajan_tekmilleri'ne satır ekler, yeteneğin basari_puani_ort ve puanlayan_ajan_sayisi alanlarını tüm puanlardan yeniden hesaplar. Aralık dışı puan ve kütüphanede olmayan yetenek id'si reddedilir; id'yi search_skills ya da list_skills sonucundan al.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "ajan": {"type": "string"},
+                    "ajan": {"type": "string", "description": "Puanı veren ajan ya da oturum adı (örn. 'claude-code')"},
                     "yetenek": {"type": "string", "description": "Yetenek id (slug)"},
                     "puan": {"type": "number", "description": "0-100"},
-                    "gerekce": {"type": "string"},
-                    "hafta": {"type": "integer", "description": "YYYYWW (varsayılan 202634)"}
+                    "gerekce": {"type": "string", "description": "Puanın kısa gerekçesi: neye yaradı, nerede eksik kaldı"},
+                    "hafta": {"type": "integer", "description": "ISO yıl ve hafta, YYYYWW (örn. 202641); boşsa çağrı anının haftası"}
                 },
                 "required": ["ajan", "yetenek", "puan", "gerekce"]
             }
@@ -130,11 +131,11 @@ pub fn araclar() -> Value {
         },
         {
             "name": "kural_ara",
-            "description": "Kurallar kataloğunda alt-dize arar (yalnız aktif kurallar).",
+            "description": "Aktif kurallarda alt-dize arar: sorgu kural metninde, kaynakta ya da etiketlerde geçiyorsa eşleşir; en eski kural önce gelir. Eşleşme SQL LIKE'tır: büyük/küçük harf yalnız ASCII harflerde yok sayılır (İ/ı, Ş/ş gibi Türkçe harflerde ayrım sürer); anlam araması yapılmaz.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "sorgu": {"type": "string"},
+                    "sorgu": {"type": "string", "description": "Aranacak dize; boş olamaz"},
                     "limit": {"type": "integer", "description": "Azami sonuç sayısı (varsayılan 20)"}
                 },
                 "required": ["sorgu"]
@@ -149,39 +150,12 @@ pub fn araclar() -> Value {
                     "etiket": {"type": "string", "description": "Süzülecek etiket; boşsa tümü"}
                 }
             }
-        },
-        {
-            "name": "santral_gonder",
-            "description": "Oturumlar arası veya Nazar/santral hattına doğrudan mesaj, durum veya iş devri (handoff) gönderir.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "hedef": {"type": "string", "description": "Hedef oturum kimliği veya rol (örn: 'claude-code', 'nazar', 'hepsi')"},
-                    "konu": {"type": "string", "description": "Mesajın konusu veya eylem türü (örn: 'is-devri', 'bilgi', 'soru')"},
-                    "icerik": {"type": "string", "description": "İletilecek mesaj metni veya JSON yükü"}
-                },
-                "required": ["hedef", "konu", "icerik"]
-            }
-        },
-        {
-            "name": "santral_yokla",
-            "description": "Bu oturuma veya belirtilen hedefe gelen bekleyen santral mesajlarını okur ve kutuyu boşaltır.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "hedef": {"type": "string", "description": "Yoklanacak oturum/rol (boş bırakılırsa bu oturumun kimliği)"}
-                }
-            }
-        },
-        {
-            "name": "santral_durum",
-            "description": "Santral operatörü ve Nazar durumunu görüntüler: aktif oturumlar, bekleyen mesajlar ve Nazar IPC durumu.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {}
-            }
         }
-    ])
+    ]);
+    if let Some(d) = a.as_array_mut() {
+        d.extend(fihrist_santral::araclar());
+    }
+    a
 }
 
 fn metin(p: &Value, ad: &str) -> std::result::Result<String, String> {
@@ -217,8 +191,11 @@ async fn arac_calistir(
     conn: &Connection,
     ad: &str,
     p: &Value,
-    santral: &crate::santral::Santral,
+    santral: &Santral,
 ) -> std::result::Result<String, String> {
+    if let Some(r) = fihrist_santral::calistir(ad, p, santral).await {
+        return r;
+    }
     match ad {
         "search_skills" => {
             let q = metin(p, "query")?;
@@ -285,7 +262,8 @@ async fn arac_calistir(
                 .get("puan")
                 .and_then(Value::as_f64)
                 .ok_or("'puan' alanı gerekli (sayı)")?;
-            let hafta = p.get("hafta").and_then(Value::as_i64).unwrap_or(202634);
+            let hafta = p.get("hafta").and_then(Value::as_i64);
+            let hafta = hafta.unwrap_or_else(fihrist_core::hafta::bu_hafta);
             tekmil_ver(conn, hafta, &ajan, &yetenek, puan, &gerekce)
                 .await
                 .map_err(|e| e.to_string())?;
@@ -319,41 +297,6 @@ async fn arac_calistir(
                 .await
                 .map_err(|e| e.to_string())?;
             serde_json::to_string_pretty(&liste).map_err(|e| e.to_string())
-        }
-        "santral_gonder" => {
-            let hedef = metin(p, "hedef")?;
-            let konu = metin(p, "konu")?;
-            let icerik = metin(p, "icerik")?;
-            let gonderen = "oturum".to_string();
-            let mesaj = crate::santral::SantralMesaji::yeni(gonderen, hedef.clone(), konu, icerik);
-            let kuyruk_boyu = santral.ilet(mesaj);
-            Ok(format!(
-                "Santral mesajı iletildi: hedef='{hedef}', bekleyen kuyruk boyu={kuyruk_boyu}"
-            ))
-        }
-        "santral_yokla" => {
-            let hedef = p.get("hedef").and_then(Value::as_str).unwrap_or("");
-            let gelenler = santral.yokla(hedef);
-            serde_json::to_string_pretty(&gelenler).map_err(|e| e.to_string())
-        }
-        "santral_durum" => {
-            let hedefler = santral.aktif_hedefler();
-            // Nazar daemon durumu denemesi
-            let nazar_durum = match nazar_istemci::Istemci::baglan_varsayilan().await {
-                Ok(mut istemci) => match istemci.durum().await {
-                    Ok(d) => format!(
-                        "AÇIK (belge: {}, parça: {}, ocr: {})",
-                        d.belge_sayisi, d.parca_sayisi, d.ocr_kuyrugu
-                    ),
-                    Err(e) => format!("BAĞLANDI ANCAK HATA: {e}"),
-                },
-                Err(e) => format!("KAPALI ({e})"),
-            };
-            Ok(format!(
-                "Santral Operatörü Durumu:\n- Aktif Mesaj Kutuları: {}\n- Nazar IPC (Named Pipe): {}",
-                if hedefler.is_empty() { "Yok (kuyruklar boş)".to_string() } else { hedefler.join(", ") },
-                nazar_durum
-            ))
         }
         _ => Err(format!("bilinmeyen araç: {ad}")),
     }
@@ -394,7 +337,7 @@ async fn ele_al(
     b: &mut Baglam,
     s: &mut Sicak,
     k: &mut Kaynaklar,
-    santral: &crate::santral::Santral,
+    santral: &Santral,
     istek: Istek,
 ) -> Option<Value> {
     match istek {
@@ -487,14 +430,14 @@ where
     R: AsyncBufRead + Unpin,
     W: AsyncWrite + Unpin,
 {
-    konus_santral(okur, yazar, b, crate::santral::Santral::yeni()).await
+    konus_santral(okur, yazar, b, Santral::yeni()).await
 }
 
 pub(crate) async fn konus_santral<R, W>(
     okur: R,
     mut yazar: W,
     mut b: Baglam,
-    santral: crate::santral::Santral,
+    santral: Santral,
 ) -> crate::Result<()>
 where
     R: AsyncBufRead + Unpin,
@@ -589,6 +532,8 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
     // ponytail: süreç içine düşülünce küme tutulur ama düşüş bildirimi yok (zamanlayıcı konus'ta).
     let mut yerel_sicak = Sicak::yeni(crate::sicak::omur_ms());
     let mut kaynaklar = Kaynaklar::yoklamasiz();
+    // Döngü dışında: her satırda yeni kutu açılsaydı bırakılan mesaj bir sonraki istekte kaybolurdu.
+    let santral = Santral::yeni();
     while let Some(satir) = girdi.next_line().await? {
         if let Istek::Cagri {
             yontem, parametre, ..
@@ -612,7 +557,6 @@ async fn aktar(akis: tokio::net::TcpStream, mut b: Baglam) -> crate::Result<()> 
             yerel = true;
             geri.abort();
         }
-        let santral = crate::santral::Santral::yeni();
         if let Some(y) = ele_al(
             &mut b,
             &mut yerel_sicak,
