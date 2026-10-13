@@ -82,19 +82,36 @@ pub fn run_fihrist_gui() -> eframe::Result {
         "el-Fihrist",
         native_options,
         Box::new(|cc| {
-            // giydir = iki tema + sarma_kur + tercih; roller `app.rs`te `.rol(..)` ile işaretli.
-            let tercih = kilim_tema::TemaTercihi::yukle(
-                "el-fihrist",
-                kilim_tema::TemaTercihi::varsayilan(kilim_tema::Varyant::CamGobegiAltin),
-            );
-            kilim_tema::giydir(&cc.egui_ctx, &tercih);
+            tema_kur(&cc.egui_ctx);
             Ok(Box::new(FihristApp::new(cc)))
         }),
     )
 }
 
+/// Açılış teması: kullanıcının kayıtlı tercihi (yoksa CamGöbeği-Altın) ile `giydir` = iki tema + `sarma_kur`;
+/// roller `app.rs`te `.rol(..)` ile işaretli.
+fn tema_kur(ctx: &eframe::egui::Context) {
+    let tercih = kilim_tema::TemaTercihi::yukle(
+        "el-fihrist",
+        kilim_tema::TemaTercihi::varsayilan(kilim_tema::Varyant::CamGobegiAltin),
+    );
+    kilim_tema::giydir(ctx, &tercih);
+}
+
 #[cfg(test)]
 mod tests {
+    /// Açılış kurulumu kilim'i gerçekten giydirir (satır silinse ya da başka işlev çağrılsa kızarır):
+    /// sarma açık, panel zemini egui varsayılanı değil.
+    #[test]
+    fn tema_kur_kilim_giydirir() {
+        let ctx = eframe::egui::Context::default();
+        let varsayilan = ctx.global_style().visuals.panel_fill;
+        super::tema_kur(&ctx);
+        let s = ctx.global_style();
+        assert_eq!(s.wrap_mode, Some(eframe::egui::TextWrapMode::Wrap));
+        assert_ne!(s.visuals.panel_fill, varsayilan, "tema kurulmadı");
+    }
+
     /// Windows kuralı: yalnız bir arka uç açılır (Vulkan ya da DX12), ikisi birden değil.
     #[cfg(not(target_os = "linux"))]
     #[test]
