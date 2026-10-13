@@ -21,3 +21,6 @@ test_gercekciligi = "uygulanir"
 veri_dayanikliligi = "uygulanir"       # değişiklik günlüğü, kütüphane yazımı
 surum_izi = "uygulanir"                # kurulu MCP kopyası kaynakla ayrışmasın
 belge_dogrulugu = "uygulanir"
+
+[karakter.muaf]
+"el-fihrist-windows.mcpb" = "Derlenmiş ikili MCP paket dağıtımı; metin değil"

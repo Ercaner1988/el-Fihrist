@@ -99,6 +99,10 @@ _Kaçın_: tema deposu, tema sunucusu
 
 ### Hafıza
 
+**Oturum arşivi**:
+YZ oturumlarının özetleme sınırları arasında kalan bölümlerinin aranabilir kaydı: Ercan'ın mesajları, modelin cevapları, araç çağrılarının adı ve girdisi, sınırdaki özet. Araç çıktısının gövdesi girmez, yalnız izi ve asıl döküme işaret girer. Mahremiyet katmanı Kişisel'dir. İlk kaynak Claude Code dökümleridir.
+_Kaçın_: döküm (o ham `.jsonl` dosyasıdır), oturum geçmişi (agit'in işi)
+
 **Hafıza grafı**:
 Kod tabanı yönetimi için agit (oturum geçmişi), graft (kod grafı), graphify (kavram grafı) ve archify'ın (görünüm) çıktılarını birbirine bağlayan, el-Fihrist'in bir modülü olarak yaşayan graf; görünümü şimdilik Logseq'tir.
 _Kaçın_: ikinci beyin, bilgi tabanı, wiki
@@ -168,8 +172,37 @@ _Kaçın_: çakışma (kopyalar çakışmadan önce ayıklanır)
 Aynı ailenin (ör. aynı MCP sunucusunun araçları) birbirini tamamlayan parçaları; birbiriyle çakışmaz.
 _Kaçın_: çakışma
 
+### Mahremiyet
+
+**Mahremiyet katmanı**:
+Her verinin taşıdığı üç düzeyden biri: **Genel** (herkese açılabilir: kod, yetenek kataloğu), **İlgilisine özel** (yalnız işi gereken tarafa: tez taslağı, proje notları), **Kişisel** (yalnız Ercan'da kalır: kimlik bilgisi, hafıza, uyuşmazlık dosyaları).
+_Kaçın_: gizlilik seviyesi, sınıf (dört ya da daha çok katman sanılır)
+
+**Bulut model**:
+Çıkarımı bilgisayar dışında, bir sağlayıcının sunucusunda yapılan YZ arayüzü modeli (Claude, Gemini); okuduğu her şey sağlayıcıya gider.
+_Kaçın_: uzak model
+
+**Yerel model**:
+Çıkarımı Ercan'ın kendi donanımında yapılan model; okuduğu hiçbir şey bilgisayardan çıkmaz.
+
+**Köprülü**:
+YZ arayüzlerinin el-Fihrist'e açılan tek MCP kapısı: çağrıyı Arka MCP'ye aktarır, Arka MCP'leri gerektiğinde başlatıp boşta kapatır, dönen içeriği Mahremiyet katmanına göre süzer (gerekirse Takma adlandırmadan geçirir). Oturumlar arası mesajlaşma (Santral) ondan ayrı bir iştir.
+_Kaçın_: Merkez (o `ibnunnedim-cli`dir), kapı (Altın kapı ile karışır), ağ geçidi, proxy
+
+**Arka MCP**:
+Köprülü'nün arkasında duran, YZ arayüzüne doğrudan bağlanmayan, Ercan'ın kendi yerel MCP sunucusu (nazar, kesfuzzunun, archify-graft, agent-reach, shamela). Başkalarının yerel MCP'lerinin arkaya alınması tek tek Hüküm'le kararlaştırılır.
+
+**Kapsam dışı bağlayıcı**:
+Sağlayıcının sunucusunda çalışan, Köprülü'den geçmeyen bağlayıcı (Gmail, Drive, Calendar); verisi zaten buluttadır, Mahremiyet katmanı onu korumaz.
+
+**Takma adlandırma**:
+Bulut modele gidecek metindeki kişi, kurum ve kimlik bilgilerinin yer tutucularla (`[K1]`) değiştirilmesi ve dönen cevapta geri çevrilmesi; eşleme yalnız Ercan'ın bilgisayarında kalır. Adları bulan, bir Yerel modeldir; bilinen Kişi kayıtları ona sözlük olur.
+_Kaçın_: anonimleştirme (geri çevrilemez sanılır), şifreleme
+
 ## İlişkiler
 
+- **Mahremiyet katmanı** kayda değil kaynağa verilir (klasör, veritabanı, araç); katmanı bilinmeyen veri **Kişisel** sayılır. Bir kaydı daha açık bir katmana yalnız Ercan yükseltir.
+- **Kişisel** ya da **İlgilisine özel** veri bir **Bulut model**e **Takma adlandırma**dan geçmeden gitmez.
 - Bir **Hüküm** bir çifte verilir; **Kopya** ve **Kardeş** çakışma sayımına girmez.
 - Bir **Merkez ödünç alma** tam olarak bir **Kaynak kütüphane**yi el-Fihrist'in bir crate'i ardından bir **Hedef araç**a taşır.
 - Bir **Hedef araç**, **YZ arayüzü**ne kendi MCP sunucusuyla görünür; ödünç aldığı kütüphaneyi ayrıca göstermez.

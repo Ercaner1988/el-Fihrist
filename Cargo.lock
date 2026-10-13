@@ -2075,6 +2075,8 @@ dependencies = [
  "eframe",
  "fihrist-core",
  "fihrist-storage",
+ "kilim-tema",
+ "pollster",
  "thiserror 2.0.20",
  "tokio",
  "tracing",
@@ -3290,12 +3292,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
+name = "kilim-palet"
+version = "0.1.0"
+source = "git+https://github.com/Ercaner1988/kilim-tema?rev=463ff671b548fb976610248a6569d8975caa5a66#463ff671b548fb976610248a6569d8975caa5a66"
+dependencies = [
+ "egui",
+]
+
+[[package]]
 name = "kilim-tema"
 version = "0.1.0"
-source = "git+https://github.com/Ercaner1988/kilim-tema?rev=a62bfc71227202fe1173b8f9d36aaa723fd5a12c#a62bfc71227202fe1173b8f9d36aaa723fd5a12c"
+source = "git+https://github.com/Ercaner1988/kilim-tema?rev=463ff671b548fb976610248a6569d8975caa5a66#463ff671b548fb976610248a6569d8975caa5a66"
 dependencies = [
  "egui",
  "image",
+ "kilim-palet",
 ]
 
 [[package]]
@@ -4806,7 +4817,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b570b25f7617e43d59005d0990ccb79e950a423952cea19671b7a876da390adf"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools 0.12.1",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
