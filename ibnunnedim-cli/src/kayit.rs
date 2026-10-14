@@ -20,7 +20,6 @@
 
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 
 /// Dökümden çıkarılan tek araç çağrısı.
 #[derive(Debug, Clone, PartialEq)]
@@ -73,41 +72,8 @@ pub fn ozetle(girdi: &Value) -> String {
     crate::kisalt(&format!("({})", adlar.join(", ")), 200)
 }
 
-/// `1970-01-01`den bu yana gün (Hinnant'ın `days_from_civil`i).
-fn gun(y: i64, m: i64, d: i64) -> i64 {
-    let y = if m <= 2 { y - 1 } else { y };
-    let era = if y >= 0 { y } else { y - 399 } / 400;
-    let yoe = y - era * 400;
-    let doy = (153 * ((m + 9) % 12) + 2) / 5 + d - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    era * 146_097 + doe - 719_468
-}
-
-/// `2026-09-09T16:28:32.381Z` → Unix milisaniyesi.
-///
-/// Tarih kütüphanesi YOK: Claude Code tek bir biçim yazıyor (UTC, `Z`,
-/// milisaniye). `Z` ile bitmeyen damga `None` — saat dilimi kaymasını
-/// sessizce yanlış süreye çevirmektense reddeder.
-pub fn iso_ms(s: &str) -> Option<i64> {
-    let b = s.as_bytes();
-    if b.len() < 20 || !s.ends_with('Z') {
-        return None;
-    }
-    if [4, 7].iter().any(|&i| b[i] != b'-') || b[10] != b'T' || b[13] != b':' || b[16] != b':' {
-        return None;
-    }
-    let n = |a: usize, z: usize| s.get(a..z).and_then(|p| p.parse::<i64>().ok());
-    let (y, mo, d) = (n(0, 4)?, n(5, 7)?, n(8, 10)?);
-    let (h, mi, se) = (n(11, 13)?, n(14, 16)?, n(17, 19)?);
-    let ms = if b[19] == b'.' {
-        let kesir = &s[20..s.len() - 1];
-        let uc: String = kesir.chars().chain("000".chars()).take(3).collect();
-        uc.parse::<i64>().ok()?
-    } else {
-        0
-    };
-    Some(((gun(y, mo, d) * 24 + h) * 60 + mi) * 60_000 + se * 1000 + ms)
-}
+// Zaman damgası ayrıştırma ve döküm bulma tek yerde: fihrist-arsiv (Oturum arşivi de kullanır).
+pub use fihrist_arsiv::zaman::iso_ms;
 
 /// Tek bir döküm dosyasının içeriğinden araç çağrılarını çıkarır. SAF.
 ///
@@ -172,39 +138,7 @@ pub fn dokumden_cagrilar(icerik: &str, oturum: &str, proje: &str) -> Vec<Cagri> 
         .collect()
 }
 
-/// Kök altındaki bütün `.jsonl` dökümleri (alt ajan dökümleri de dahil —
-/// onların araç çağrıları da gerçek çağrılar).
-pub fn dokumleri_bul(kok: &Path) -> Vec<PathBuf> {
-    let mut bulunan = Vec::new();
-    let mut yigin = vec![kok.to_path_buf()];
-    while let Some(dizin) = yigin.pop() {
-        let Ok(girdiler) = std::fs::read_dir(&dizin) else {
-            continue;
-        };
-        for g in girdiler.flatten() {
-            let y = g.path();
-            if y.is_dir() {
-                yigin.push(y);
-            } else if y.extension().is_some_and(|e| e == "jsonl") {
-                bulunan.push(y);
-            }
-        }
-    }
-    bulunan.sort();
-    bulunan
-}
-
-/// Varsayılan döküm kökü: `CLAUDE_CONFIG_DIR` (Claude Code'un kendi
-/// yer değiştirme değişkeni) yoksa `<home>/.claude`, altında `projects`.
-pub fn varsayilan_kok() -> Option<PathBuf> {
-    if let Ok(v) = std::env::var("CLAUDE_CONFIG_DIR") {
-        return Some(PathBuf::from(v).join("projects"));
-    }
-    ["USERPROFILE", "HOME"]
-        .iter()
-        .find_map(|k| std::env::var(k).ok())
-        .map(|h| PathBuf::from(h).join(".claude").join("projects"))
-}
+pub use fihrist_arsiv::dokum::{dokumleri_bul, varsayilan_kok};
 
 #[cfg(test)]
 mod testler {
@@ -229,27 +163,6 @@ mod testler {
             uzun.contains("+300 karakter"),
             "kırptığını söylemedi: {uzun}"
         );
-    }
-
-    /// Süre bu damgalardan hesaplanıyor; biri kayarsa bütün süreler yalan olur.
-    #[test]
-    fn iso_ms_bilinen_anlar() {
-        assert_eq!(iso_ms("1970-01-01T00:00:00.000Z"), Some(0));
-        assert_eq!(iso_ms("2000-01-01T00:00:00.000Z"), Some(946_684_800_000));
-        // Artık gün + yarım saniye.
-        assert_eq!(iso_ms("2024-02-29T12:00:00.500Z"), Some(1_709_208_000_500));
-        // Kesirsiz ve kısa kesirli biçim.
-        assert_eq!(iso_ms("2000-01-01T00:00:01Z"), Some(946_684_801_000));
-        assert_eq!(iso_ms("2000-01-01T00:00:00.5Z"), Some(946_684_800_500));
-    }
-
-    /// Saat dilimli ya da bozuk damga sessizce yanlış süre üretmemeli.
-    #[test]
-    fn iso_ms_bicim_disini_reddeder() {
-        assert_eq!(iso_ms("2024-02-29T12:00:00.500+03:00"), None);
-        assert_eq!(iso_ms("2024-02-29 12:00:00Z"), None);
-        assert_eq!(iso_ms(""), None);
-        assert_eq!(iso_ms("çöp"), None);
     }
 
     fn satir(ts: &str, bloklar: Value) -> String {
