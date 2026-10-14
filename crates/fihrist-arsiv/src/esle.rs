@@ -41,12 +41,12 @@ pub struct Rapor {
 /// düz yol aynı biçime iner. (Türkçe harf katlaması gerekmez: yollar iki yanda da aynı kaynaktan.)
 pub fn normallestir(s: &str) -> String {
     let mut cikti = String::with_capacity(s.len());
-    for c in s.chars() {
+    for c in katla::kucult(s).chars() {
         let c = if c == '\\' { '/' } else { c };
         if c == '/' && cikti.ends_with('/') {
             continue;
         }
-        cikti.extend(c.to_lowercase());
+        cikti.push(c);
     }
     cikti
 }
@@ -160,11 +160,14 @@ pub async fn esle_kopyadan(
         }
         let yaprak: Option<i64> = s.get(4).map_err(hata)?;
         let satir: Option<i64> = s.get(5).map_err(hata)?;
-        aramalar.last_mut().unwrap().3.push((
+        let sonuc = (
             s.get(3).map_err(hata)?,
             yaprak.map(|y| y as u32),
             satir.map(|n| n as usize),
-        ));
+        );
+        if let Some(son) = aramalar.last_mut() {
+            son.3.push(sonuc);
+        }
     }
     drop(r);
     // Sonuçsuz aramalar JOIN'de düşer; sayıyı ayrıca al.
@@ -223,9 +226,9 @@ pub async fn esle_kopyadan(
 /// Kaynak günlüğü kopyalayıp eşler.
 pub async fn esle(arsiv: &Depo, nazar_gunlugu: &Path) -> Result<(Vec<Secim>, Rapor), String> {
     let gecici = std::env::temp_dir().join(format!("nazar-secim-kopya-{}.db", std::process::id()));
-    let _ = std::fs::remove_file(&gecici);
+    std::fs::remove_file(&gecici).ok();
     kopyala(nazar_gunlugu, &gecici)?;
     let sonuc = esle_kopyadan(arsiv, &gecici).await;
-    let _ = std::fs::remove_file(&gecici);
+    std::fs::remove_file(&gecici).ok();
     sonuc
 }
