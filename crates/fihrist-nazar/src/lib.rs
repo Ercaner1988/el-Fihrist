@@ -7,7 +7,8 @@
 //!
 //! `nazard` kapalıysa SESSİZ DÜŞÜLMEZ: bölüm "KAPALI" nedenini söyler.
 
-use nazar_istemci::nazar_proto::{AramaYaniti, Duzey, Sorgu};
+pub use nazar_istemci::nazar_proto::SecimBilgisi;
+use nazar_istemci::nazar_proto::{AramaYaniti, Duzey, Istek, Sorgu, Yanit};
 use nazar_istemci::Istemci;
 use std::time::Duration;
 
@@ -42,6 +43,28 @@ pub async fn ara(sorgu: &str, limit: usize) -> Result<AramaYaniti, String> {
         Ok(r) => r.map_err(|h| h.to_string()),
         Err(_) => Err(format!("{} sn içinde yanıt yok", ZAMAN_ASIMI.as_secs())),
     }
+}
+
+/// Seçimleri nazard'ın Seçim günlüğüne yazdırır; kaydedilen sayıyı döner. nazard Seçimi bilmiyorsa ya da
+/// günlüğü kapalıysa SESSİZ DÜŞÜLMEZ: ilk reddedişte nedenle durur.
+pub async fn secim_gonder(secimler: Vec<SecimBilgisi>) -> Result<usize, String> {
+    let mut istemci = Istemci::baglan_varsayilan()
+        .await
+        .map_err(|h| format!("nazard kapalı: {h}"))?;
+    let mut kaydedilen = 0;
+    for s in secimler {
+        let yanit = tokio::time::timeout(ZAMAN_ASIMI, istemci.iste(&Istek::Secim(s)))
+            .await
+            .map_err(|_| format!("{} sn içinde yanıt yok", ZAMAN_ASIMI.as_secs()))?
+            .map_err(|h| h.to_string())?;
+        match yanit {
+            Yanit::Tamam(m) if m == "kaydedildi" => kaydedilen += 1,
+            Yanit::Tamam(m) => return Err(format!("nazard Seçimi yazmadı: {m}")),
+            Yanit::Hata(e) => return Err(format!("nazard reddetti (eski sürüm olabilir): {e}")),
+            y => return Err(format!("beklenmeyen yanıt: {y:?}")),
+        }
+    }
+    Ok(kaydedilen)
 }
 
 /// Arama çıktısına eklenecek bölüm; `acik` değilse boş (nazar'a hiç sorulmaz).

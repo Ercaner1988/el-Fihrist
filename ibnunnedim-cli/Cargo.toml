@@ -31,6 +31,8 @@ fihrist-core.workspace = true
 fihrist-kaynak.workspace = true
 # Altın set ayrıştırma/puanlama (`olcum` komutu); sandık sınırı için ayrı crate.
 fihrist-olcum.workspace = true
+# Oturum arşivi komutları (arsivle, arsiv-ara, secim-esle); sandık sınırı için ayrı crate.
+fihrist-arsiv.workspace = true
 # ONNX gömme çekirdeği (multilingual-e5-small, 384 boyut). Yalnız `--features onnx`.
 fastembed = { version = "4.9", optional = true }
 # ibnun-nedim (eski bge-embed-rs) / llama-server'ın yerel /v1/embeddings uç noktası için: yalnız

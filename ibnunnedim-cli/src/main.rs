@@ -115,6 +115,9 @@ enum Command {
     /// Stdio MCP sunucusu olarak koşar (JSON-RPC 2.0). stdout protokole aittir.
     /// Tek el-Fihrist hizmetine aktarır; ulaşamazsa süreç içinde çalışır.
     Mcp,
+    /// Oturum arşivi: arsivle · arsiv-ara · secim-esle (fihrist-arsiv).
+    #[command(flatten)]
+    Arsiv(fihrist_arsiv::komut::Komutlar),
     /// Tek el-Fihrist hizmeti: oturumların MCP süreçleri buna aktarır
     /// (127.0.0.1, FIHRIST_HIZMET_PORT, varsayılan 11437). Elle başlatmak
     /// gerekmez; ilk `mcp` süreci yoksa başlatır.
@@ -1259,6 +1262,14 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // Oturum arşivi de katalogu açmaz (kilit); yalnız yanındaki `kutup_arsiv.db` yolunu ister.
+    if let Command::Arsiv(k) = args.command {
+        let kutuphane = kutuphane_yolu().map_err(CliError::Girdi)?;
+        return fihrist_arsiv::komut::calistir(k, &kutuphane)
+            .await
+            .map_err(CliError::Girdi);
+    }
+
     if let Command::Eslestir { kok } = &args.command {
         let kok = kok
             .clone()
@@ -1569,6 +1580,7 @@ async fn main() -> Result<()> {
         Command::Mcp => unreachable!("mcp DB bağlantısından önce ele alınır"),
         Command::Hizmet => unreachable!("hizmet DB bağlantısından önce ele alınır"),
         Command::Eslestir { .. } => unreachable!("eşleştirme DB bağlantısından önce ele alınır"),
+        Command::Arsiv(_) => unreachable!("arşiv komutları DB bağlantısından önce ele alınır"),
         Command::KayitAl { .. } => {
             unreachable!("kayit-al DB bağlantısından önce ele alınır")
         }

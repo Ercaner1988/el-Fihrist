@@ -1,0 +1,19 @@
+[package]
+name = "fihrist-arsiv"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Oturum arşivi: Claude Code dökümlerinin özetleme sınırları arasında kalan bölümlerinin aranabilir kaydı (Kişisel) ve MCP Seçimi eşlemesi"
+
+[dependencies]
+turso.workspace = true
+katla.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+tokio.workspace = true
+# MCP Seçimini nazard'a yazmak için (secim-esle).
+fihrist-nazar.workspace = true
+
+[dev-dependencies]
+tempfile = "3"
