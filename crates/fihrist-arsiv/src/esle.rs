@@ -226,9 +226,9 @@ pub async fn esle_kopyadan(
 /// Kaynak günlüğü kopyalayıp eşler.
 pub async fn esle(arsiv: &Depo, nazar_gunlugu: &Path) -> Result<(Vec<Secim>, Rapor), String> {
     let gecici = std::env::temp_dir().join(format!("nazar-secim-kopya-{}.db", std::process::id()));
-    std::fs::remove_file(&gecici).ok();
+    std::fs::remove_file(&gecici).unwrap_or_default();
     kopyala(nazar_gunlugu, &gecici)?;
     let sonuc = esle_kopyadan(arsiv, &gecici).await;
-    std::fs::remove_file(&gecici).ok();
+    std::fs::remove_file(&gecici).unwrap_or_default();
     sonuc
 }
