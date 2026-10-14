@@ -1264,7 +1264,16 @@ async fn main() -> Result<()> {
 
     // Oturum arşivi de katalogu açmaz (kilit); yalnız yanındaki `kutup_arsiv.db` yolunu ister.
     if let Command::Arsiv(k) = args.command {
-        let kutuphane = kutuphane_yolu().map_err(CliError::Girdi)?;
+        let kanca = fihrist_arsiv::komut::kanca_mi(&k);
+        let kutuphane = match kutuphane_yolu() {
+            Ok(y) => y,
+            // Kanca hata verse de çıkış 0: PreCompact'ta sıfır olmayan çıkış sıkıştırmayı engeller.
+            Err(e) if kanca => {
+                eprintln!("arsivle (kanca): {e}");
+                return Ok(());
+            }
+            Err(e) => return Err(CliError::Girdi(e)),
+        };
         return fihrist_arsiv::komut::calistir(k, &kutuphane)
             .await
             .map_err(CliError::Girdi);

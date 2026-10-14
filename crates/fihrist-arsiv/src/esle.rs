@@ -60,6 +60,17 @@ fn varyantlar(norm: &str) -> Vec<String> {
     vec![norm.to_string()]
 }
 
+/// Yol, çağrı metninde TAM bir yol olarak geçiyor mu? `/r/a.rs`, `/r/a.rs.bak` ya da `/eski/r/a.rs` içinde
+/// geçmez: öncesi ve sonrası yol karakteri (harf, rakam, `. _ - /`) olamaz.
+pub(crate) fn yol_geciyor(metin: &str, yol: &str) -> bool {
+    let yol_kar = |c: char| c.is_alphanumeric() || matches!(c, '.' | '_' | '-' | '/');
+    metin.match_indices(yol).any(|(i, g)| {
+        let once = metin[..i].chars().next_back();
+        let sonra = metin[i + g.len()..].chars().next();
+        !once.is_some_and(yol_kar) && !sonra.is_some_and(yol_kar)
+    })
+}
+
 struct Cagri {
     zaman_ms: i64,
     arac: String,
@@ -207,7 +218,7 @@ pub async fn esle_kopyadan(
             let bulunan = c
                 .iter()
                 .filter(|k| k.zaman_ms > zaman)
-                .find(|k| hedefler.iter().any(|h| k.metin.contains(h.as_str())));
+                .find(|k| hedefler.iter().any(|h| yol_geciyor(&k.metin, h)));
             if let Some(k) = bulunan {
                 secimler.push(Secim {
                     arama_id,

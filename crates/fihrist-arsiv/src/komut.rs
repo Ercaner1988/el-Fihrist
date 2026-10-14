@@ -56,6 +56,11 @@ pub struct EsleArgs {
     pub kuru: bool,
 }
 
+/// Komut bir kanca çağrısı mı (hata olsa da çıkış 0 verilmeli)?
+pub fn kanca_mi(k: &Komutlar) -> bool {
+    matches!(k, Komutlar::Arsivle(a) if a.kanca)
+}
+
 /// `kutuphane`: katalog dosyası (`kutup_kutuphane.db`); arşiv yanına `kutup_arsiv.db` olarak konur. Katalog
 /// açılmaz (Turso dosyayı süreç ömrünce kilitler), yalnız yolu kullanılır.
 pub async fn calistir(k: Komutlar, kutuphane: &Path) -> Result<(), String> {

@@ -355,3 +355,43 @@ async fn degismeyen_dokum_atlanir_degisen_alinir() {
     let kalan = depo.degisenler(&[a, b.clone()]).await.unwrap();
     assert_eq!(kalan, [b]);
 }
+
+#[test]
+fn yol_yalniz_tam_yol_olarak_gecince_eslesir() {
+    use crate::esle::yol_geciyor;
+    assert!(yol_geciyor(r#"{"file_path":"/r/a.rs"}"#, "/r/a.rs"));
+    assert!(yol_geciyor("cat /r/a.rs | head", "/r/a.rs"));
+    assert!(
+        !yol_geciyor(r#"{"file_path":"/r/a.rs.bak"}"#, "/r/a.rs"),
+        "sonek"
+    );
+    assert!(
+        !yol_geciyor(r#"{"file_path":"/eski/r/a.rs"}"#, "/r/a.rs"),
+        "önek"
+    );
+    assert!(
+        yol_geciyor("/r/a.rs.bak /r/a.rs", "/r/a.rs"),
+        "ikinci geçiş tam"
+    );
+}
+
+#[test]
+fn kanca_mi_yalniz_arsivle_kancasini_tanir() {
+    use crate::komut::{kanca_mi, AraArgs, ArsivleArgs, Komutlar};
+    let arsivle = |kanca| {
+        Komutlar::Arsivle(ArsivleArgs {
+            dokum: None,
+            tumu: false,
+            kok: None,
+            kanca,
+        })
+    };
+    assert!(kanca_mi(&arsivle(true)));
+    assert!(!kanca_mi(&arsivle(false)));
+    let ara = Komutlar::ArsivAra(AraArgs {
+        sorgu: vec![],
+        limit: 1,
+        tur: None,
+    });
+    assert!(!kanca_mi(&ara));
+}
