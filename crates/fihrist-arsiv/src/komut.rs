@@ -224,6 +224,7 @@ async fn esle_calistir(a: EsleArgs, arsiv_db: &Path) -> Result<(), String> {
             yol: s.yol.into(),
             yaprak: s.yaprak,
             satir_no: s.satir,
+            gunluk_sirasi: None,
             gosterilen_sira: None,
             eylem: s.arac,
             kanal: Some("mcp".into()),
